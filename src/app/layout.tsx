@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Cinzel, Playfair_Display, Prompt, Noto_Serif_Thai } from 'next/font/google';
 import './globals.css';
 import { AudioProvider } from '@/context/AudioContext';
 import { CartProvider } from '@/context/CartContext';
@@ -6,6 +7,33 @@ import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { StickyAudioPlayer } from '@/components/StickyAudioPlayer';
 import { CartDrawer } from '@/components/CartDrawer';
+
+const cinzel = Cinzel({
+  subsets: ['latin'],
+  variable: '--font-cinzel',
+  display: 'swap',
+  weight: ['400', '600', '700', '800', '900'],
+});
+
+const playfair = Playfair_Display({
+  subsets: ['latin'],
+  variable: '--font-playfair',
+  display: 'swap',
+});
+
+const prompt = Prompt({
+  subsets: ['thai', 'latin'],
+  weight: ['300', '400', '500', '600', '700'],
+  variable: '--font-prompt',
+  display: 'swap',
+});
+
+const notoSerifThai = Noto_Serif_Thai({
+  subsets: ['thai', 'latin'],
+  weight: ['300', '400', '500', '600', '700'],
+  variable: '--font-noto-serif-thai',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: 'The Safe Soul Project | 4 มิติแห่งปัญญา (Safe from the Dunya)',
@@ -26,8 +54,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="th" className="scroll-smooth">
-      <body className="min-h-screen bg-slate-dark text-parchment-cream antialiased flex flex-col justify-between selection:bg-gold-warm selection:text-slate-abyss">
+    <html
+      lang="th"
+      className={`scroll-smooth ${cinzel.variable} ${playfair.variable} ${prompt.variable} ${notoSerifThai.variable}`}
+    >
+      <body className="min-h-screen bg-slate-dark text-parchment-cream font-thai antialiased flex flex-col justify-between selection:bg-gold-warm selection:text-slate-abyss">
         <AudioProvider>
           <CartProvider>
             <div className="flex flex-col min-h-screen">

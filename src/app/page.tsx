@@ -10,19 +10,21 @@ import { mockSeries, mockChapters, mockFoundingQuota } from '@/lib/supabase/mock
 import { useAudio } from '@/context/AudioContext';
 import { ContentMode } from '@/types';
 import {
-  Compass,
   Sparkles,
   BookOpen,
-  Play,
   ArrowRight,
   ShieldCheck,
   CheckCircle,
   Crown,
   Headphones,
-  Film,
   Layers,
   ChevronRight,
+  Feather,
+  Brain,
+  SlidersHorizontal,
 } from 'lucide-react';
+
+const ROMAN_NUMERALS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
 
 export default function HomePage() {
   const [contentMode, setContentMode] = useState<ContentMode>('easy');
@@ -44,42 +46,45 @@ export default function HomePage() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-slate-dark text-parchment-cream">
+    <div className="relative min-h-screen overflow-hidden bg-[#08110D] text-parchment-cream font-thai">
       {/* Background Sacred Geometry & Ambient Glow */}
-      <SacredGeometryPattern className="opacity-15" />
-      <GoldGlowOrb className="-top-40 left-1/4 w-[600px] h-[600px]" />
-      <GoldGlowOrb className="top-1/3 -right-40 w-[500px] h-[500px]" />
+      <SacredGeometryPattern className="opacity-20" />
+      <GoldGlowOrb className="-top-40 left-1/4 w-[700px] h-[700px]" />
+      <GoldGlowOrb className="top-1/3 -right-40 w-[600px] h-[600px]" />
 
       {/* ---------------------------------------------------------------------- */}
-      {/* 1. HERO SECTION (Canva & Animation presentation mood) */}
+      {/* 1. LUXURY HERO SECTION */}
       {/* ---------------------------------------------------------------------- */}
-      <section className="relative pt-16 sm:pt-24 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        <div className="text-center max-w-3xl mx-auto space-y-6">
-          {/* Top Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-deep/80 border border-gold/40 text-gold-light text-xs font-semibold shadow-gold-sm backdrop-blur-md animate-float">
+      <section className="relative pt-20 sm:pt-28 pb-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div className="text-center max-w-4xl mx-auto space-y-8">
+          {/* Top Regal Badge */}
+          <div className="inline-flex items-center gap-2.5 px-5 py-2 rounded-full bg-emerald-card/90 border border-gold-warm/40 text-gold-light text-xs font-cinzel font-semibold shadow-gold-sm backdrop-blur-xl animate-float">
             <Sparkles className="w-4 h-4 text-gold-warm" />
-            <span>4 มิติแห่งปัญญา • 7 ธีมหลัก • 35 บทย่อย</span>
+            <span className="tracking-[0.2em] uppercase">THE 4 DIMENSIONS OF WISDOM • 35 CHAPTERS</span>
           </div>
 
-          {/* Main Title */}
-          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-serif font-black tracking-tight text-balance">
-            <span className="block text-parchment-cream">ปลอดภัยจากดุนยา</span>
-            <span className="block mt-2 bg-gradient-to-r from-gold-light via-gold-warm to-amber-600 bg-clip-text text-transparent">
-              Safe from the Dunya
-            </span>
-          </h1>
+          {/* Luxury Main Titles */}
+          <div className="space-y-3">
+            <h1 className="text-4xl sm:text-6xl lg:text-7xl font-thai-serif font-black tracking-normal text-balance">
+              <span className="block text-parchment-cream drop-shadow-md">ปลอดภัยจากดุนยา</span>
+              <span className="block mt-2 font-cinzel font-black tracking-[0.08em] text-gold-luxury text-3xl sm:text-5xl lg:text-6xl">
+                SAFE FROM THE DUNYA
+              </span>
+            </h1>
+            <div className="h-1 w-24 mx-auto bg-gradient-to-r from-transparent via-gold-warm to-transparent mt-4" />
+          </div>
 
           {/* Subtitle */}
-          <p className="text-base sm:text-xl text-parchment-muted/90 font-light leading-relaxed max-w-2xl mx-auto text-balance">
+          <p className="text-base sm:text-xl text-parchment-muted/95 font-light leading-relaxed max-w-2xl mx-auto text-balance">
             เดินใต้แสงแห่งปัญญา โดยไม่หลงไปกับประกายของโลกวัตถุนิยม สร้างภูมิคุ้มกันทางจิตวิญญาณ
-            ผ่านมุมมองตรรกศาสตร์ วิทยาศาสตร์ และสัจธรรมอันสงบเย็น
+            ผ่านการบูรณาการตรรกศาสตร์ วิทยาศาสตร์ และเทววิทยาอันสง่างาม
           </p>
 
           {/* CTA Group */}
           <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
               href="/articles/art-of-self-awareness"
-              className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-gold-gradient text-slate-abyss font-bold text-sm sm:text-base shadow-gold-md hover:brightness-110 active:scale-[0.98] transition flex items-center justify-center gap-2"
+              className="w-full sm:w-auto px-8 py-4 rounded-xl gold-bevel-button text-slate-abyss font-bold text-sm sm:text-base flex items-center justify-center gap-2.5 shadow-gold-md"
             >
               <span>เริ่มอ่านบทที่ 1 ฟรี</span>
               <ArrowRight className="w-4 h-4" />
@@ -87,7 +92,7 @@ export default function HomePage() {
 
             <button
               onClick={handlePlaySampleAudio}
-              className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-emerald-surface/90 hover:bg-emerald-light border border-gold/30 text-parchment-cream font-semibold text-sm sm:text-base transition flex items-center justify-center gap-2.5 backdrop-blur-md"
+              className="w-full sm:w-auto px-7 py-4 rounded-xl bg-emerald-surface/90 hover:bg-emerald-light border border-gold-warm/40 text-parchment-cream font-semibold text-sm sm:text-base transition flex items-center justify-center gap-2.5 backdrop-blur-md shadow-sm hover:border-gold-light"
             >
               <Headphones className="w-4 h-4 text-gold-warm" />
               <span>
@@ -99,37 +104,37 @@ export default function HomePage() {
           </div>
 
           {/* Guarantee / Free Download Tag */}
-          <div className="pt-4 flex items-center justify-center gap-6 text-xs text-parchment-muted">
+          <div className="pt-2 flex flex-wrap items-center justify-center gap-6 text-xs text-parchment-muted">
             <button
               onClick={() => setIsEbookOpen(true)}
-              className="flex items-center gap-1.5 hover:text-gold-light transition cursor-pointer"
+              className="flex items-center gap-2 hover:text-gold-light transition cursor-pointer"
             >
               <BookOpen className="w-4 h-4 text-gold-warm" />
               <span>ดาวน์โหลด E-book 7 บทฟรีทันที (Tier 1)</span>
             </button>
-            <span className="text-white/20">•</span>
+            <span className="text-white/20 hidden sm:inline">•</span>
             <span className="flex items-center gap-1.5">
               <ShieldCheck className="w-4 h-4 text-emerald-400" />
-              <span>ปลดล็อก 35 บทครบทั้ง Easy & Deep</span>
+              <span>สลับโหมด Easy & Deep Mode ได้อิสระ</span>
             </span>
           </div>
         </div>
       </section>
 
       {/* ---------------------------------------------------------------------- */}
-      {/* 2. DUAL-MODE CONTENT ENGINE INTERACTIVE SHOWCASE */}
+      {/* 2. DUAL-MODE CONTENT ENGINE LUXURY PREVIEW */}
       {/* ---------------------------------------------------------------------- */}
       <section className="relative py-16 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">
-        <div className="rounded-3xl p-6 sm:p-10 bg-gradient-to-b from-emerald-card via-[#0F231A] to-slate-card border border-gold/30 shadow-2xl relative overflow-hidden">
-          <div className="text-center max-w-xl mx-auto mb-8 space-y-3">
-            <span className="text-xs font-bold uppercase tracking-wider text-gold-warm">
-              Interactive Content Technology
+        <div className="luxury-glass rounded-3xl p-6 sm:p-12 relative overflow-hidden">
+          <div className="text-center max-w-2xl mx-auto mb-10 space-y-3">
+            <span className="text-xs font-cinzel font-bold uppercase tracking-[0.2em] text-gold-warm">
+              INNOVATIVE DUAL-MODE ENGINE
             </span>
-            <h2 className="text-2xl sm:text-3xl font-serif font-bold text-parchment-cream">
-              ระบบสลับเนื้อหา 2 มิติ (Dual-Mode Engine)
+            <h2 className="text-2xl sm:text-4xl font-thai-serif font-bold text-parchment-cream">
+              ระบบสลับเนื้อหา 2 มิติ (Dual-Mode Technology)
             </h2>
-            <p className="text-xs sm:text-sm text-parchment-muted">
-              สลับมุมมองการเรียนรู้ได้ทันทีในคลิกเดียว ไม่ต้องโหลดหน้าใหม่ เลือกความลึกที่เหมาะกับคุณ
+            <p className="text-xs sm:text-sm text-parchment-muted leading-relaxed">
+              สลับมุมมองการศึกษาได้ทันทีในคลิกเดียวโดยไม่ต้องโหลดหน้าซ้ำ เพื่อให้ตรงกับบริบทของคุณ
             </p>
           </div>
 
@@ -141,57 +146,65 @@ export default function HomePage() {
           />
 
           {/* Live Preview Card */}
-          <div className="rounded-2xl p-6 sm:p-8 bg-black/40 border border-emerald-border/80 backdrop-blur-md transition-all duration-300">
-            <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-emerald-border/50 text-xs">
-              <div className="flex items-center gap-2">
+          <div className="rounded-2xl p-6 sm:p-10 bg-black/60 border border-gold-warm/30 backdrop-blur-xl shadow-2xl transition-all duration-300">
+            <div className="flex flex-wrap items-center justify-between gap-3 pb-5 border-b border-emerald-border/60 text-xs">
+              <div className="flex items-center gap-2.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-gold-warm animate-ping" />
                 <span className="font-semibold text-gold-light">
                   ตัวอย่างเนื้อหา: {sampleChapter.title_th}
                 </span>
               </div>
-              <span className="px-2.5 py-1 rounded bg-white/5 border border-white/10 text-parchment-muted font-mono">
-                โหมดปัจจุบัน: {contentMode === 'easy' ? 'Easy (ครอบครัว & เล่าเรื่อง)' : 'Deep (ตรรกะ & วิทยาศาสตร์)'}
+              <span className="px-3 py-1 rounded-full bg-emerald-deep/80 border border-gold/30 text-parchment-cream font-mono text-[11px]">
+                โหมดปัจจุบัน: {contentMode === 'easy' ? 'Easy (เรื่องเล่า & ครอบครัว)' : 'Deep (ตรรกศาสตร์ & เทววิทยา)'}
               </span>
             </div>
 
             {/* Content Preview */}
-            <div className="pt-6">
+            <div className="pt-8">
               {contentMode === 'easy' ? (
-                <div className="space-y-4 animate-fade-in text-parchment-cream/90 leading-relaxed text-sm sm:text-base font-light">
-                  <p className="text-lg font-serif font-semibold text-gold-light">
+                <div className="space-y-5 animate-fade-in text-parchment-cream/90 leading-relaxed text-sm sm:text-base font-light">
+                  <div className="flex items-center gap-2 text-emerald-300 text-xs font-bold uppercase tracking-wider">
+                    <Feather className="w-4 h-4 text-emerald-400" />
+                    <span>สำนวนเล่าเรื่องและอุปมาอุปไมย (Storytelling Mode)</span>
+                  </div>
+                  <p className="text-xl sm:text-2xl font-thai-serif font-bold text-gold-light">
                     &ldquo;เรือที่ลอยอยู่เหนือน้ำ&rdquo;
                   </p>
                   <p>
                     ลองจินตนาการว่าคุณกำลังนั่งเรือข้ามมหาสมุทรที่กว้างใหญ่ น้ำในทะเลเปรียบเสมือนสิ่งของรอบตัวเราในโลก—เรือจำเป็นต้องใช้น้ำเพื่อพยุงให้ลอยไปข้างหน้า แต่ถ้าเมื่อไหร่ที่น้ำรั่วเข้ามาในเรือ เรือก็จะค่อยๆ จมลง...
                   </p>
-                  <div className="p-4 rounded-xl bg-emerald-deep/40 border-l-4 border-gold-warm text-xs sm:text-sm text-parchment-muted">
-                    <strong className="text-gold-light block mb-1">บทเรียนแก่นแท้ (Easy Takeaways):</strong>
-                    โลกภายนอกเหมือนน้ำในทะเล เรือลอยบนน้ำได้ แต่ห้ามให้น้ำรั่วเข้าสู่ใจเรา
+                  <div className="p-5 rounded-2xl bg-emerald-deep/60 border-l-4 border-gold-warm text-xs sm:text-sm text-parchment-muted space-y-1">
+                    <strong className="text-gold-light block font-semibold">บทเรียนแก่นแท้ (Easy Takeaways):</strong>
+                    <span>โลกภายนอกเหมือนน้ำในทะเล เรือลอยบนน้ำได้ แต่ห้ามให้น้ำรั่วเข้าสู่ห้องหัวใจ</span>
                   </div>
                 </div>
               ) : (
-                <div className="space-y-4 animate-fade-in text-parchment-cream/90 leading-relaxed text-sm sm:text-base font-light">
-                  <p className="text-lg font-serif font-semibold text-gold-light">
+                <div className="space-y-5 animate-fade-in text-parchment-cream/90 leading-relaxed text-sm sm:text-base font-light">
+                  <div className="flex items-center gap-2 text-gold-warm text-xs font-bold uppercase tracking-wider">
+                    <Brain className="w-4 h-4 text-gold-warm" />
+                    <span>การวิเคราะห์เชิงภววิทยาและญาณวิทยา (Philosophical Mode)</span>
+                  </div>
+                  <p className="text-xl sm:text-2xl font-thai-serif font-bold text-gold-light">
                     &ldquo;ญาณวิทยาแห่งดุนยาและการจัดวาง Teleology&rdquo;
                   </p>
                   <p>
-                    ในทางญาณวิทยาและปรัชญาเทววิทยา ดุนยามิใช่สิ่งชั่วร้ายในเชิงภววิทยา (Ontological evil) แต่ &quot;พิษแห่งดุนยา&quot; อุบัติขึ้นเมื่อมนุษย์เกิดความวิปริตทางทัศนะในการจัดลำดับคุณค่าสูงสุด (Teleological Inversion) แปรเปลี่ยนสถานะของโลกกายภาพจาก &quot;สื่อกลาง (Wasīlah)&quot; ไปสู่ &quot;จุดหมายสูงสุดในตัวเอง (Ghāyah)&quot;...
+                    ในทางญาณวิทยาและปรัชญาเทววิทยา ดุนยามิใช่สิ่งชั่วร้ายในเชิงภววิทยา (Ontological evil) ทว่า &quot;พิษแห่งดุนยา&quot; อุบัติขึ้นเมื่อมนุษย์เกิดความวิปริตทางทัศนะในการจัดลำดับคุณค่าสูงสุด (Teleological Inversion) แปรเปลี่ยนสถานะของโลกกายภาพจาก &quot;สื่อกลาง (Wasīlah)&quot; ไปสู่ &quot;จุดหมายสูงสุดในตัวเอง (Ghāyah)&quot;...
                   </p>
-                  <div className="p-4 rounded-xl bg-slate-card border-l-4 border-blue-400 text-xs sm:text-sm text-parchment-muted font-mono">
-                    <strong className="text-blue-300 block mb-1 font-sans">การอ้างอิงเชิงวิชาการ (Epistemic References):</strong>
-                    Al-Ghazali, Ihya Ulum al-Din • Kahneman (2011), Hedonic Adaptation & System 1/2
+                  <div className="p-5 rounded-2xl bg-slate-card border-l-4 border-amber-400 text-xs sm:text-sm text-parchment-muted font-mono space-y-1">
+                    <strong className="text-gold-light block font-sans font-semibold">การอ้างอิงเชิงวิชาการ (Epistemic References):</strong>
+                    <span>Al-Ghazali, Ihya Ulum al-Din • Kahneman (2011), Hedonic Adaptation & System 1/2</span>
                   </div>
                 </div>
               )}
             </div>
 
-            <div className="pt-6 mt-6 border-t border-emerald-border/40 flex justify-end">
+            <div className="pt-6 mt-8 border-t border-emerald-border/40 flex justify-end">
               <Link
                 href={`/articles/${sampleChapter.slug}`}
-                className="text-xs font-semibold text-gold-warm hover:text-gold-light flex items-center gap-1.5 transition"
+                className="text-xs font-bold text-gold-warm hover:text-gold-light flex items-center gap-1.5 transition group"
               >
                 <span>เปิดอ่านบทความฉบับเต็ม พร้อมเครื่องเล่นพอดแคสต์</span>
-                <ChevronRight className="w-4 h-4" />
+                <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition" />
               </Link>
             </div>
           </div>
@@ -199,15 +212,15 @@ export default function HomePage() {
       </section>
 
       {/* ---------------------------------------------------------------------- */}
-      {/* 3. 7 SAFE SERIES (35 CHAPTERS OVERVIEW) */}
+      {/* 3. 7 SAFE SERIES (CURRICULUM) */}
       {/* ---------------------------------------------------------------------- */}
       <section className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        <div className="text-center max-w-2xl mx-auto mb-14 space-y-3">
-          <div className="inline-flex items-center gap-2 text-gold-warm text-xs font-bold uppercase tracking-wider">
+        <div className="text-center max-w-3xl mx-auto mb-16 space-y-3">
+          <div className="inline-flex items-center gap-2 text-gold-warm text-xs font-cinzel font-bold uppercase tracking-[0.2em]">
             <Layers className="w-4 h-4" />
-            <span>Curriculum & Wisdom Roadmap</span>
+            <span>THE 7 SACRED PILLARS</span>
           </div>
-          <h2 className="text-3xl sm:text-4xl font-serif font-bold text-parchment-cream">
+          <h2 className="text-3xl sm:text-5xl font-thai-serif font-bold text-parchment-cream">
             7 ธีมหลักแห่งการปกป้องจิตวิญญาณ
           </h2>
           <p className="text-sm text-parchment-muted">
@@ -215,11 +228,11 @@ export default function HomePage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {mockSeries.map((series, index) => (
             <div
               key={series.id}
-              className="group rounded-2xl bg-gradient-to-b from-emerald-card to-slate-card border border-emerald-border/70 hover:border-gold/50 shadow-lg hover:shadow-gold-sm transition-all duration-300 flex flex-col overflow-hidden"
+              className="group luxury-glass rounded-3xl overflow-hidden flex flex-col justify-between transition-all duration-500 hover:-translate-y-1"
             >
               {/* Cover Image Container */}
               <div className="relative aspect-[16/9] w-full overflow-hidden bg-black">
@@ -227,24 +240,25 @@ export default function HomePage() {
                 <img
                   src={series.cover_image}
                   alt={series.title_th}
-                  className="w-full h-full object-cover group-hover:scale-105 transition duration-500 opacity-75 group-hover:opacity-90"
+                  className="w-full h-full object-cover group-hover:scale-105 transition duration-700 opacity-75 group-hover:opacity-90"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-card via-transparent to-black/30" />
-                <span className="absolute top-3 left-3 px-2.5 py-1 rounded-md bg-black/60 backdrop-blur-md border border-white/10 text-[11px] font-mono font-bold text-gold-warm">
-                  Series #{series.order_index}
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0B1410] via-transparent to-black/40" />
+
+                <span className="absolute top-3.5 left-3.5 px-3 py-1 rounded-lg bg-black/70 backdrop-blur-md border border-gold-warm/40 text-xs font-cinzel font-bold text-gold-light shadow-sm">
+                  PILLAR {ROMAN_NUMERALS[index]}
                 </span>
-                <span className="absolute bottom-3 left-3 text-[11px] text-parchment-muted/90 font-medium">
+                <span className="absolute bottom-3.5 left-3.5 text-xs text-parchment-muted font-medium">
                   {series.dimension}
                 </span>
               </div>
 
               {/* Body */}
-              <div className="p-5 sm:p-6 flex-1 flex flex-col justify-between space-y-4">
+              <div className="p-6 sm:p-7 flex-1 flex flex-col justify-between space-y-4">
                 <div>
-                  <h3 className="text-lg font-serif font-bold text-parchment-cream group-hover:text-gold-light transition">
+                  <h3 className="text-xl font-thai-serif font-bold text-parchment-cream group-hover:text-gold-light transition duration-300">
                     {series.title_th}
                   </h3>
-                  <p className="text-xs text-gold-warm/80 font-medium tracking-wide mb-2">
+                  <p className="text-xs font-cinzel font-semibold text-gold-warm/90 tracking-wider mb-2.5 mt-0.5">
                     {series.title_en}
                   </p>
                   <p className="text-xs text-parchment-muted line-clamp-3 leading-relaxed">
@@ -252,14 +266,14 @@ export default function HomePage() {
                   </p>
                 </div>
 
-                <div className="pt-3 border-t border-emerald-border/40 flex items-center justify-between text-xs">
-                  <span className="text-parchment-muted/80">5 บทย่อย • รวมเสียง & คลิป</span>
+                <div className="pt-4 border-t border-emerald-border/50 flex items-center justify-between text-xs">
+                  <span className="text-parchment-muted/80">5 บทย่อย • รวมเสียง & แอนิเมชัน</span>
                   <Link
-                    href={`/articles/${index === 0 ? 'art-of-self-awareness' : 'art-of-self-awareness'}`}
-                    className="text-gold-light font-semibold hover:underline flex items-center gap-1"
+                    href="/articles/art-of-self-awareness"
+                    className="text-gold-light font-semibold hover:text-gold-warm flex items-center gap-1 group/btn"
                   >
-                    <span>สำรวจ</span>
-                    <ChevronRight className="w-3.5 h-3.5" />
+                    <span>เข้าสู่เนื้อหา</span>
+                    <ChevronRight className="w-3.5 h-3.5 group-hover/btn:translate-x-1 transition" />
                   </Link>
                 </div>
               </div>
@@ -279,46 +293,48 @@ export default function HomePage() {
       {/* 5. 3-TIER MEMBERSHIP COMPARISON */}
       {/* ---------------------------------------------------------------------- */}
       <section className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        <div className="text-center max-w-xl mx-auto mb-14 space-y-3">
-          <span className="text-xs font-bold uppercase tracking-wider text-gold-warm">
-            Membership & Access Control
+        <div className="text-center max-w-2xl mx-auto mb-16 space-y-3">
+          <span className="text-xs font-cinzel font-bold uppercase tracking-[0.2em] text-gold-warm">
+            PREMIUM ACCESS TIERS
           </span>
-          <h2 className="text-3xl sm:text-4xl font-serif font-bold text-parchment-cream">
+          <h2 className="text-3xl sm:text-5xl font-thai-serif font-bold text-parchment-cream">
             เลือกระดับการสนับสนุนที่คุณต้องการ
           </h2>
           <p className="text-sm text-parchment-muted">
-            สนับสนุนเพื่อร่วมสร้างสังคมแห่งปัญญา พร้อมรับสิทธิประโยชน์อันทรงคุณค่า
+            สนับสนุนเพื่อร่วมสร้างสังคมแห่งปัญญา พร้อมรับสิทธิ์การเข้าถึงคลังข้อมูลและชุมชน
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 items-stretch">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
           {/* Tier 1: Free Member */}
-          <div className="rounded-2xl p-6 sm:p-8 bg-emerald-card/60 border border-emerald-border flex flex-col justify-between">
-            <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-parchment-muted">
-                Tier 1
-              </span>
-              <h3 className="text-xl font-serif font-bold text-parchment-cream mt-1 mb-2">
-                Free Member
-              </h3>
-              <div className="text-2xl font-bold font-mono text-parchment-light mb-4">
-                ฿0 <span className="text-xs text-parchment-muted font-sans">ตลอดชีพ</span>
+          <div className="luxury-glass rounded-3xl p-6 sm:p-8 flex flex-col justify-between">
+            <div className="space-y-6">
+              <div>
+                <span className="text-xs font-cinzel font-bold uppercase tracking-widest text-parchment-muted">
+                  TIER I
+                </span>
+                <h3 className="text-2xl font-thai-serif font-bold text-parchment-cream mt-1">
+                  Free Member
+                </h3>
+                <div className="text-3xl font-serif font-black text-parchment-light mt-3">
+                  ฿0 <span className="text-xs font-sans text-parchment-muted">ตลอดชีพ</span>
+                </div>
+                <p className="text-xs text-parchment-muted mt-2 leading-relaxed">
+                  สมัครด้วยอีเมลง่ายๆ เพื่อเริ่มต้นก้าวแรกแห่งการเรียนรู้
+                </p>
               </div>
-              <p className="text-xs text-parchment-muted mb-6 leading-relaxed">
-                สมัครด้วยอีเมลง่ายๆ เพื่อเริ่มต้นก้าวแรกแห่งการเรียนรู้
-              </p>
 
-              <ul className="space-y-3 text-xs text-parchment-muted mb-8">
-                <li className="flex items-center gap-2">
+              <ul className="space-y-3.5 text-xs text-parchment-muted border-t border-emerald-border/40 pt-6">
+                <li className="flex items-center gap-2.5">
                   <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
                   <span>ดาวน์โหลด E-book 7 บทหลักฟรีทันที</span>
                 </li>
-                <li className="flex items-center gap-2">
+                <li className="flex items-center gap-2.5">
                   <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
                   <span>เข้าถึงเนื้อหาบทที่ 1 - 3 ได้ฟรีตลอดชีพ</span>
                 </li>
-                <li className="flex items-center gap-2 text-parchment-muted/50">
-                  <span className="w-4 h-4 border border-white/20 rounded-full flex items-center justify-center text-[10px]">✕</span>
+                <li className="flex items-center gap-2.5 text-parchment-muted/40">
+                  <span className="w-4 h-4 rounded-full border border-white/20 flex items-center justify-center text-[10px]">✕</span>
                   <span>ปลดล็อก 35 ตอนครบชุด</span>
                 </li>
               </ul>
@@ -326,96 +342,100 @@ export default function HomePage() {
 
             <button
               onClick={() => setIsEbookOpen(true)}
-              className="w-full py-3 rounded-xl bg-emerald-surface hover:bg-emerald-light border border-gold/30 text-gold-light text-xs font-bold transition"
+              className="mt-8 w-full py-3.5 rounded-xl bg-emerald-surface hover:bg-emerald-light border border-gold/30 text-gold-light text-xs font-bold transition shadow-sm"
             >
               สมัครสมาชิกฟรี
             </button>
           </div>
 
           {/* Tier 2: Supporter 199 THB/mo */}
-          <div className="rounded-2xl p-6 sm:p-8 bg-emerald-surface/70 border-2 border-emerald-border/80 flex flex-col justify-between relative shadow-lg">
-            <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-emerald-300">
-                Tier 2 • แนะนำสำหรับผู้เรียนรู้ต่อเนื่อง
-              </span>
-              <h3 className="text-xl font-serif font-bold text-parchment-cream mt-1 mb-2">
-                Monthly / Yearly Supporter
-              </h3>
-              <div className="text-2xl font-bold font-mono text-gold-light mb-4">
-                ฿199 <span className="text-xs text-parchment-muted font-sans">/ เดือน</span>
+          <div className="luxury-glass rounded-3xl p-6 sm:p-8 border-2 border-emerald-400/40 flex flex-col justify-between relative shadow-2xl">
+            <div className="space-y-6">
+              <div>
+                <span className="text-xs font-cinzel font-bold uppercase tracking-widest text-emerald-300">
+                  TIER II • MOST POPULAR
+                </span>
+                <h3 className="text-2xl font-thai-serif font-bold text-parchment-cream mt-1">
+                  Supporter
+                </h3>
+                <div className="text-3xl font-serif font-black text-gold-light mt-3">
+                  ฿199 <span className="text-xs font-sans text-parchment-muted">/ เดือน</span>
+                </div>
+                <p className="text-xs text-parchment-muted mt-2 leading-relaxed">
+                  ปลดล็อกคลังปัญญาทั้งหมด ครบ 35 บท พร้อมระบบเสียงพอดแคสต์
+                </p>
               </div>
-              <p className="text-xs text-parchment-muted mb-6 leading-relaxed">
-                ปลดล็อกคลังปัญญาทั้งหมด ครบ 35 บท พร้อมระบบเสียงพอดแคสต์
-              </p>
 
-              <ul className="space-y-3 text-xs text-parchment-cream/90 mb-8">
-                <li className="flex items-center gap-2">
+              <ul className="space-y-3.5 text-xs text-parchment-cream/90 border-t border-emerald-border/40 pt-6">
+                <li className="flex items-center gap-2.5">
                   <CheckCircle className="w-4 h-4 text-gold-warm shrink-0" />
                   <span>ปลดล็อกครบ 35 บท ทั้ง Easy และ Deep Mode</span>
                 </li>
-                <li className="flex items-center gap-2">
+                <li className="flex items-center gap-2.5">
                   <CheckCircle className="w-4 h-4 text-gold-warm shrink-0" />
                   <span>ฟังพอดแคสต์เสียงความคมชัดสูงทุกตอน</span>
                 </li>
-                <li className="flex items-center gap-2">
+                <li className="flex items-center gap-2.5">
                   <CheckCircle className="w-4 h-4 text-gold-warm shrink-0" />
-                  <span>รับบทบาท Supporter ใน Discord และสิทธิ์กลุ่ม Telegram</span>
+                  <span>รับบทบาท Supporter ใน Discord และกลุ่ม Telegram</span>
                 </li>
               </ul>
             </div>
 
             <Link
               href="/pricing#supporter-checkout"
-              className="w-full py-3 rounded-xl bg-gold-gradient text-slate-abyss text-xs font-bold hover:brightness-110 shadow-gold-sm transition text-center"
+              className="mt-8 w-full py-3.5 rounded-xl gold-bevel-button text-slate-abyss text-xs font-bold shadow-gold-sm transition text-center"
             >
               สมัครสนับสนุน ฿199/เดือน
             </Link>
           </div>
 
           {/* Tier 3: Founding 100 Lifetime */}
-          <div className="rounded-2xl p-6 sm:p-8 bg-gradient-to-b from-[#1C3A2D] to-slate-card border-2 border-gold-warm flex flex-col justify-between relative shadow-gold-md">
-            <div className="absolute -top-3.5 right-6 px-3 py-1 rounded-full bg-gold-gradient text-slate-abyss text-[10px] font-black uppercase tracking-wider shadow-sm">
-              จำกัด 100 ท่าน
+          <div className="rounded-3xl p-6 sm:p-8 bg-gradient-to-b from-[#1C3B2C] via-[#12261C] to-slate-card border-2 border-gold-warm flex flex-col justify-between relative shadow-gold-luxury">
+            <div className="absolute -top-3.5 right-6 px-3.5 py-1 rounded-full bg-gold-gradient text-slate-abyss text-[10px] font-cinzel font-black uppercase tracking-wider shadow-sm">
+              LIMITED 100 SLOTS
             </div>
 
-            <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-gold-warm flex items-center gap-1">
-                <Crown className="w-3.5 h-3.5 fill-current" />
-                <span>Tier 3 • สิทธิพิเศษตลอดชีพ</span>
-              </span>
-              <h3 className="text-xl font-serif font-bold text-parchment-light mt-1 mb-2">
-                Founding 100 Lifetime
-              </h3>
-              <div className="text-2xl font-bold font-mono text-gold-light mb-4">
-                ฿3,990 <span className="text-xs text-parchment-muted font-sans">จ่ายครั้งเดียวตลอดชีพ</span>
+            <div className="space-y-6">
+              <div>
+                <span className="text-xs font-cinzel font-bold uppercase tracking-widest text-gold-warm flex items-center gap-1.5">
+                  <Crown className="w-3.5 h-3.5 fill-current" />
+                  <span>TIER III • LIFETIME PRESTIGE</span>
+                </span>
+                <h3 className="text-2xl font-thai-serif font-bold text-parchment-light mt-1">
+                  Founding 100 Lifetime
+                </h3>
+                <div className="text-3xl font-serif font-black text-gold-light mt-3">
+                  ฿3,990 <span className="text-xs font-sans text-parchment-muted">จ่ายครั้งเดียวตลอดชีพ</span>
+                </div>
+                <p className="text-xs text-parchment-muted mt-2 leading-relaxed">
+                  สำหรับผู้ร่วมก่อตั้ง รับสิทธิพิเศษพรีเมียมทุกมิติและ Full E-book 240 หน้า
+                </p>
               </div>
-              <p className="text-xs text-parchment-muted mb-6 leading-relaxed">
-                สำหรับผู้มีวิสัยทัศน์ที่ต้องการร่วมสร้างและได้รับทุกอย่างในระดับพรีเมียม
-              </p>
 
-              <ul className="space-y-3 text-xs text-parchment-cream/90 mb-8">
-                <li className="flex items-center gap-2">
+              <ul className="space-y-3.5 text-xs text-parchment-cream/95 border-t border-emerald-border/40 pt-6">
+                <li className="flex items-center gap-2.5">
                   <CheckCircle className="w-4 h-4 text-gold-warm shrink-0" />
                   <span>เข้าถึง 35 บทตลอดชีพ รวมการอัปเดตในอนาคต</span>
                 </li>
-                <li className="flex items-center gap-2">
+                <li className="flex items-center gap-2.5">
                   <CheckCircle className="w-4 h-4 text-gold-warm shrink-0" />
-                  <span>ดาวน์โหลด Full Master E-book 240 หน้าพร้อมลายน้ำเฉพาะ</span>
+                  <span>ดาวน์โหลด Full Master E-book 240 หน้า (ประทับตราลิขสิทธิ์)</span>
                 </li>
-                <li className="flex items-center gap-2">
+                <li className="flex items-center gap-2.5">
                   <CheckCircle className="w-4 h-4 text-gold-warm shrink-0" />
-                  <span>โค้ดส่วนลด 20% สำหรับสินค้า Physical Merch ทุกชิ้น</span>
+                  <span>ส่วนลด 20% สำหรับสินค้า Physical Merch ทุกชิ้น</span>
                 </li>
-                <li className="flex items-center gap-2">
+                <li className="flex items-center gap-2.5">
                   <CheckCircle className="w-4 h-4 text-gold-warm shrink-0" />
-                  <span>บทบาท Founding 100 สีทองบน Discord & Telegram ส่วนตัว</span>
+                  <span>บทบาท Founding 100 สีทองบน Discord & Telegram</span>
                 </li>
               </ul>
             </div>
 
             <Link
               href="/pricing#founding-checkout"
-              className="w-full py-3 rounded-xl bg-gold-gradient text-slate-abyss text-xs font-bold hover:brightness-110 shadow-gold-sm transition text-center"
+              className="mt-8 w-full py-3.5 rounded-xl gold-bevel-button text-slate-abyss text-xs font-bold shadow-gold-sm transition text-center"
             >
               รับสิทธิ์ Founding 100 (เหลือ {mockFoundingQuota.remaining_slots} ที่)
             </Link>
