@@ -1,0 +1,49 @@
+import type { Metadata } from 'next';
+import './globals.css';
+import { AudioProvider } from '@/context/AudioContext';
+import { CartProvider } from '@/context/CartContext';
+import { Navbar } from '@/components/Navbar';
+import { Footer } from '@/components/Footer';
+import { StickyAudioPlayer } from '@/components/StickyAudioPlayer';
+import { CartDrawer } from '@/components/CartDrawer';
+
+export const metadata: Metadata = {
+  title: 'The Safe Soul Project | 4 มิติแห่งปัญญา (Safe from the Dunya)',
+  description:
+    'แพลตฟอร์มความรู้ พอดแคสต์ และแอนิเมชันแห่งปัญญา 7 ซีรีส์ 35 บท เพื่อการสร้างภูมิคุ้มกันทางจิตวิญญาณ อยู่ร่วมกับโลกยุคใหม่โดยไม่ยอมให้โลกกลืนกินหัวใจ',
+  keywords: [
+    'The Safe Soul Project',
+    '4 มิติแห่งปัญญา',
+    'Safe from the Dunya',
+    'พอดแคสต์พัฒนาจิตวิญญาณ',
+    'ปรัชญาและวิทยาศาสตร์',
+  ],
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="th" className="scroll-smooth">
+      <body className="min-h-screen bg-slate-dark text-parchment-cream antialiased flex flex-col justify-between selection:bg-gold-warm selection:text-slate-abyss">
+        <AudioProvider>
+          <CartProvider>
+            <div className="flex flex-col min-h-screen">
+              <Navbar />
+              <main className="flex-1">{children}</main>
+              <Footer />
+            </div>
+
+            {/* Persistent Sticky Audio Player (Audio plays across all routes) */}
+            <StickyAudioPlayer />
+
+            {/* Slide-over Shopping Cart */}
+            <CartDrawer />
+          </CartProvider>
+        </AudioProvider>
+      </body>
+    </html>
+  );
+}
