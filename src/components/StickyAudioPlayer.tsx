@@ -111,9 +111,9 @@ export function StickyAudioPlayer() {
                 )}
                 {isPlaying && (
                   <div className="absolute inset-0 bg-black/40 flex items-center justify-center gap-0.5">
-                    <span className="w-1 h-3 bg-gold-warm animate-bounce" style={{ animationDelay: '0ms' }} />
-                    <span className="w-1 h-5 bg-gold-warm animate-bounce" style={{ animationDelay: '150ms' }} />
-                    <span className="w-1 h-2 bg-gold-warm animate-bounce" style={{ animationDelay: '300ms' }} />
+                    <span className="w-1 h-3 bg-gold-warm animate-pulse" style={{ animationDelay: '0ms' }} />
+                    <span className="w-1 h-5 bg-gold-warm animate-pulse" style={{ animationDelay: '150ms' }} />
+                    <span className="w-1 h-2 bg-gold-warm animate-pulse" style={{ animationDelay: '300ms' }} />
                   </div>
                 )}
               </div>

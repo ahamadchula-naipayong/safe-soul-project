@@ -2,6 +2,17 @@ export type TierType = 'free_tier_1' | 'supporter_tier_2' | 'founding_tier_3';
 
 export type ContentMode = 'easy' | 'deep';
 
+export interface Member {
+  id: string;
+  memberNumber: number; // Member ลำดับที่
+  username: string;
+  email: string;
+  password?: string;
+  name: string;
+  tier: TierType;
+  createdAt: string;
+}
+
 export interface Profile {
   id: string;
   email: string;
@@ -86,4 +97,30 @@ export interface FoundingSlotsQuota {
   claimed_slots: number;
   remaining_slots: number;
   percentage_claimed: number;
+}
+
+export interface NewsSection {
+  index: number;
+  title?: string;
+  content: string;
+  image?: string | null;
+}
+
+export interface NewsItem {
+  id: string; // e.g. "KORDD1000"
+  slug: string; // e.g. "kordd1000"
+  korNo: string;
+  rawTitle: string;
+  title: string;
+  topicLead?: string; // Original Title from column D, displayed before Content 2
+  date: string; // "2026-07-20"
+  dateFormatted: string; // "20 กรกฎาคม 2026"
+  dateShort: string; // "20 ก.ค. 2026"
+  dateTimestamp: number;
+  subcategory: string;
+  image: string; // Main hero background image
+  video?: string | null;
+  source?: string | null;
+  sections: NewsSection[];
+  excerpt: string;
 }

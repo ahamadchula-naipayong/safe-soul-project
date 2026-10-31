@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { mockChapters, mockSeries } from '@/lib/supabase/mockData';
 import { Chapter } from '@/types';
+import { RichTextEditor } from '@/components/RichTextEditor';
 import {
   BookOpen,
   ArrowLeft,
@@ -251,8 +252,8 @@ export default function AdminArticlesPage() {
         {/* VISUAL CHAPTER & IMAGE EDITOR MODAL */}
         {/* ------------------------------------------------------------------ */}
         {editingChapter && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in overflow-y-auto">
-            <div className="relative w-full max-w-4xl my-8 rounded-3xl bg-gradient-to-b from-[#12271D] via-[#0E1E16] to-[#0A130F] border-2 border-gold/40 shadow-2xl text-parchment-cream p-6 sm:p-8 space-y-6">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md animate-fade-in overflow-y-auto">
+            <div className="relative w-full max-w-6xl my-6 rounded-3xl bg-gradient-to-b from-[#12271D] via-[#0E1E16] to-[#0A130F] border-2 border-gold/40 shadow-2xl text-parchment-cream p-5 sm:p-8 space-y-6">
               {/* Close Button */}
               <button
                 onClick={() => setEditingChapter(null)}
@@ -287,7 +288,7 @@ export default function AdminArticlesPage() {
                   }`}
                 >
                   <BookOpen className="w-4 h-4" />
-                  <span>โหมด Easy (ครอบครัว & เรื่องเล่า)</span>
+                  <span>โหมด Easy (Upcoming - ครอบครัว & เรื่องเล่า)</span>
                 </button>
                 <button
                   onClick={() => setActiveTab('deep')}
@@ -348,17 +349,14 @@ export default function AdminArticlesPage() {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-medium text-parchment-muted mb-1">
-                        เนื้อหาบทความ Easy Mode (ภาษาเล่าเรื่อง เข้าใจง่าย)
-                      </label>
-                      <textarea
-                        rows={8}
-                        required
+                      <RichTextEditor
+                        label="เนื้อหาบทความ Easy Mode (ภาษาเล่าเรื่อง & เรื่องเล่ารอบตัว)"
                         value={editingChapter.easy_content}
-                        onChange={(e) =>
-                          setEditingChapter({ ...editingChapter, easy_content: e.target.value })
+                        onChange={(val) =>
+                          setEditingChapter({ ...editingChapter, easy_content: val })
                         }
-                        className="w-full px-4 py-3 rounded-xl bg-slate-dark border border-emerald-border focus:border-gold-warm text-sm text-parchment-cream outline-none font-sans"
+                        placeholder="เขียนเนื้อหาบทความ Easy Mode ด้วย Markdown หรือใช้แถบเครื่องมือด้านบน คล้าย Google Docs / Sheets..."
+                        minHeight="280px"
                       />
                     </div>
 
@@ -411,17 +409,15 @@ export default function AdminArticlesPage() {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-medium text-parchment-muted mb-1">
-                        เนื้อหาบทความ Deep Mode (ตรรกศาสตร์, จิตวิทยา, ญาณวิทยา และเทววิทยา)
-                      </label>
-                      <textarea
-                        rows={10}
-                        required
+                      <RichTextEditor
+                        label="เนื้อหาบทความ Deep Mode (ตรรกศาสตร์, จิตวิทยา, ญาณวิทยา และเทววิทยา)"
                         value={editingChapter.deep_content}
-                        onChange={(e) =>
-                          setEditingChapter({ ...editingChapter, deep_content: e.target.value })
+                        onChange={(val) =>
+                          setEditingChapter({ ...editingChapter, deep_content: val })
                         }
-                        className="w-full px-4 py-3 rounded-xl bg-slate-dark border border-emerald-border focus:border-gold-warm text-sm text-parchment-cream outline-none font-serif"
+                        placeholder="เขียนเนื้อหาบทความ Deep Mode ด้วย Markdown... รองรับหัวข้อ, ตารางเปรียบเทียบ, อ้างอิง และกล่องข้อคิด"
+                        minHeight="320px"
+                        isDeepMode
                       />
                     </div>
                   </div>

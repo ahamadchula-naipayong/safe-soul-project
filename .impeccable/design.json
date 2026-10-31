@@ -1,0 +1,143 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-20T12:48:00Z",
+  "title": "Design System: Safe Soul Project",
+  "extensions": {
+    "colorMeta": {
+      "primary": {
+        "role": "primary",
+        "displayName": "Regal Warm Gold",
+        "canonical": "#F59E0B",
+        "tonalRamp": ["#451A03", "#78350F", "#92400E", "#B45309", "#D97706", "#F59E0B", "#FBBF24", "#FDE68A"]
+      },
+      "emerald-deep": {
+        "role": "neutral",
+        "displayName": "Abyss Emerald Deep",
+        "canonical": "#0F291E",
+        "tonalRamp": ["#040906", "#08110D", "#0F291E", "#12251D", "#183226", "#1E3E30", "#2A5944", "#3D7A5E"]
+      },
+      "parchment-cream": {
+        "role": "neutral",
+        "displayName": "Parchment Cream",
+        "canonical": "#F4F1EA",
+        "tonalRamp": ["#736F66", "#8F8A80", "#ADA79C", "#C5BFA3", "#DDD8CE", "#EAE6DE", "#F4F1EA", "#FAF8F5"]
+      },
+      "artisanal-caramel": {
+        "role": "accent",
+        "displayName": "Roasted Caramel",
+        "canonical": "#AB682A",
+        "tonalRamp": ["#422209", "#5E320D", "#793F12", "#8C4F1A", "#AB682A", "#C98547", "#E4A86E", "#F4D2AE"]
+      },
+      "artisanal-cream": {
+        "role": "neutral",
+        "displayName": "Artisanal Oatmeal Cream",
+        "canonical": "#F9F6F0",
+        "tonalRamp": ["#969085", "#B8B1A5", "#D7D2C7", "#EAE6DD", "#F4F1EA", "#F9F6F0", "#FCFAF7", "#FFFFFF"]
+      },
+      "artisanal-charcoal": {
+        "role": "neutral",
+        "displayName": "Artisanal Warm Charcoal",
+        "canonical": "#1C1C1C",
+        "tonalRamp": ["#0D0D0D", "#1C1C1C", "#2D2D2D", "#454545", "#666666", "#8F8F8F", "#B8B8B8", "#E0E0E0"]
+      },
+      "artisanal-sage": {
+        "role": "accent",
+        "displayName": "Botanical Sage",
+        "canonical": "#61CE70",
+        "tonalRamp": ["#164E24", "#1F7034", "#2B9546", "#3DB65C", "#61CE70", "#8BE097", "#B9F0C2", "#E2F9E6"]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Hero titles and regal headlines (Cinzel)." },
+      "headline": { "displayName": "Headline", "purpose": "Chapter and series main titles (Noto Serif Thai)." },
+      "artisanal": { "displayName": "Artisanal", "purpose": "Warm handwritten artisanal script for communal hearth & journals (Mali)." },
+      "body": { "displayName": "Body", "purpose": "Contemplative long-form reading (Prompt)." },
+      "caption": { "displayName": "Caption", "purpose": "Timestamps, image credits, secondary details (Prompt 11px)." },
+      "badge": { "displayName": "Badge", "purpose": "Counter chips, tier pills, status badges (Prompt 10px)." }
+    },
+    "shadows": [
+      { "name": "gold-sm", "value": "0 0 15px rgba(245, 158, 11, 0.2)", "purpose": "Status chips and subtle interactive gold buttons." },
+      { "name": "card-luxury", "value": "0 20px 60px -15px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(245, 158, 11, 0.25)", "purpose": "Sanctuary glass cards and major containers." },
+      { "name": "gold-luxury", "value": "0 10px 50px -10px rgba(245, 158, 11, 0.35)", "purpose": "Founding 100 Lifetime prestige elements." },
+      { "name": "artisanal-sm", "value": "0 2px 10px rgba(171, 104, 42, 0.08)", "purpose": "Subtle artisanal pill badges and micro-cards." },
+      { "name": "artisanal-card", "value": "0 10px 30px -5px rgba(171, 104, 42, 0.12), 0 2px 6px rgba(0, 0, 0, 0.04)", "purpose": "Artisanal hearth cards with organic warmth." }
+    ],
+    "motion": [
+      { "name": "ease-standard", "value": "cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Tactile bevel hover and mode switches." },
+      { "name": "duration-fast", "value": "150ms", "purpose": "Feedback and micro-interactions." },
+      { "name": "duration-normal", "value": "300ms", "purpose": "Dual-mode transitions and drawer reveals." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "xl", "value": "1280px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Gold Bevel Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Primary luxury call-to-action button with warm gold bevel sheen.",
+      "html": "<button class=\"ds-gold-btn\">เริ่มอ่านบทที่ 1 ฟรี</button>",
+      "css": ".ds-gold-btn { background: linear-gradient(135deg, #FDE68A 0%, #F59E0B 45%, #B45309 100%); color: #08110D; padding: 14px 28px; font-weight: 700; border-radius: 12px; border: none; font-size: 14px; box-shadow: 0 4px 20px rgba(245, 158, 11, 0.35); cursor: pointer; transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1); } .ds-gold-btn:hover { filter: brightness(1.1); transform: translateY(-1px); box-shadow: 0 6px 28px rgba(245, 158, 11, 0.5); }"
+    },
+    {
+      "name": "Sanctuary Glass Card",
+      "kind": "card",
+      "refersTo": "card-sanctuary",
+      "description": "Deep emerald frosted container with subtle gold hairline border.",
+      "html": "<div class=\"ds-card-sanctuary\"><h3 class=\"ds-card-title\">มิติแห่งตน</h3><p class=\"ds-card-body\">การครองสติในโลกที่เร่งรีบ</p></div>",
+      "css": ".ds-card-sanctuary { background: linear-gradient(180deg, rgba(18, 37, 29, 0.75) 0%, rgba(10, 18, 14, 0.92) 100%); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 24px; padding: 32px; backdrop-filter: blur(16px); } .ds-card-title { font-family: Georgia, serif; font-size: 20px; font-weight: 700; color: #F4F1EA; margin: 0 0 8px 0; } .ds-card-body { font-size: 14px; color: #E2DDD2; line-height: 1.6; margin: 0; }"
+    },
+    {
+      "name": "Artisanal Hearth Card",
+      "kind": "card",
+      "refersTo": "card-artisanal",
+      "description": "Warm oatmeal cream container with roasted caramel accent and Mali typography inspired by Koh Nai Soi.",
+      "html": "<div class=\"ds-card-artisanal\"><h3 class=\"ds-card-artisanal-title\">วงสนทนาจิบชาช้าๆ</h3><p class=\"ds-card-artisanal-body\">สนทนาแลกเปลี่ยนความคิดอย่างอบอุ่นริมโต๊ะไม้</p></div>",
+      "css": ".ds-card-artisanal { background-color: #FAF7F2; border: 1px solid rgba(171, 104, 42, 0.2); border-radius: 24px; padding: 28px; box-shadow: 0 10px 30px -5px rgba(171, 104, 42, 0.12); color: #1C1C1C; } .ds-card-artisanal-title { font-family: 'Mali', cursive, sans-serif; font-size: 20px; font-weight: 600; color: #AB682A; margin: 0 0 8px 0; } .ds-card-artisanal-body { font-size: 14px; color: #333333; line-height: 1.6; margin: 0; }"
+    },
+    {
+      "name": "Caramel Hearth Button",
+      "kind": "button",
+      "refersTo": "button-artisanal",
+      "description": "Tactile roasted caramel button with warm elevation for communal actions.",
+      "html": "<button class=\"ds-caramel-btn\">เข้าร่วมวงเสวนา</button>",
+      "css": ".ds-caramel-btn { background-color: #AB682A; color: #FFFFFF; padding: 12px 24px; font-family: 'Mali', cursive, sans-serif; font-weight: 600; border-radius: 12px; border: 1px solid rgba(140, 79, 26, 0.3); font-size: 14px; box-shadow: 0 2px 10px rgba(171, 104, 42, 0.2); cursor: pointer; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); } .ds-caramel-btn:hover { background-color: #8C4F1A; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(171, 104, 42, 0.3); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Sacred Epistemic Sanctuary & The Artisanal Hearth",
+    "overview": "Safe Soul Project ถูกออกแบบให้เป็นระบบความรู้สึกสองโลกคู่ขนานที่เติมเต็มกันอย่างสมบูรณ์แบบ: โลกแรกคือวิหารญาณวิทยา (Deep Emerald & Gold) สำหรับการศึกษาตรรกะและสมาธิลึกซึ้ง และโลกที่สองคือลานชุมชนและศาลาพักใจ (Warm Artisanal Hearth inspired by Koh Nai Soi: Oatmeal Cream, Caramel, and Mali script) สำหรับไมตรีจิต การล้อมวงจิบชา และบทสนทนาที่เป็นมิตร",
+    "keyCharacteristics": [
+      "Deep Emerald & Gold Glow: พื้นหลังรัตติกาลอมเขียวมรกตลึก ขับเน้นด้วยประกายทองแห่งปัญญา",
+      "Warm Oatmeal & Roasted Caramel: พื้นผิวกระดาษทำมือสีครีม ตัดขอบคาราเมลอบและสีเขียวใบเสจ สะท้อนความเรียบง่ายและเป็นกันเอง",
+      "Tri-Typographic Symphony: Display โรมัน Cinzel + หัวข้อไทย Noto Serif Thai + ลายมืออบอุ่นเป็นกันเอง Mali + เนื้อความอ่านสบายตา Prompt"
+    ],
+    "rules": [
+      { "name": "The Rarity Rule", "body": "สีทองอุ่นจะถูกใช้ไม่เกิน 15% ของพื้นที่หน้าจอในโหมด Sanctuary ความศักดิ์สิทธิ์และพลังของสีทองเกิดจากความประณีตและความหายาก", "section": "colors" },
+      { "name": "The Tonal Night Rule", "body": "ในโหมด Sanctuary ไม่มีพื้นผิวใดเป็นสีดำเทาสเตอไรล์ ทุกพื้นผิวมืดต้องอมสีเขียวมรกตลึก (#08110D)", "section": "colors" },
+      { "name": "The Atmosphere Integrity Rule", "body": "ห้ามผสมพื้นหลังสีมืดสนิทกับสีครีมข้าวโอ๊ตในคอนเทนเนอร์เดียวกันแบบครึ่งๆ กลางๆ แต่ละพื้นผิวต้องมีขอบเขตบรรยากาศที่ชัดเจน", "section": "colors" },
+      { "name": "The Sanctuary Measure Rule", "body": "บรรทัดของเนื้อหาบทความต้องจำกัดความกว้างระหว่าง 65–75 ตัวอักษรเสมอ เพื่อรักษาจังหวะการอ่านที่สงบ", "section": "typography" },
+      { "name": "The Handcrafted Purpose Rule", "body": "ฟอนต์ Mali จะถูกใช้เฉพาะกับพื้นที่ชุมชน (Community Hearth), คำเชื้อเชิญที่เป็นมิตร, คำโปรยบรรยากาศคาเฟ่, และบันทึกข้อคิดประจำวัน", "section": "typography" },
+      { "name": "The No-Eyebrow Rule", "body": "ไม่อนุญาตให้ใส่ป้ายกำกับลอย (Eyebrow/Kicker) เหนือพาดหัวหลัก หัวข้อต้องมีน้ำหนักด้วยตัวเอง", "section": "typography" },
+      { "name": "The Responsive Glow Rule", "body": "เงาและแสงสะท้อนสีทองจะปรากฏหรือสว่างขึ้นเพื่อตอบสนองต่อการมีปฏิสัมพันธ์ ห้ามใช้แสงเรืองฟุ้งนิ่งแบบไร้ความหมาย", "section": "elevation" },
+      { "name": "The Natural Warmth Rule", "body": "ในพื้นที่ Artisanal Hearth ให้ใช้เงาที่โปร่งแสงและอมสีคาราเมลเจือจาง เพื่อรักษาความรู้สึกอบอุ่นของแสงธรรมชาติ", "section": "elevation" }
+    ],
+    "dos": [
+      "Do ใช้ตัวอักษรสีครีม (#F4F1EA) บนพื้นหลังมรกตลึก และใช้ตัวอักษรสีชาร์โคล (#1C1C1C) บนพื้นหลังครีมข้าวโอ๊ต เพื่อให้คอนทราสต์เกิน 4.5:1 เสมอ",
+      "Do ใช้ฟอนต์ Mali ในพื้นที่ลานชุมชน บันทึกความรู้สึก และหัวข้อที่ต้องการความอบอุ่นเป็นกันเอง",
+      "Do ใส่เครื่องเล่นเสียงพอดแคสต์และเนื้อหา Easy/Deep Mode ให้ครบถ้วนสมบูรณ์",
+      "Do ใช้เส้นขอบบาง 1px ที่มีสีทองจางๆ หรือคาราเมลจางๆ เพื่อกำหนดขอบเขตของกล่องเนื้อหา"
+    ],
+    "donts": [
+      "Don't ใช้ Gradient Text กับพาดหัวเนื้อหาจริง (ให้เน้นด้วยขนาดและน้ำหนักตัวอักษร)",
+      "Don't ใส่ Eyebrow หรือ Kicker ลอยเหนือพาดหัวหลัก",
+      "Don't ใช้เส้นขอบหนาด้านข้าง (border-l-4 หรือมากกว่า) บนการ์ดหรือกล่องข้อความ",
+      "Don't ใช้สีเทากลางหรือสีดำสนิทที่ปราศจากเฉดมรกตหรือทองในโซน Sanctuary",
+      "Don't ใช้ฟอนต์ลายมือ Mali กับเนื้อหาบทความวิชาการญาณวิทยาที่เป็นทางการใน Article Reader"
+    ]
+  }
+}

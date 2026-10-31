@@ -27,12 +27,15 @@ export function DualModeToggle({ mode, onToggle, className = '' }: DualModeToggl
         {/* Easy Mode Button */}
         <button
           onClick={() => onToggle('easy')}
-          className={`relative z-10 flex items-center gap-2 px-5 py-2 rounded-full text-xs sm:text-sm font-semibold transition-colors duration-200 ${
+          className={`relative z-10 flex items-center gap-2 px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-semibold transition-colors duration-200 ${
             mode === 'easy' ? 'text-parchment-light' : 'text-parchment-muted/70 hover:text-parchment-cream'
           }`}
         >
           <Feather className={`w-4 h-4 ${mode === 'easy' ? 'text-emerald-300' : 'text-parchment-muted'}`} />
-          <span>Easy Mode (ครอบครัว & เล่าเรื่อง)</span>
+          <span>Easy Mode</span>
+          <span className="px-1.5 py-0.2 bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 rounded-full text-[10px] font-bold">
+            Upcoming
+          </span>
         </button>
 
         {/* Deep Mode Button */}
@@ -52,12 +55,12 @@ export function DualModeToggle({ mode, onToggle, className = '' }: DualModeToggl
         {mode === 'easy' ? (
           <>
             <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-            <span>โหมดภาษาง่าย อุปมาอุปไมย เข้าใจง่าย เหมาะสำหรับทุกคนในครอบครัว</span>
+            <span className="text-gold-light">Easy Mode: เร็วๆ นี้ (Upcoming) — อยู่ระหว่างการจัดเตรียมเนื้อหาฉบับย่อยง่าย</span>
           </>
         ) : (
           <>
             <Compass className="w-3.5 h-3.5 text-gold-warm" />
-            <span>โหมดวิเคราะห์เชิงลึก ญาณวิทยา ตรรกศาสตร์ วิทยาศาสตร์สมอง และเทววิทยา</span>
+            <span>Deep Mode: โหมดวิเคราะห์เชิงลึก ญาณวิทยา ตรรกศาสตร์ วิทยาศาสตร์สมอง และเทววิทยา (พร้อมใช้งาน)</span>
           </>
         )}
       </div>

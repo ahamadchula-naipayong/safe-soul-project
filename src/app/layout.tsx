@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
-import { Cinzel, Playfair_Display, Prompt, Noto_Serif_Thai } from 'next/font/google';
+import { Cinzel, Playfair_Display, Prompt, Noto_Serif_Thai, Mali } from 'next/font/google';
 import './globals.css';
 import { AudioProvider } from '@/context/AudioContext';
 import { CartProvider } from '@/context/CartContext';
+import { AuthProvider } from '@/context/AuthContext';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { StickyAudioPlayer } from '@/components/StickyAudioPlayer';
@@ -35,6 +36,13 @@ const notoSerifThai = Noto_Serif_Thai({
   display: 'swap',
 });
 
+const mali = Mali({
+  subsets: ['thai', 'latin'],
+  weight: ['300', '400', '500', '600', '700'],
+  variable: '--font-mali',
+  display: 'swap',
+});
+
 export const metadata: Metadata = {
   title: 'The Safe Soul Project | 4 มิติแห่งปัญญา (Safe from the Dunya)',
   description:
@@ -56,24 +64,26 @@ export default function RootLayout({
   return (
     <html
       lang="th"
-      className={`scroll-smooth ${cinzel.variable} ${playfair.variable} ${prompt.variable} ${notoSerifThai.variable}`}
+      className={`scroll-smooth ${cinzel.variable} ${playfair.variable} ${prompt.variable} ${notoSerifThai.variable} ${mali.variable}`}
     >
       <body className="min-h-screen bg-slate-dark text-parchment-cream font-thai antialiased flex flex-col justify-between selection:bg-gold-warm selection:text-slate-abyss">
-        <AudioProvider>
-          <CartProvider>
-            <div className="flex flex-col min-h-screen">
-              <Navbar />
-              <main className="flex-1">{children}</main>
-              <Footer />
-            </div>
+        <AuthProvider>
+          <AudioProvider>
+            <CartProvider>
+              <div className="flex flex-col min-h-screen">
+                <Navbar />
+                <main className="flex-1">{children}</main>
+                <Footer />
+              </div>
 
-            {/* Persistent Sticky Audio Player (Audio plays across all routes) */}
-            <StickyAudioPlayer />
+              {/* Persistent Sticky Audio Player (Audio plays across all routes) */}
+              <StickyAudioPlayer />
 
-            {/* Slide-over Shopping Cart */}
-            <CartDrawer />
-          </CartProvider>
-        </AudioProvider>
+              {/* Slide-over Shopping Cart */}
+              <CartDrawer />
+            </CartProvider>
+          </AudioProvider>
+        </AuthProvider>
       </body>
     </html>
   );

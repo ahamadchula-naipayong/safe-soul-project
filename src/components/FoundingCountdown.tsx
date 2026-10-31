@@ -73,7 +73,7 @@ export function FoundingCountdown({
           ผู้ร่วมก่อตั้งและสนับสนุนตลอดชีพ
         </h3>
         <p className="text-sm text-parchment-muted leading-relaxed">
-          จ่ายครั้งเดียว เข้าถึงครบ 35 บททั้ง Easy และ Deep Mode ตลอดชีพ พร้อมสิทธิ์ดาวน์โหลด E-book มาสเตอร์ฉบับเต็ม 240 หน้า และส่วนลด Merch ทุกชิ้น
+          จ่ายครั้งเดียว เข้าถึงครบ 35 บทใน Deep Mode ตลอดชีพ (พร้อมรับสิทธิ์ Easy Mode เมื่อเปิดตัว Upcoming) พร้อมสิทธิ์ดาวน์โหลด E-book มาสเตอร์ฉบับเต็ม 240 หน้า และส่วนลด Merch ทุกชิ้น
         </p>
       </div>
 
@@ -111,7 +111,7 @@ export function FoundingCountdown({
       <ul className="space-y-2.5 text-xs sm:text-sm text-parchment-muted mb-6">
         <li className="flex items-center gap-2">
           <span className="w-1.5 h-1.5 rounded-full bg-gold-warm" />
-          <span>ปลดล็อกครบ 35 ตอน (7 ซีรีส์) ทั้ง Easy และ Deep Mode ตลอดชีพ</span>
+          <span>ปลดล็อกครบ 35 ตอน (7 ซีรีส์) ใน Deep Mode ตลอดชีพ (Easy Mode: Upcoming)</span>
         </li>
         <li className="flex items-center gap-2">
           <span className="w-1.5 h-1.5 rounded-full bg-gold-warm" />

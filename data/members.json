@@ -1,0 +1,52 @@
+[
+  {
+    "id": "mem_001",
+    "memberNumber": 1,
+    "username": "admin",
+    "email": "admin@safesoul.com",
+    "password": "password123",
+    "name": "ผู้ดูแลระบบ The Safe Soul",
+    "tier": "founding_tier_3",
+    "createdAt": "2026-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "mem_002",
+    "memberNumber": 2,
+    "username": "founding02",
+    "email": "founding02@safesoul.com",
+    "password": "password123",
+    "name": "ผู้ร่วมก่อตั้งลำดับที่ 2",
+    "tier": "founding_tier_3",
+    "createdAt": "2026-01-15T10:30:00.000Z"
+  },
+  {
+    "id": "mem_003",
+    "memberNumber": 3,
+    "username": "seeker_soul",
+    "email": "soul.seeker@example.com",
+    "password": "password123",
+    "name": "ผู้แสวงหาปัญญา",
+    "tier": "supporter_tier_2",
+    "createdAt": "2026-02-01T14:20:00.000Z"
+  },
+  {
+    "id": "mem_004",
+    "memberNumber": 4,
+    "username": "new_explorer",
+    "email": "explorer@safesoul.project",
+    "password": "password123",
+    "name": "นักเดินทางผู้ตื่นรู้",
+    "tier": "founding_tier_3",
+    "createdAt": "2026-10-30T07:40:07.394Z"
+  },
+  {
+    "id": "mem_005",
+    "memberNumber": 5,
+    "username": "free_member",
+    "email": "free.member@safesoul.project",
+    "password": "password123",
+    "name": "สมาชิกทั่วไป (Free Tier)",
+    "tier": "free_tier_1",
+    "createdAt": "2026-10-31T00:00:00.000Z"
+  }
+]

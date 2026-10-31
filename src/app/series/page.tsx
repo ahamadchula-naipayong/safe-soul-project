@@ -59,7 +59,7 @@ export default function SeriesPage() {
                     <div className="pt-2 flex items-center gap-4 text-xs text-parchment-muted">
                       <span className="flex items-center gap-1.5">
                         <BookOpen className="w-4 h-4 text-emerald-400" />
-                        <span>5 บทย่อย (Easy & Deep)</span>
+                        <span>5 บทย่อย (Deep Mode • Easy: Upcoming)</span>
                       </span>
                       <span className="flex items-center gap-1.5">
                         <Headphones className="w-4 h-4 text-gold-warm" />

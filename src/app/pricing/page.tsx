@@ -196,7 +196,7 @@ export default function PricingPage() {
               <ul className="space-y-3.5 text-xs text-parchment-cream/90 border-t border-emerald-border/40 pt-6">
                 <li className="flex items-center gap-2.5">
                   <Check className="w-4 h-4 text-gold-warm shrink-0" />
-                  <span>ปลดล็อกครบ 35 บท ทั้ง Easy และ Deep Mode</span>
+                  <span>ปลดล็อกครบ 35 บทใน Deep Mode (Easy Mode: Upcoming)</span>
                 </li>
                 <li className="flex items-center gap-2.5">
                   <Check className="w-4 h-4 text-gold-warm shrink-0" />
@@ -253,7 +253,7 @@ export default function PricingPage() {
               <ul className="space-y-3.5 text-xs text-parchment-cream/95 border-t border-emerald-border/40 pt-6">
                 <li className="flex items-center gap-2.5">
                   <Check className="w-4 h-4 text-gold-warm shrink-0" />
-                  <span>เข้าถึง 35 บทตลอดชีพ ทั้ง Easy & Deep Mode</span>
+                  <span>เข้าถึง 35 บทตลอดชีพใน Deep Mode (Easy Mode: Upcoming)</span>
                 </li>
                 <li className="flex items-center gap-2.5">
                   <Check className="w-4 h-4 text-gold-warm shrink-0" />
