@@ -32,6 +32,33 @@ interface AudioContextType {
   closePlayer: () => void;
 }
 
+const R2_AUDIO_BASE = (
+  process.env.NEXT_PUBLIC_AUDIO_BASE_URL ||
+  'https://pub-f97e75c998b047ada96253d539c8f805.r2.dev'
+).replace(/\/+$/, '');
+
+export function normalizeAudioUrl(rawUrl?: string, chapterNumber?: number): string {
+  if (!rawUrl) {
+    const num = chapterNumber || 1;
+    return `${R2_AUDIO_BASE}/audio/oneshot/island${num}-full.mp3`;
+  }
+  let url = rawUrl.trim();
+  // Repair accidental double https:// prefix if present
+  const secondHttp = url.indexOf('https://', 8);
+  if (secondHttp !== -1) {
+    url = url.slice(secondHttp);
+  }
+  // Upgrade legacy oneshot part1/part2 URLs to unified full audio URL
+  url = url.replace(
+    /\/audio\/oneshot\/island(\d+)-part[12]\.mp3/i,
+    '/audio/oneshot/island$1-full.mp3'
+  );
+  if (url.startsWith('/audio/')) {
+    return `${R2_AUDIO_BASE}${url}`;
+  }
+  return url;
+}
+
 const AudioContext = createContext<AudioContextType | undefined>(undefined);
 
 export function AudioProvider({ children }: { children: React.ReactNode }) {
@@ -93,16 +120,22 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
     if (!audioRef.current) return;
     const audio = audioRef.current;
 
-    if (currentTrack?.id === track.id) {
+    const normalizedUrl = normalizeAudioUrl(track.audioUrl, track.chapterNumber);
+    const normalizedTrack: AudioTrack = {
+      ...track,
+      audioUrl: normalizedUrl,
+    };
+
+    if (currentTrack?.id === normalizedTrack.id || currentTrack?.audioUrl === normalizedUrl) {
       if (!isPlaying) {
         audio.play().then(() => setIsPlaying(true)).catch(console.error);
       }
       return;
     }
 
-    currentTrackRef.current = track;
-    setCurrentTrack(track);
-    audio.src = track.audioUrl;
+    currentTrackRef.current = normalizedTrack;
+    setCurrentTrack(normalizedTrack);
+    audio.src = normalizedUrl;
     audio.playbackRate = playbackRate;
     audio.volume = volume;
     audio.play().then(() => setIsPlaying(true)).catch(console.error);

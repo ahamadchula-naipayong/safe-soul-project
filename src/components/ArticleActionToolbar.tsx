@@ -1,9 +1,20 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Share2, Printer, Check, Copy, Headphones, Play, Pause, Lock, X } from 'lucide-react';
-import { useAudio } from '@/context/AudioContext';
+import {
+  Share2,
+  Printer,
+  Check,
+  Headphones,
+  Pause,
+  Lock,
+  X,
+  Minus,
+  Plus,
+  Type,
+} from 'lucide-react';
+import { useAudio, normalizeAudioUrl } from '@/context/AudioContext';
 import { useAuth } from '@/context/AuthContext';
 import { checkOceanAudioAccess } from '@/lib/oceanAccess';
 import { ArticleStatus } from '@/types';
@@ -30,6 +41,9 @@ interface ArticleActionToolbarProps {
   className?: string;
 }
 
+const FONT_SCALE_STEPS = [0.88, 1, 1.12, 1.25, 1.4];
+const FONT_SCALE_STORAGE_KEY = 'safesoul_reader_font_scale';
+
 export function ArticleActionToolbar({
   title,
   description,
@@ -38,14 +52,79 @@ export function ArticleActionToolbar({
 }: ArticleActionToolbarProps) {
   const [copied, setCopied] = useState(false);
   const [showTierModal, setShowTierModal] = useState(false);
+  const [fontScale, setFontScale] = useState<number>(1);
 
   const { member } = useAuth();
   const { playTrack, pauseTrack, currentTrack, isPlaying } = useAudio();
 
-  const isCurrentPlaying = audioTrack && currentTrack?.id === audioTrack.id && isPlaying;
+  // Initialize and sync font scale across toolbar instances
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const saved = parseFloat(localStorage.getItem(FONT_SCALE_STORAGE_KEY) || '1');
+      if (!isNaN(saved) && saved >= 0.8 && saved <= 1.6) {
+        setFontScale(saved);
+        document.documentElement.style.setProperty('--reader-font-scale', String(saved));
+      }
+    } catch {}
+
+    const handleSync = (e: Event) => {
+      const custom = e as CustomEvent<number>;
+      if (typeof custom.detail === 'number') {
+        setFontScale(custom.detail);
+      }
+    };
+    window.addEventListener('safesoul-font-scale', handleSync);
+    return () => window.removeEventListener('safesoul-font-scale', handleSync);
+  }, []);
+
+  const updateFontScale = (nextScale: number) => {
+    setFontScale(nextScale);
+    if (typeof window !== 'undefined') {
+      document.documentElement.style.setProperty('--reader-font-scale', String(nextScale));
+      try {
+        localStorage.setItem(FONT_SCALE_STORAGE_KEY, String(nextScale));
+      } catch {}
+      window.dispatchEvent(new CustomEvent('safesoul-font-scale', { detail: nextScale }));
+    }
+  };
+
+  const handleDecreaseFont = () => {
+    const idx = FONT_SCALE_STEPS.findIndex((s) => Math.abs(s - fontScale) < 0.03);
+    const currentIdx = idx === -1 ? 1 : idx;
+    const nextIdx = Math.max(0, currentIdx - 1);
+    updateFontScale(FONT_SCALE_STEPS[nextIdx]);
+  };
+
+  const handleIncreaseFont = () => {
+    const idx = FONT_SCALE_STEPS.findIndex((s) => Math.abs(s - fontScale) < 0.03);
+    const currentIdx = idx === -1 ? 1 : idx;
+    const nextIdx = Math.min(FONT_SCALE_STEPS.length - 1, currentIdx + 1);
+    updateFontScale(FONT_SCALE_STEPS[nextIdx]);
+  };
+
+  const handleResetFont = () => {
+    updateFontScale(1);
+  };
 
   const inferredRealm: 'shallow' | 'deep' =
     audioTrack?.realm || (audioTrack?.id?.startsWith('oneshot') ? 'shallow' : 'deep');
+
+  const resolvedAudioUrl = audioTrack
+    ? normalizeAudioUrl(
+        audioTrack.audioUrl ||
+          (inferredRealm === 'shallow'
+            ? `/audio/oneshot/island${audioTrack.chapterNumber}-full.mp3`
+            : undefined),
+        audioTrack.chapterNumber
+      )
+    : '';
+
+  const isCurrentPlaying =
+    !!audioTrack &&
+    isPlaying &&
+    (currentTrack?.id === audioTrack.id ||
+      (!!resolvedAudioUrl && currentTrack?.audioUrl === resolvedAudioUrl));
 
   const audioAccess = audioTrack
     ? checkOceanAudioAccess({
@@ -77,12 +156,8 @@ export function ArticleActionToolbar({
         title: audioTrack.title,
         seriesTitle: audioTrack.seriesTitle,
         chapterNumber: audioTrack.chapterNumber,
-        audioUrl:
-          audioTrack.audioUrl ||
-          (inferredRealm === 'shallow'
-            ? `/audio/oneshot/island${audioTrack.chapterNumber}-part1.mp3`
-            : 'https://assets.mixkit.co/music/preview/mixkit-spirit-of-the-desert-1248.mp3'),
-        duration: audioTrack.duration || '15:00',
+        audioUrl: resolvedAudioUrl,
+        duration: audioTrack.duration || '16:30',
         coverImage: audioTrack.coverImage,
       });
     }
@@ -100,34 +175,345 @@ export function ArticleActionToolbar({
         });
         return;
       } catch (err: any) {
-        if (err.name !== 'AbortError') {
-          console.log('Share fallback to clipboard:', err);
-        } else {
-          return;
-        }
+        if (err.name === 'AbortError') return;
       }
     }
 
-    // Fallback: Copy link
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
       setTimeout(() => setCopied(false), 2500);
-    } catch {
-      // In case clipboard fails
-    }
+    } catch {}
   };
 
   const handlePrint = () => {
-    if (typeof window !== 'undefined') {
-      window.print();
+    if (typeof window === 'undefined') return;
+
+    // Extract clean article HTML from .markdown-sanctuary blocks on the current page
+    const markdownNodes = Array.from(document.querySelectorAll('.markdown-sanctuary'));
+    const sectionHeaders = Array.from(
+      document.querySelectorAll('main section h3, #content-body h3')
+    );
+
+    let extractedHtml = '';
+    if (markdownNodes.length > 0) {
+      extractedHtml = markdownNodes
+        .map((node, i) => {
+          const parentSec = node.closest('section');
+          const secH3 = parentSec?.querySelector('h3')?.textContent?.trim();
+          const headingHtml = secH3 ? `<h2>${secH3}</h2>` : '';
+          return `<div class="article-section">${headingHtml}${node.innerHTML}</div>`;
+        })
+        .join('<hr class="section-divider" />');
+    } else {
+      const mainEl =
+        document.querySelector('#chapter-content') ||
+        document.querySelector('#content-body') ||
+        document.querySelector('article') ||
+        document.querySelector('main');
+      extractedHtml = mainEl ? mainEl.innerHTML : `<p>${description || ''}</p>`;
     }
+
+    const origin = window.location.origin;
+    const currentUrl = window.location.href;
+    const qrUrl = `${origin}/images/qr/Cofffee.jpg`;
+
+    const printWindow = window.open('', '_blank', 'width=900,height=1000');
+    if (!printWindow) {
+      window.print();
+      return;
+    }
+
+    const htmlDoc = `<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <title>${title} | The Fitrah Shield (Plain Text PDF)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;600;700&family=Noto+Serif+Thai:wght@400;600;700;900&display=swap" rel="stylesheet">
+  <style>
+    @page {
+      size: A4;
+      margin: 18mm 16mm 18mm 16mm;
+    }
+    * {
+      box-sizing: border-box;
+      color: black !important;
+      background: transparent !important;
+      text-shadow: none !important;
+      box-shadow: none !important;
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: white !important;
+      color: black !important;
+      font-family: 'Noto Sans Thai', 'Noto Serif Thai', serif;
+      font-size: 12.5pt;
+      line-height: 1.85;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .page-container {
+      max-width: 740px;
+      margin: 0 auto;
+      padding: 24px 16px;
+    }
+    .toolbar-no-print {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      margin-bottom: 24px;
+      border: 1.5px solid black;
+      border-radius: 8px;
+      font-size: 11pt;
+    }
+    .toolbar-no-print button {
+      padding: 8px 18px;
+      border: 1.5px solid black;
+      border-radius: 8px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      background: white !important;
+    }
+    @media print {
+      .toolbar-no-print {
+        display: none !important;
+      }
+      .page-container {
+        padding: 0;
+        max-width: 100%;
+      }
+    }
+    .doc-header {
+      border-bottom: 2px solid #000000;
+      padding-bottom: 14px;
+      margin-bottom: 24px;
+    }
+    .doc-brand {
+      font-size: 9.5pt;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .doc-title {
+      font-family: 'Noto Serif Thai', serif;
+      font-size: 20pt;
+      font-weight: 900;
+      line-height: 1.3;
+      margin: 0 0 8px 0;
+    }
+    .doc-desc {
+      font-size: 11.5pt;
+      margin: 0;
+      font-style: italic;
+    }
+    h1, h2, h3, h4 {
+      font-family: 'Noto Serif Thai', serif;
+      font-weight: 700;
+      line-height: 1.35;
+      margin-top: 20px;
+      margin-bottom: 10px;
+      page-break-after: avoid;
+    }
+    h1 { font-size: 17pt; }
+    h2 { font-size: 15pt; border-bottom: 1px solid #000; padding-bottom: 4px; }
+    h3 { font-size: 13.5pt; }
+    p {
+      margin: 0 0 12px 0;
+      text-align: justify;
+    }
+    ul, ol {
+      margin: 0 0 14px 0;
+      padding-left: 24px;
+    }
+    li {
+      margin-bottom: 6px;
+    }
+    blockquote {
+      margin: 14px 0;
+      padding: 10px 16px;
+      border-left: 3px solid #000000;
+      font-style: italic;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 11pt;
+    }
+    th, td {
+      border: 1px solid #000000;
+      padding: 8px 10px;
+      text-align: left;
+    }
+    .section-divider {
+      border: 0;
+      border-top: 1px dashed #000000;
+      margin: 22px 0;
+    }
+    img:not(.qr-coffee-img) {
+      max-width: 100%;
+      height: auto;
+      filter: grayscale(100%);
+    }
+    .support-footer {
+      margin-top: 32px;
+      padding: 18px 20px;
+      border: 2px solid #000000;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      page-break-inside: avoid;
+    }
+    .support-text {
+      flex: 1;
+      font-size: 11pt;
+      line-height: 1.65;
+    }
+    .support-text h4 {
+      margin: 0 0 6px 0;
+      font-size: 13pt;
+      font-weight: 900;
+    }
+    .support-text p {
+      margin: 0 0 6px 0;
+      text-align: left;
+    }
+    .support-qr {
+      width: 165px;
+      text-align: center;
+      flex-shrink: 0;
+      border: 1px solid #000;
+      padding: 8px;
+      border-radius: 8px;
+    }
+    .support-qr img.qr-coffee-img {
+      width: 145px;
+      height: auto;
+      display: block;
+      margin: 0 auto 4px auto;
+    }
+    .support-qr-caption {
+      font-size: 8.5pt;
+      font-weight: 700;
+      line-height: 1.3;
+    }
+  </style>
+</head>
+<body>
+  <div class="page-container">
+    <div class="toolbar-no-print">
+      <span><strong>โหมดอ่านขาวดำสบายตา (Plain Text & PDF Export)</strong> • The Fitrah Shield</span>
+      <button onclick="window.print()">🖨️ สั่งพิมพ์ / บันทึกเป็น PDF</button>
+    </div>
+
+    <header class="doc-header">
+      <div class="doc-brand">THE FITRAH SHIELD • เกราะพิทักษ์ฟิฏเราะฮฺ (https://thefitrahshield.hardynaipayong.cloud)</div>
+      <h1 class="doc-title">${title}</h1>
+      ${description ? `<p class="doc-desc">${description}</p>` : ''}
+    </header>
+
+    <main class="doc-content">
+      ${extractedHtml}
+    </main>
+
+    <footer class="support-footer">
+      <div class="support-text">
+        <h4>☕ ร่วมสนับสนุนเลี้ยงกาแฟทีมงาน & สมทบทุน 10% เพื่อการกุศล</h4>
+        <p>
+          ขอบคุณที่ร่วมเดินทางแสวงหาปัญญาและสร้างภูมิคุ้มกันทางจิตวิญญาณกับ <strong>The Fitrah Shield (เกราะพิทักษ์ฟิฏเราะฮฺ)</strong>
+          หากบทความนี้เป็นประโยชน์ต่อคุณ สามารถสแกน QR Code <strong>"Coffee ☕"</strong> ด้านขวามือเพื่อร่วมสนับสนุนเลี้ยงกาแฟทีมงานได้ตามอัธยาศัย
+        </p>
+        <p>
+          <strong>พันธสัญญาแห่งความจำเริญ:</strong> ทุกยอดการสนับสนุนเลี้ยงกาแฟ สมัครสมาชิก และสั่งซื้อสินค้า ทางโครงการหัก <strong>10% เพื่อบริจาคสู่งานการกุศล</strong> อย่างต่อเนื่อง
+        </p>
+        <p style="font-size: 9.5pt; margin-top: 6px;">
+          🌐 ติดตามอ่านบทความ ฟังพอดแคสต์ และสำนักข่าวเพิ่มเติมได้ที่: <strong>https://thefitrahshield.hardynaipayong.cloud</strong><br/>
+          🔗 ลิงก์บทความต้นฉบับ: ${currentUrl}
+        </p>
+      </div>
+      <div class="support-qr">
+        <img id="coffee-qr" class="qr-coffee-img" src="${qrUrl}" alt="Cofffee QR Code" />
+        <div class="support-qr-caption">
+          Coffee ☕ (เลี้ยงกาแฟ)<br/>
+          นาย นรฤทธิ์ อหะหมัดจุฬา<br/>
+          (บริจาค 10% เพื่อการกุศล)
+        </div>
+      </div>
+    </footer>
+  </div>
+  <script>
+    (function() {
+      var img = document.getElementById('coffee-qr');
+      function triggerPrint() {
+        setTimeout(function() { window.print(); }, 250);
+      }
+      if (img && !img.complete) {
+        img.onload = triggerPrint;
+        img.onerror = triggerPrint;
+      } else {
+        triggerPrint();
+      }
+    })();
+  </script>
+</body>
+</html>`;
+
+    printWindow.document.open();
+    printWindow.document.write(htmlDoc);
+    printWindow.document.close();
   };
 
   return (
     <>
-      <div className={`flex flex-wrap items-center gap-2.5 print:hidden ${className}`}>
-        {/* Audio Podcast Button (if audioTrack provided) */}
+      <div className={`flex flex-wrap items-center gap-2 print:hidden ${className}`}>
+        {/* 1. Font Size Adjuster (ปุ่มปรับไซส์ตัวหนังสือ ก- / ก+) */}
+        <div
+          className="inline-flex items-center rounded-xl bg-black/65 border border-white/15 p-0.5 shadow-sm"
+          title="ปรับขนาดตัวอักษรเพื่ออรรถรสในการอ่าน"
+        >
+          <button
+            type="button"
+            onClick={handleDecreaseFont}
+            disabled={fontScale <= FONT_SCALE_STEPS[0]}
+            className="px-2.5 py-1.5 rounded-lg text-xs font-bold text-parchment-cream hover:text-gold-light hover:bg-emerald-surface/80 disabled:opacity-35 transition cursor-pointer flex items-center gap-0.5"
+            aria-label="ลดขนาดตัวอักษร"
+            title="ลดขนาดตัวหนังสือ (ก-)"
+          >
+            <Type className="w-3 h-3 text-gold-warm" />
+            <Minus className="w-3 h-3" />
+          </button>
+
+          <button
+            type="button"
+            onClick={handleResetFont}
+            className="px-2 py-1 text-[11px] font-mono font-bold text-gold-light hover:text-gold-warm transition cursor-pointer"
+            title="คลิกเพื่อรีเซ็ตขนาดตัวอักษรมาตรฐาน (100%)"
+          >
+            {Math.round(fontScale * 100)}%
+          </button>
+
+          <button
+            type="button"
+            onClick={handleIncreaseFont}
+            disabled={fontScale >= FONT_SCALE_STEPS[FONT_SCALE_STEPS.length - 1]}
+            className="px-2.5 py-1.5 rounded-lg text-xs font-bold text-parchment-cream hover:text-gold-light hover:bg-emerald-surface/80 disabled:opacity-35 transition cursor-pointer flex items-center gap-0.5"
+            aria-label="เพิ่มขนาดตัวอักษร"
+            title="เพิ่มขนาดตัวหนังสือ (ก+)"
+          >
+            <Type className="w-3.5 h-3.5 text-gold-warm" />
+            <Plus className="w-3 h-3" />
+          </button>
+        </div>
+
+        {/* 2. Audio Podcast Button (if audioTrack provided) */}
         {audioTrack && (
           <button
             type="button"
@@ -154,17 +540,17 @@ export function ArticleActionToolbar({
           </button>
         )}
 
-        {/* Share Button */}
+        {/* 3. Share Button */}
         <button
           type="button"
           onClick={handleShare}
-          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-black/60 hover:bg-emerald-surface/90 border border-white/15 hover:border-gold-warm/50 text-xs text-parchment-cream hover:text-gold-light transition shadow-sm group cursor-pointer"
+          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-black/60 hover:bg-emerald-surface/90 border border-white/15 hover:border-gold-warm/50 text-xs text-parchment-cream hover:text-gold-light transition shadow-sm group cursor-pointer"
           title="แชร์บทเรียนนี้สู่เครือข่ายสังคม หรือคัดลอกลิงก์"
         >
           {copied ? (
             <>
               <Check className="w-3.5 h-3.5 text-emerald-400" />
-              <span className="text-emerald-300 font-medium">คัดลอกลิงก์แล้ว!</span>
+              <span className="text-emerald-300 font-medium">คัดลอกแล้ว!</span>
             </>
           ) : (
             <>
@@ -174,12 +560,12 @@ export function ArticleActionToolbar({
           )}
         </button>
 
-        {/* Print Button */}
+        {/* 4. Print / B&W Plain-Text PDF Export Button */}
         <button
           type="button"
           onClick={handlePrint}
-          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-black/60 hover:bg-emerald-surface/90 border border-white/15 hover:border-gold-warm/50 text-xs text-parchment-cream hover:text-gold-light transition shadow-sm group cursor-pointer"
-          title="สั่งพิมพ์บทเรียน หรือบันทึกเป็น PDF"
+          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-black/60 hover:bg-emerald-surface/90 border border-white/15 hover:border-gold-warm/50 text-xs text-parchment-cream hover:text-gold-light transition shadow-sm group cursor-pointer"
+          title="ส่งออกบทความแบบ Plain Text ขาวดำอ่านสบายตา พร้อม QR เลี้ยงกาแฟท้ายบทความ"
         >
           <Printer className="w-3.5 h-3.5 text-gold-warm group-hover:scale-110 transition-transform" />
           <span>พิมพ์ / PDF</span>

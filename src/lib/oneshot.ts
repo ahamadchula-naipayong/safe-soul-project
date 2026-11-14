@@ -325,9 +325,9 @@ function parseChapterChunk(
   }
 
   const audioUrl =
-    audioInfo?.parts?.[0]?.url ||
-    `${audioBase}/audio/oneshot/island${chapterNumber}-part1.mp3`;
-  const audioDuration = audioInfo?.full?.duration || '15:00';
+    audioInfo?.full?.url ||
+    `${audioBase}/audio/oneshot/island${chapterNumber}-full.mp3`;
+  const audioDuration = audioInfo?.full?.duration || '16:30';
 
   return {
     id: `oneshot-${chapterNumber}`,
@@ -358,7 +358,10 @@ export async function getAllOneshotChapters(): Promise<OneshotChapter[]> {
 
   try {
     const stat = fs.statSync(filePath);
-    if (cachedChapters && stat.mtimeMs === lastModifiedTime) {
+    const metaPath = path.join(process.cwd(), 'data', 'oneshot_audio_meta.json');
+    const metaMtime = fs.existsSync(metaPath) ? fs.statSync(metaPath).mtimeMs : 0;
+    const combinedMtime = stat.mtimeMs + metaMtime;
+    if (cachedChapters && combinedMtime === lastModifiedTime) {
       return cachedChapters;
     }
 
@@ -374,7 +377,7 @@ export async function getAllOneshotChapters(): Promise<OneshotChapter[]> {
     );
 
     cachedChapters = chapters;
-    lastModifiedTime = stat.mtimeMs;
+    lastModifiedTime = combinedMtime;
     return chapters;
   } catch (error) {
     console.error('Failed to parse oneshot chapters:', error);

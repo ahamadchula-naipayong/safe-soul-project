@@ -267,6 +267,41 @@ export default function StorePage() {
             })}
           </div>
         )}
+
+        {/* Official Store Payment QR Info (Premium Shopper) */}
+        <div className="mt-12 rounded-3xl bg-gradient-to-b from-[#11261C] via-[#0B1912] to-[#07110C] border border-gold-warm/45 p-6 sm:p-8 shadow-2xl">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+            <div className="md:col-span-8 space-y-3">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gold-warm/20 border border-gold-warm/40 text-gold-light text-xs font-bold">
+                <Sparkles className="w-3.5 h-3.5 text-gold-warm" />
+                <span>OFFICIAL STORE PAYMENT • PREMIUM SHOPPER QR</span>
+              </div>
+              <h2 className="text-xl sm:text-2xl font-thai-serif font-black text-parchment-cream">
+                ช่องทางชำระเงินสำหรับสั่งซื้อสินค้าภายในร้านค้า (Premium Shopper)
+              </h2>
+              <p className="text-xs sm:text-sm text-parchment-muted leading-relaxed font-light">
+                เมื่อหยิบสินค้าลงตะกร้ามุมขวาบนแล้ว คุณสามารถสแกน QR Code{' '}
+                <strong className="text-gold-light">&ldquo;Premium Shopper&rdquo;</strong>{' '}
+                (บัญชี: <strong className="text-parchment-cream">นาย นรฤทธิ์ อหะหมัดจุฬา</strong> • MAKE by KBank PromptPay)
+                และแนบสลิปในตะกร้าเพื่อให้ระบบตรวจสอบอัตโนมัติ โดย{' '}
+                <strong className="text-emerald-300">10% ของทุกยอดคำสั่งซื้อจะนำไปสมทบทุนเพื่อการกุศล</strong>
+              </p>
+            </div>
+            <div className="md:col-span-4 flex justify-center">
+              <div className="w-52 rounded-2xl bg-white p-3 text-slate-900 shadow-xl border-2 border-gold-warm text-center space-y-1.5">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/images/qr/PremiumShopper.jpg"
+                  alt="Premium Shopper QR Code - นาย นรฤทธิ์ อหะหมัดจุฬา"
+                  className="w-full h-auto rounded-xl object-contain mx-auto"
+                />
+                <div className="text-[11px] font-bold text-slate-900">
+                  Premium Shopper • ร้านค้า Safe for Support
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

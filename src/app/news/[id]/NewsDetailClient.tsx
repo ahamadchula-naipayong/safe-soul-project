@@ -14,6 +14,8 @@ import {
 } from 'lucide-react';
 import { NewsItem } from '@/types';
 import { NewsContentGate } from '@/components/NewsContentGate';
+import { ArticleActionToolbar } from '@/components/ArticleActionToolbar';
+import { ArticleCoffeeSupport } from '@/components/ArticleCoffeeSupport';
 
 interface NewsDetailClientProps {
   slugId: string;
@@ -113,7 +115,7 @@ export default function NewsDetailClient({
       {/* 1. FIXED BACKGROUND IMAGE */}
       {news.image && (
         <div
-          className="fixed inset-0 w-full h-full -z-30 bg-cover bg-center bg-fixed transition-all duration-700 pointer-events-none"
+          className="fixed inset-0 w-full h-full -z-30 bg-cover bg-center bg-scroll lg:bg-fixed transition-all duration-700 pointer-events-none print:hidden"
           style={{
             backgroundImage: `url('${news.image}')`,
           }}
@@ -123,38 +125,45 @@ export default function NewsDetailClient({
 
       {/* Hero Ambient Gradient Overlay */}
       <div
-        className="fixed inset-0 w-full h-full -z-20 bg-gradient-to-b from-black/85 via-black/60 to-black/90 pointer-events-none"
+        className="fixed inset-0 w-full h-full -z-20 bg-gradient-to-b from-black/85 via-black/60 to-black/90 pointer-events-none print:hidden"
         aria-hidden="true"
       />
 
       {/* 2. HERO FIRST VIEWPORT */}
-      <header className="min-h-screen flex flex-col justify-between px-4 sm:px-8 lg:px-16 pt-8 pb-12 relative z-10">
-        <div className="flex flex-wrap items-center justify-between gap-4">
+      <header className="min-h-[68vh] sm:min-h-[75vh] lg:min-h-[88vh] flex flex-col justify-between px-4 sm:px-8 lg:px-16 pt-5 sm:pt-8 pb-8 sm:pb-12 relative z-10">
+        <div className="flex flex-wrap items-center justify-between gap-3 sm:gap-4">
           <Link
             href="/news"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-black/60 hover:bg-black/80 backdrop-blur-md border border-white/15 hover:border-gold-warm/50 text-xs sm:text-sm font-medium text-parchment-cream hover:text-gold-light transition shadow-sm group"
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-black/60 hover:bg-black/80 backdrop-blur-md border border-white/15 hover:border-gold-warm/50 text-xs sm:text-sm font-medium text-parchment-cream hover:text-gold-light transition shadow-sm group"
           >
             <ArrowLeft className="w-4 h-4 text-gold-warm group-hover:-translate-x-1 transition-transform" />
             <span>ย้อนกลับไปหน้ารวมข่าว</span>
           </Link>
 
-          <div className="flex items-center gap-2">
-            <span className="px-3 py-1 rounded-xl bg-black/75 backdrop-blur-md text-xs font-bold text-gold-light border border-gold-warm/40 font-mono shadow-sm">
-              {news.korNo}
-            </span>
-            <span className="px-3 py-1 rounded-xl bg-emerald-950/80 backdrop-blur-md text-xs font-semibold text-emerald-300 border border-emerald-500/40 shadow-sm">
-              {news.subcategory}
-            </span>
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            <ArticleActionToolbar
+              title={`${news.korNo}: ${news.title}`}
+              description={news.topicLead || news.excerpt}
+            />
+
+            <div className="flex items-center gap-2">
+              <span className="px-3 py-1 rounded-xl bg-black/75 backdrop-blur-md text-xs font-bold text-gold-light border border-gold-warm/40 font-mono shadow-sm">
+                {news.korNo}
+              </span>
+              <span className="px-3 py-1 rounded-xl bg-emerald-950/80 backdrop-blur-md text-xs font-semibold text-emerald-300 border border-emerald-500/40 shadow-sm">
+                {news.subcategory}
+              </span>
+            </div>
           </div>
         </div>
 
-        <div className="my-auto py-12 max-w-5xl space-y-6">
+        <div className="my-auto py-8 sm:py-12 max-w-5xl space-y-4 sm:space-y-6">
           <div className="inline-flex items-center gap-2 text-xs sm:text-sm text-gold-warm font-semibold tracking-wider uppercase font-thai">
             <Compass className="w-4 h-4 text-gold-warm" />
             <span>สำนักข่าว The Key of Return • วิเคราะห์สถานการณ์โลกและภูมิรัฐศาสตร์</span>
           </div>
 
-          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-thai-serif font-black text-parchment-cream leading-[1.2] tracking-tight drop-shadow-2xl text-balance">
+          <h1 className="text-2xl sm:text-4xl lg:text-6xl font-thai-serif font-black text-parchment-cream leading-[1.2] tracking-tight drop-shadow-2xl text-balance">
             {news.title}
           </h1>
 
@@ -236,6 +245,20 @@ export default function NewsDetailClient({
 
           {/* 4. FOOTER */}
           <div className="pt-12 border-t border-emerald-border/60 space-y-10">
+            {/* End of Article Coffee Support & 10% Charity QR ("Cofffee") */}
+            <ArticleCoffeeSupport articleTitle={news.title} />
+
+            {/* Share & Print Toolbar in Footer */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-5 rounded-2xl bg-black/60 border border-emerald-border/60">
+              <div className="text-xs text-parchment-muted">
+                ปรับขนาดตัวอักษร แชร์ หรือส่งออกรายงานข่าวฉบับ Plain Text ขาวดำ:
+              </div>
+              <ArticleActionToolbar
+                title={`${news.korNo}: ${news.title}`}
+                description={news.topicLead || news.excerpt}
+              />
+            </div>
+
             <div className="text-center">
               <Link
                 href="/news"

@@ -187,6 +187,39 @@ export function Navbar() {
             )}
           </div>
         </div>
+
+        {/* Mobile & Tablet Quick Navigation Strip (ปรากฏเฉพาะจอมือถือและแท็บเล็ตเพื่อความสะดวกในการสลับหน้า) */}
+        <div className="lg:hidden border-t border-emerald-border/50 bg-[#060E0A]/95 px-3 py-1.5">
+          <div className="max-w-7xl mx-auto flex items-center justify-between gap-1 overflow-x-auto no-scrollbar text-[11px] font-semibold">
+            {[
+              { href: '/', label: 'หน้าแรก', icon: Compass },
+              { href: '/journey', label: 'คลังบทความ', icon: Anchor },
+              { href: '/news', label: 'สำนักข่าว', icon: FileText },
+              { href: '/pricing', label: 'แผนสมาชิก', icon: Crown },
+              { href: '/store', label: 'ร้านค้า', icon: ShoppingBag },
+            ].map((item) => {
+              const Icon = item.icon;
+              const isActive =
+                item.href === '/'
+                  ? pathname === '/'
+                  : pathname?.startsWith(item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-lg whitespace-nowrap transition flex-1 ${
+                    isActive
+                      ? 'bg-gold-warm/20 text-gold-light border border-gold-warm/50 font-bold'
+                      : 'text-parchment-muted hover:text-parchment-cream hover:bg-emerald-surface/40'
+                  }`}
+                >
+                  <Icon className="w-3 h-3 text-gold-warm shrink-0" />
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
       </header>
 
       {/* ---------------------------------------------------------------------- */}

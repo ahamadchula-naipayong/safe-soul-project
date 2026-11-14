@@ -14,14 +14,14 @@ import {
 } from 'lucide-react';
 
 // ============================================================================
-// MOCKUP QR & BANK SETTINGS (แก้ไขเลขบัญชีหรือวางรูป QR จริงได้ที่นี่ก่อนต่อ Stripe)
+// OFFICIAL FERRY TICKET QR & BANK SETTINGS (สำหรับรับโอนเงินค่าสมาชิกทุกหมวดหมู่)
 // ============================================================================
 export const PAYMENT_QR_CONFIG = {
-  promptPayId: '08X-XXX-XXXX (PromptPay Mockup)',
-  bankName: 'ธนาคารกสิกรไทย (KBANK - Mockup)',
-  accountNumber: 'XXX-X-XXXXX-X',
-  accountName: 'โครงการ เกราะพิทักษ์ฟิฏเราะฮฺ (The Fitrah Shield)',
-  customQrImageUrl: '', // หากมีไฟล์ภาพ QR จริง สามารถใส่ path เช่น '/images/qr-promptpay.png' ได้ทันที
+  promptPayId: '004643001085912',
+  bankName: 'MAKE by KBank • ธนาคารกสิกรไทย (PromptPay)',
+  accountNumber: 'xxx-x-x3702-x (Ref: 004643001085912)',
+  accountName: 'นาย นรฤทธิ์ อหะหมัดจุฬา (Ferry Ticket 🎫)',
+  customQrImageUrl: '/images/qr/FerryTicket.jpg',
 };
 
 interface QrSlipPaymentBoxProps {
@@ -118,58 +118,17 @@ export function QrSlipPaymentBox({
 
       {/* QR Code Card + Bank Details */}
       <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-center">
-        {/* Crisp White PromptPay QR Box */}
+        {/* Official Ferry Ticket PromptPay QR Box */}
         <div className="sm:col-span-5 flex justify-center">
-          <div className="w-48 rounded-2xl bg-white p-3 text-slate-900 shadow-xl border-2 border-gold-warm/60 space-y-2 text-center">
-            <div className="bg-[#113566] text-white text-[10px] font-bold py-1 px-2 rounded-lg tracking-wider uppercase">
-              THAI QR PAYMENT
-            </div>
-
-            {PAYMENT_QR_CONFIG.customQrImageUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={PAYMENT_QR_CONFIG.customQrImageUrl}
-                alt="PromptPay QR Code"
-                className="w-36 h-36 mx-auto object-contain"
-              />
-            ) : (
-              /* Crisp Deterministic SVG QR Mockup with Center Logo */
-              <div className="relative w-36 h-36 mx-auto bg-white p-1 flex items-center justify-center">
-                <svg viewBox="0 0 29 29" className="w-full h-full" shapeRendering="crispEdges">
-                  <rect width="29" height="29" fill="#FFFFFF" />
-                  {/* Top-left finder */}
-                  <path d="M1,1 h7 v7 h-7 z M2,2 v5 h5 v-5 z M3,3 h3 v3 h-3 z" fill="#0B1B13" />
-                  {/* Top-right finder */}
-                  <path d="M21,1 h7 v7 h-7 z M22,2 v5 h5 v-5 z M23,3 h3 v3 h-3 z" fill="#0B1B13" />
-                  {/* Bottom-left finder */}
-                  <path d="M1,21 h7 v7 h-7 z M2,22 v5 h5 v-5 z M3,23 h3 v3 h-3 z" fill="#0B1B13" />
-                  {/* Timing & Data modules */}
-                  <path
-                    d="M10,1 h2 v1 h-2 z M14,1 h1 v2 h-1 z M17,1 h2 v1 h-2 z
-                       M9,3 h2 v2 h-2 z M13,3 h3 v1 h-3 z M18,3 h2 v2 h-2 z
-                       M10,6 h1 v1 h-1 z M12,6 h1 v1 h-1 z M14,6 h1 v1 h-1 z M16,6 h1 v1 h-1 z M18,6 h1 v1 h-1 z
-                       M1,10 h2 v2 h-2 z M5,10 h2 v1 h-2 z M8,9 h3 v2 h-3 z M19,9 h2 v3 h-2 z M23,10 h2 v2 h-2 z M26,9 h2 v2 h-2 z
-                       M2,13 h3 v1 h-3 z M6,12 h1 v3 h-1 z M9,13 h2 v2 h-2 z M19,14 h3 v1 h-3 z M24,13 h4 v1 h-4 z
-                       M1,16 h2 v2 h-2 z M4,16 h3 v1 h-3 z M8,17 h2 v2 h-2 z M18,17 h2 v2 h-2 z M22,16 h2 v2 h-2 z M26,16 h2 v3 h-2 z
-                       M1,19 h1 v1 h-1 z M5,19 h2 v1 h-2 z M10,20 h3 v2 h-3 z M15,20 h2 v1 h-2 z M20,20 h3 v2 h-3 z M25,20 h2 v1 h-2 z
-                       M9,23 h2 v2 h-2 z M13,22 h3 v2 h-3 z M17,23 h2 v3 h-2 z M21,23 h3 v2 h-3 z M26,22 h2 v2 h-2 z
-                       M10,26 h2 v2 h-2 z M14,25 h2 v3 h-2 z M19,26 h3 v2 h-3 z M24,25 h4 v3 h-4 z"
-                    fill="#0B1B13"
-                  />
-                </svg>
-                <div className="absolute w-8 h-8 rounded-lg bg-[#0B1B13] border border-gold-warm p-1 flex items-center justify-center shadow">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src="/images/logo/logo-transparent.png"
-                    alt="Logo"
-                    className="w-full h-full object-contain"
-                  />
-                </div>
-              </div>
-            )}
-
-            <div className="text-[10px] font-bold text-slate-700">
-              PromptPay • ฿{amount.toLocaleString()}
+          <div className="w-56 rounded-2xl bg-white p-2.5 text-slate-900 shadow-xl border-2 border-gold-warm/60 space-y-1.5 text-center">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={PAYMENT_QR_CONFIG.customQrImageUrl}
+              alt="Ferry Ticket PromptPay QR Code - นาย นรฤทธิ์ อหะหมัดจุฬา"
+              className="w-full h-auto rounded-xl mx-auto object-contain"
+            />
+            <div className="text-[11px] font-bold text-slate-800 pt-0.5">
+              Ferry Ticket 🎫 • ยอดโอน ฿{amount.toLocaleString()}
             </div>
           </div>
         </div>
@@ -177,7 +136,7 @@ export function QrSlipPaymentBox({
         {/* Account Transfer Details */}
         <div className="sm:col-span-7 space-y-2.5 text-xs">
           <div className="p-3 rounded-xl bg-black/35 border border-white/10 space-y-1">
-            <div className="text-[11px] text-parchment-muted">ชื่อบัญชีรับโอน</div>
+            <div className="text-[11px] text-parchment-muted">ชื่อบัญชีรับโอนค่าสมาชิก (Ferry Ticket 🎫)</div>
             <div className="font-bold text-parchment-cream">{PAYMENT_QR_CONFIG.accountName}</div>
           </div>
 
@@ -196,10 +155,10 @@ export function QrSlipPaymentBox({
             </button>
           </div>
 
-          <p className="text-[11px] text-parchment-muted/75 font-light flex items-start gap-1.5">
+          <p className="text-[11px] text-parchment-muted/85 font-light flex items-start gap-1.5">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
             <span>
-              โอนเงินตามยอดด้านบนและแนบไฟล์สลิปด้านล่างเพื่อให้แอดมินตรวจสอบ (ระบบจะเชื่อมต่อ Stripe อัตโนมัติในเฟสถัดไป)
+              สแกน QR <strong>Ferry Ticket 🎫</strong> ด้านซ้ายด้วยแอปธนาคารได้ทุกธนาคาร โอนเงินตามยอดด้านบนและแนบสลิปด้านล่างเพื่อตรวจสอบอัตโนมัติ (10% สมทบทุนเพื่อการกุศล)
             </span>
           </p>
         </div>

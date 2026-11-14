@@ -526,29 +526,29 @@ export function CartDrawer() {
                       <div className="flex items-center justify-between text-xs font-bold text-gold-light">
                         <span className="flex items-center gap-1.5">
                           <QrCode className="w-4 h-4 text-gold-warm" />
-                          <span>สแกน QR PromptPay & แนบสลิป (EasySlip)</span>
+                          <span>สแกน QR ร้านค้า (Premium Shopper 🤑)</span>
                         </span>
                         <span className="font-mono text-gold-warm">
                           ฿{totalPriceThb.toLocaleString()}
                         </span>
                       </div>
 
-                      <div className="flex items-center gap-3 p-2.5 rounded-xl bg-white/95 text-slate-900">
+                      <div className="flex flex-col items-center gap-2.5 p-3 rounded-xl bg-white text-slate-900 text-center">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
-                          src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(
-                            `THE-FITRAH-SHIELD-STORE-THB-${totalPriceThb}`
-                          )}`}
-                          alt="PromptPay QR"
-                          className="w-20 h-20 rounded-lg border border-slate-200 shrink-0"
+                          src="/images/qr/PremiumShopper.jpg"
+                          alt="Premium Shopper PromptPay QR - นาย นรฤทธิ์ อหะหมัดจุฬา"
+                          className="w-48 h-auto rounded-xl border border-slate-200 object-contain"
                         />
                         <div className="text-[11px] space-y-0.5 leading-snug">
                           <div className="font-bold text-emerald-900">
-                            กองทุนเกราะพิทักษ์ฟิฏเราะฮฺ
+                            นาย นรฤทธิ์ อหะหมัดจุฬา (Premium Shopper 🤑)
                           </div>
-                          <div>ยอดชำระ: ฿{totalPriceThb.toLocaleString()} บาท</div>
+                          <div className="font-semibold text-slate-800">
+                            ยอดชำระสุทธิ: ฿{totalPriceThb.toLocaleString()} บาท (10% สมทบทุนการกุศล)
+                          </div>
                           <div className="text-slate-600">
-                            สแกนด้วยแอปธนาคารไทย แล้วแนบรูปสลิปด้านล่างเพื่อตรวจสอบอัตโนมัติ
+                            สแกนด้วยแอปธนาคารไทยได้ทุกธนาคาร แล้วแนบรูปสลิปด้านล่างเพื่อตรวจสอบ
                           </div>
                         </div>
                       </div>

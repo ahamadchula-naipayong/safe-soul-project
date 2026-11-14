@@ -28,6 +28,7 @@ import {
 import { MarkdownRenderer } from '@/components/MarkdownRenderer';
 import { ArticleActionToolbar } from '@/components/ArticleActionToolbar';
 import { OneshotAudioSuite } from '@/components/OneshotAudioSuite';
+import { ArticleCoffeeSupport } from '@/components/ArticleCoffeeSupport';
 import { OneshotSectionKey } from '@/types';
 
 interface OneshotDetailPageProps {
@@ -93,7 +94,7 @@ export default async function OneshotDetailPage({ params }: OneshotDetailPagePro
       {/* ------------------------------------------------------------------ */}
       {chapter.image && (
         <div
-          className="fixed inset-0 w-full h-full -z-30 bg-cover bg-center bg-fixed transition-all duration-700 pointer-events-none"
+          className="fixed inset-0 w-full h-full -z-30 bg-cover bg-center bg-scroll lg:bg-fixed transition-all duration-700 pointer-events-none print:hidden"
           style={{
             backgroundImage: `url('${chapter.image}')`,
           }}
@@ -103,35 +104,38 @@ export default async function OneshotDetailPage({ params }: OneshotDetailPagePro
 
       {/* Hero Ambient Gradient Overlay (เพื่อให้ตัวอักษรคมชัด อ่านสบายตา) */}
       <div
-        className="fixed inset-0 w-full h-full -z-20 bg-gradient-to-b from-black/85 via-black/65 to-black/90 pointer-events-none"
+        className="fixed inset-0 w-full h-full -z-20 bg-gradient-to-b from-black/85 via-black/65 to-black/90 pointer-events-none print:hidden"
         aria-hidden="true"
       />
 
       {/* ------------------------------------------------------------------ */}
       {/* 2. HERO FIRST VIEWPORT                                             */}
       {/* ------------------------------------------------------------------ */}
-      <header className="min-h-screen flex flex-col justify-between px-4 sm:px-8 lg:px-16 pt-8 pb-12 relative z-10">
+      <header className="min-h-[68vh] sm:min-h-[75vh] lg:min-h-[88vh] flex flex-col justify-between px-4 sm:px-8 lg:px-16 pt-5 sm:pt-8 pb-8 sm:pb-12 relative z-10">
         {/* Top Bar: Back Link, Action Toolbar & Badges */}
-        <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 sm:gap-4">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-black/60 hover:bg-black/80 backdrop-blur-md border border-white/15 hover:border-gold-warm/50 text-xs sm:text-sm font-medium text-parchment-cream hover:text-gold-light transition shadow-sm group"
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-black/60 hover:bg-black/80 backdrop-blur-md border border-white/15 hover:border-gold-warm/50 text-xs sm:text-sm font-medium text-parchment-cream hover:text-gold-light transition shadow-sm group"
           >
             <ArrowLeft className="w-4 h-4 text-gold-warm group-hover:-translate-x-1 transition-transform" />
-            <span>ย้อนกลับไปหน้าแรก (Home)</span>
+            <span>ย้อนกลับไปหน้าแรก</span>
           </Link>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <ArticleActionToolbar
               title={`${chapter.titleEn}: ${chapter.titleTh}`}
               description={chapter.coreFocus}
               audioTrack={{
                 id: chapter.id,
-                title: chapter.titleEn,
-                seriesTitle: 'ทะเลน้ำตื้น (S.A.F.E.)',
+                title: `${chapter.titleEn}: ${chapter.titleTh}`,
+                seriesTitle: `ทะเลน้ำตื้น (S.A.F.E.) • เกาะที่ ${chapter.chapterNumber}/7`,
                 chapterNumber: chapter.chapterNumber,
-                duration: `${chapter.readingTimeMinutes || 15} นาที`,
+                audioUrl: chapter.audioUrl,
+                duration: chapter.audio?.full?.duration || chapter.audioDuration || '16:30',
                 coverImage: chapter.image,
+                realm: 'shallow',
+                isUnlocked: true,
               }}
             />
 
@@ -139,7 +143,7 @@ export default async function OneshotDetailPage({ params }: OneshotDetailPagePro
               <span className="px-3 py-1 rounded-xl bg-gold-warm text-slate-abyss text-xs font-black uppercase tracking-wider shadow-gold-sm">
                 เกาะที่ {chapter.chapterNumber} / 7
               </span>
-              <span className="px-3 py-1 rounded-xl bg-black/75 backdrop-blur-md text-xs font-semibold text-emerald-300 border border-emerald-500/40">
+              <span className="hidden sm:inline-block px-3 py-1 rounded-xl bg-black/75 backdrop-blur-md text-xs font-semibold text-emerald-300 border border-emerald-500/40">
                 S.A.F.E. SERIES
               </span>
             </div>
@@ -147,19 +151,19 @@ export default async function OneshotDetailPage({ params }: OneshotDetailPagePro
         </div>
 
         {/* Center: Topic ข่าวใหญ่ & คำอธิบายย่อย */}
-        <div className="my-auto py-12 max-w-5xl space-y-6">
+        <div className="my-auto py-8 sm:py-12 max-w-5xl space-y-4 sm:space-y-6">
           <div className="inline-flex items-center gap-2 text-xs sm:text-sm text-gold-warm font-semibold tracking-wider uppercase font-thai">
             <Compass className="w-4 h-4 text-gold-warm" />
             <span>การผจญภัยแห่งปัญญา • เกาะที่ {chapter.chapterNumber}</span>
           </div>
 
           {/* พาดหัวใหญ่ (Large Bold Headline) */}
-          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-thai-serif font-black text-parchment-cream leading-[1.15] tracking-tight drop-shadow-2xl text-balance">
+          <h1 className="text-3xl sm:text-5xl lg:text-7xl font-thai-serif font-black text-parchment-cream leading-[1.18] tracking-tight drop-shadow-2xl text-balance">
             {chapter.titleEn}
           </h1>
 
           {/* Thai Subtitle */}
-          <h2 className="text-xl sm:text-3xl font-thai-serif font-bold text-gold-light leading-snug max-w-4xl">
+          <h2 className="text-lg sm:text-2xl lg:text-3xl font-thai-serif font-bold text-gold-light leading-snug max-w-4xl">
             {chapter.titleTh}
           </h2>
 
@@ -289,9 +293,12 @@ export default async function OneshotDetailPage({ params }: OneshotDetailPagePro
           })}
 
           {/* ---------------------------------------------------------------- */}
-          {/* 4. FOOTER: ACTION TOOLBAR, BACK BUTTON & NEXT ISLAND NAVIGATION */}
+          {/* 4. FOOTER: COFFEE SUPPORT, ACTION TOOLBAR, BACK & NEXT ISLAND     */}
           {/* ---------------------------------------------------------------- */}
           <div className="pt-12 border-t border-emerald-border/60 space-y-10">
+            {/* End of Article Coffee Support & 10% Charity QR ("Cofffee") */}
+            <ArticleCoffeeSupport articleTitle={`${chapter.titleEn}: ${chapter.titleTh}`} />
+
             {/* Share & Print Toolbar in Footer */}
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-5 rounded-2xl bg-black/60 border border-emerald-border/60">
               <div className="text-xs text-parchment-muted">
@@ -302,11 +309,14 @@ export default async function OneshotDetailPage({ params }: OneshotDetailPagePro
                 description={chapter.coreFocus}
                 audioTrack={{
                   id: chapter.id,
-                  title: chapter.titleEn,
-                  seriesTitle: 'ทะเลน้ำตื้น (S.A.F.E.)',
+                  title: `${chapter.titleEn}: ${chapter.titleTh}`,
+                  seriesTitle: `ทะเลน้ำตื้น (S.A.F.E.) • เกาะที่ ${chapter.chapterNumber}/7`,
                   chapterNumber: chapter.chapterNumber,
-                  duration: `${chapter.readingTimeMinutes || 15} นาที`,
+                  audioUrl: chapter.audioUrl,
+                  duration: chapter.audio?.full?.duration || chapter.audioDuration || '16:30',
                   coverImage: chapter.image,
+                  realm: 'shallow',
+                  isUnlocked: true,
                 }}
               />
             </div>
