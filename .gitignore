@@ -42,7 +42,7 @@ Assets/**/*.webp
 Assets/**/*.pdf
 Assets/**/*_old.md
 
-# Deep Ocean 50 MP3s (811 MB) are served locally from public/audio/deep-ocean/ and uploaded to Cloudflare R2 via scripts/upload-r2.mjs
-public/audio/deep-ocean/*.mp3
+# All 64 MP3s (Shallow Waters 14 + Deep Ocean 50) are uploaded to Cloudflare R2 (https://pub-f97e75c998b047ada96253d539c8f805.r2.dev)
+public/audio/**/*.mp3
 *.gdoc
 Assets/**/*.zip

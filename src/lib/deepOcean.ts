@@ -90,7 +90,9 @@ export const OFFICIAL_ARCHIPELAGO_ORDER: ArchipelagoCatalogConfig[] = [
 ];
 
 function getAudioBaseUrl(): string {
-  const base = process.env.NEXT_PUBLIC_AUDIO_BASE_URL || '';
+  const base =
+    process.env.NEXT_PUBLIC_AUDIO_BASE_URL ||
+    'https://pub-f97e75c998b047ada96253d539c8f805.r2.dev';
   return base.replace(/\/+$/, '');
 }
 

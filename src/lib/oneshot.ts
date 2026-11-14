@@ -299,11 +299,34 @@ function parseChapterChunk(
     // Ignore error
   }
 
-  const audioBase = (process.env.NEXT_PUBLIC_AUDIO_BASE_URL || '').replace(/\/+$/, '');
+  const audioBase = (
+    process.env.NEXT_PUBLIC_AUDIO_BASE_URL ||
+    'https://pub-f97e75c998b047ada96253d539c8f805.r2.dev'
+  ).replace(/\/+$/, '');
+
+  if (audioInfo && audioBase) {
+    audioInfo = {
+      ...audioInfo,
+      full: audioInfo.full
+        ? {
+            ...audioInfo.full,
+            url: audioInfo.full.url.startsWith('http')
+              ? audioInfo.full.url
+              : `${audioBase}${audioInfo.full.url}`,
+          }
+        : undefined,
+      parts: Array.isArray(audioInfo.parts)
+        ? audioInfo.parts.map((pt: any) => ({
+            ...pt,
+            url: pt.url.startsWith('http') ? pt.url : `${audioBase}${pt.url}`,
+          }))
+        : [],
+    };
+  }
+
   const audioUrl =
-    audioInfo?.parts?.[0]?.url
-      ? `${audioBase}${audioInfo.parts[0].url}`
-      : `${audioBase}/audio/oneshot/island${chapterNumber}-part1.mp3`;
+    audioInfo?.parts?.[0]?.url ||
+    `${audioBase}/audio/oneshot/island${chapterNumber}-part1.mp3`;
   const audioDuration = audioInfo?.full?.duration || '15:00';
 
   return {
