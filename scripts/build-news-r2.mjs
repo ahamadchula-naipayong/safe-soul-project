@@ -207,7 +207,7 @@ async function main() {
       await putR2Object(`news/news-shard-${s}.json`, shardJson);
       console.log(`   ✅ Uploaded news/news-shard-${s}.json (${slice.length} ข่าว, ${(Buffer.byteLength(shardJson) / (1024 * 1024)).toFixed(2)} MB)`);
     }
-    console.log('🎉 อัปโหลดคลังข่าวทั้งหมด 4,640 รายการขึ้น Cloudflare R2 สำเร็จ 100%!');
+    console.log(`🎉 อัปโหลดคลังข่าวทั้งหมด ${items.length.toLocaleString()} รายการขึ้น Cloudflare R2 สำเร็จ 100%!`);
   }
 }
 

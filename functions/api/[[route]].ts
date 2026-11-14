@@ -74,32 +74,43 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
 }
 
 let cachedNewsIndex: { subcategories: string[]; total: number; items: any[] } | null = null;
-const cachedNewsShards: Record<number, Record<string, any>> = {};
+let cachedNewsIndexAt = 0;
+const cachedNewsShards: Record<number, { at: number; data: Record<string, any> }> = {};
+const NEWS_CACHE_TTL_MS = 60_000;
 
 async function loadNewsIndex(env: Env, requestUrl: string) {
-  if (cachedNewsIndex) return cachedNewsIndex;
+  const now = Date.now();
+  if (cachedNewsIndex && now - cachedNewsIndexAt < NEWS_CACHE_TTL_MS) {
+    return cachedNewsIndex;
+  }
   if (env.MEDIA_BUCKET) {
     const obj = await env.MEDIA_BUCKET.get('news/news-index.json');
     if (obj) {
       cachedNewsIndex = await obj.json();
+      cachedNewsIndexAt = now;
       return cachedNewsIndex!;
     }
   }
   const assetRes = await env.ASSETS.fetch(new URL('/api-data/news-index.json', requestUrl));
   if (assetRes.ok) {
     cachedNewsIndex = await assetRes.json();
+    cachedNewsIndexAt = now;
     return cachedNewsIndex!;
   }
   return { subcategories: ['ทั่วไป', 'Deepdive', 'West Asia'], total: 0, items: [] };
 }
 
 async function loadNewsShard(env: Env, shardIndex: number): Promise<Record<string, any>> {
-  if (cachedNewsShards[shardIndex]) return cachedNewsShards[shardIndex];
+  const now = Date.now();
+  const cached = cachedNewsShards[shardIndex];
+  if (cached && now - cached.at < NEWS_CACHE_TTL_MS) {
+    return cached.data;
+  }
   if (env.MEDIA_BUCKET) {
     const obj = await env.MEDIA_BUCKET.get(`news/news-shard-${shardIndex}.json`);
     if (obj) {
       const shardData = await obj.json();
-      cachedNewsShards[shardIndex] = shardData;
+      cachedNewsShards[shardIndex] = { at: now, data: shardData };
       return shardData;
     }
   }
