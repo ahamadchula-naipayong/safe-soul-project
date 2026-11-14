@@ -73,7 +73,7 @@ export function FoundingCountdown({
           ผู้ร่วมก่อตั้งและสนับสนุนตลอดชีพ
         </h3>
         <p className="text-sm text-parchment-muted leading-relaxed">
-          จ่ายครั้งเดียว เข้าถึงครบ 35 บทใน Deep Mode ตลอดชีพ (พร้อมรับสิทธิ์ Easy Mode เมื่อเปิดตัว Upcoming) พร้อมสิทธิ์ดาวน์โหลด E-book มาสเตอร์ฉบับเต็ม 240 หน้า และส่วนลด Merch ทุกชิ้น
+          จ่ายครั้งเดียว ปลดล็อกครบ 57 บท (7 เกาะน้ำตื้น + 10 หมู่เกาะน้ำลึก 50 บท) และเสียงพอดแคสต์ทั้งหมดตลอดชีพ พร้อมรับ E-Book ทางอีเมลสมาชิก (ฉบับน้ำตื้น 73 หน้า + สิทธิ์จองฉบับน้ำลึก Coming Soon) และส่วนลด Merch 20%
         </p>
       </div>
 
@@ -111,11 +111,11 @@ export function FoundingCountdown({
       <ul className="space-y-2.5 text-xs sm:text-sm text-parchment-muted mb-6">
         <li className="flex items-center gap-2">
           <span className="w-1.5 h-1.5 rounded-full bg-gold-warm" />
-          <span>ปลดล็อกครบ 35 ตอน (7 ซีรีส์) ใน Deep Mode ตลอดชีพ (Easy Mode: Upcoming)</span>
+          <span>ปลดล็อกครบ 57 ตอน (7 เกาะน้ำตื้น + 50 เกาะย่อยทะเลน้ำลึก) และระบบเสียงตลอดชีพ</span>
         </li>
         <li className="flex items-center gap-2">
           <span className="w-1.5 h-1.5 rounded-full bg-gold-warm" />
-          <span>ดาวน์โหลด Full Master E-book 240 หน้า (ประทับตราลิขสิทธิ์ดิจิทัลส่วนตัว)</span>
+          <span>รับ E-Book ฉบับเกาะทะเลน้ำตื้นทางอีเมลสมาชิก + สิทธิ์รับฉบับทะเลน้ำลึก (Coming Soon) ฟรีเมื่อเปิดตัว</span>
         </li>
         <li className="flex items-center gap-2">
           <span className="w-1.5 h-1.5 rounded-full bg-gold-warm" />
@@ -127,7 +127,7 @@ export function FoundingCountdown({
         </li>
         <li className="flex items-center gap-2">
           <span className="w-1.5 h-1.5 rounded-full bg-gold-warm" />
-          <span>ส่วนลด 20% สำหรับสินค้า Physical Merch ทุกรายการในสโตร์</span>
+          <span>ส่วนลด 20% สำหรับสินค้า Official Merch ทุกรายการในสโตร์</span>
         </li>
       </ul>
 

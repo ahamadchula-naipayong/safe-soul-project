@@ -1,0 +1,198 @@
+{
+  "1": {
+    "chapterNumber": 1,
+    "slug": "safe-from-the-dunya",
+    "titleEn": "Safe from the Dunya",
+    "titleTh": "ศิลปะแห่งการระวังตนและสร้างภูมิคุ้มกันชีวิตภายใต้ครรลองแห่งปัญญา",
+    "parts": [
+      {
+        "partNumber": 1,
+        "title": "Part 1 (บทนำและมิติแห่งตน)",
+        "url": "/audio/oneshot/island1-part1.mp3",
+        "duration": "5:47",
+        "seconds": 347.92
+      },
+      {
+        "partNumber": 2,
+        "title": "Part 2 (มิติการตื่นรู้ จริยธรรม และบทสรุป)",
+        "url": "/audio/oneshot/island1-part2.mp3",
+        "duration": "10:55",
+        "seconds": 655.64
+      }
+    ],
+    "full": {
+      "title": "ฉบับสมบูรณ์ (Part 1 + 2 ต่อเนื่อง)",
+      "url": "/audio/oneshot/island1-part1.mp3",
+      "duration": "16:43",
+      "seconds": 1003.616
+    }
+  },
+  "2": {
+    "chapterNumber": 2,
+    "slug": "safe-from-shirk",
+    "titleEn": "Safe from Shirk",
+    "titleTh": "ภูมิคุ้มกันชิรก์และการตั้งภาคีที่ซ่อนเร้นในยุคสมัยใหม่",
+    "parts": [
+      {
+        "partNumber": 1,
+        "title": "Part 1 (บทนำและมิติแห่งตน)",
+        "url": "/audio/oneshot/island2-part1.mp3",
+        "duration": "8:38",
+        "seconds": 518.88
+      },
+      {
+        "partNumber": 2,
+        "title": "Part 2 (มิติการตื่นรู้ จริยธรรม และบทสรุป)",
+        "url": "/audio/oneshot/island2-part2.mp3",
+        "duration": "8:13",
+        "seconds": 493.12
+      }
+    ],
+    "full": {
+      "title": "ฉบับสมบูรณ์ (Part 1 + 2 ต่อเนื่อง)",
+      "url": "/audio/oneshot/island2-part1.mp3",
+      "duration": "16:52",
+      "seconds": 1012.048
+    }
+  },
+  "3": {
+    "chapterNumber": 3,
+    "slug": "safe-from-nafs",
+    "titleEn": "Safe from Nafs",
+    "titleTh": "การควบคุมนัฟซูและกิเลสภายในเพื่ออิสรภาพของจิตวิญญาณ",
+    "parts": [
+      {
+        "partNumber": 1,
+        "title": "Part 1 (บทนำและมิติแห่งตน)",
+        "url": "/audio/oneshot/island3-part1.mp3",
+        "duration": "8:46",
+        "seconds": 526
+      },
+      {
+        "partNumber": 2,
+        "title": "Part 2 (มิติการตื่นรู้ จริยธรรม และบทสรุป)",
+        "url": "/audio/oneshot/island3-part2.mp3",
+        "duration": "7:09",
+        "seconds": 429.12
+      }
+    ],
+    "full": {
+      "title": "ฉบับสมบูรณ์ (Part 1 + 2 ต่อเนื่อง)",
+      "url": "/audio/oneshot/island3-part1.mp3",
+      "duration": "15:55",
+      "seconds": 955.176
+    }
+  },
+  "4": {
+    "chapterNumber": 4,
+    "slug": "safe-for-rizq",
+    "titleEn": "Safe for Rizq",
+    "titleTh": "ความกังวลในริสกีและการพึ่งพาพระเจ้าในโลกแห่งความไม่แน่นอน",
+    "parts": [
+      {
+        "partNumber": 1,
+        "title": "Part 1 (บทนำและมิติแห่งตน)",
+        "url": "/audio/oneshot/island4-part1.mp3",
+        "duration": "8:49",
+        "seconds": 529.24
+      },
+      {
+        "partNumber": 2,
+        "title": "Part 2 (มิติการตื่นรู้ จริยธรรม และบทสรุป)",
+        "url": "/audio/oneshot/island4-part2.mp3",
+        "duration": "6:30",
+        "seconds": 390.72
+      }
+    ],
+    "full": {
+      "title": "ฉบับสมบูรณ์ (Part 1 + 2 ต่อเนื่อง)",
+      "url": "/audio/oneshot/island4-part1.mp3",
+      "duration": "15:20",
+      "seconds": 920.016
+    }
+  },
+  "5": {
+    "chapterNumber": 5,
+    "slug": "safe-from-hype",
+    "titleEn": "Safe from Fitnah & Deception",
+    "titleTh": "การรอดพ้นจากกระแสลวง ฟิตนะฮ์ และภาพลวงตาทางสังคม",
+    "parts": [
+      {
+        "partNumber": 1,
+        "title": "Part 1 (บทนำและมิติแห่งตน)",
+        "url": "/audio/oneshot/island5-part1.mp3",
+        "duration": "9:38",
+        "seconds": 578.92
+      },
+      {
+        "partNumber": 2,
+        "title": "Part 2 (มิติการตื่นรู้ จริยธรรม และบทสรุป)",
+        "url": "/audio/oneshot/island5-part2.mp3",
+        "duration": "7:08",
+        "seconds": 428.52
+      }
+    ],
+    "full": {
+      "title": "ฉบับสมบูรณ์ (Part 1 + 2 ต่อเนื่อง)",
+      "url": "/audio/oneshot/island5-part1.mp3",
+      "duration": "16:47",
+      "seconds": 1007.496
+    }
+  },
+  "6": {
+    "chapterNumber": 6,
+    "slug": "safe-from-haram",
+    "titleEn": "Safe from Haram & Doubt",
+    "titleTh": "ความปลอดภัยจากสิ่งฮารอมและความคลุมเครือในวิถีชีวิต",
+    "parts": [
+      {
+        "partNumber": 1,
+        "title": "Part 1 (บทนำและมิติแห่งตน)",
+        "url": "/audio/oneshot/island6-part1.mp3",
+        "duration": "8:33",
+        "seconds": 513.84
+      },
+      {
+        "partNumber": 2,
+        "title": "Part 2 (มิติการตื่นรู้ จริยธรรม และบทสรุป)",
+        "url": "/audio/oneshot/island6-part2.mp3",
+        "duration": "11:29",
+        "seconds": 689
+      }
+    ],
+    "full": {
+      "title": "ฉบับสมบูรณ์ (Part 1 + 2 ต่อเนื่อง)",
+      "url": "/audio/oneshot/island6-part1.mp3",
+      "duration": "20:02",
+      "seconds": 1202.888
+    }
+  },
+  "7": {
+    "chapterNumber": 7,
+    "slug": "safe-for-barzakh",
+    "titleEn": "Safe for Barzakh & Beyond",
+    "titleTh": "การเตรียมพร้อมสู่โลกบัรซัคและการเปลี่ยนผ่านสู่นิรันดร",
+    "parts": [
+      {
+        "partNumber": 1,
+        "title": "Part 1 (บทนำและมิติแห่งตน)",
+        "url": "/audio/oneshot/island7-part1.mp3",
+        "duration": "6:52",
+        "seconds": 412.08
+      },
+      {
+        "partNumber": 2,
+        "title": "Part 2 (มิติการตื่นรู้ จริยธรรม และบทสรุป)",
+        "url": "/audio/oneshot/island7-part2.mp3",
+        "duration": "9:34",
+        "seconds": 574.68
+      }
+    ],
+    "full": {
+      "title": "ฉบับสมบูรณ์ (Part 1 + 2 ต่อเนื่อง)",
+      "url": "/audio/oneshot/island7-part1.mp3",
+      "duration": "16:26",
+      "seconds": 986.808
+    }
+  }
+}

@@ -1,0 +1,20 @@
+name = "the-fitrah-shield"
+compatibility_date = "2025-02-01"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = ".vercel/output/static"
+
+# 1. Cloudflare D1 Serverless SQL Database (สำหรับเก็บตารางสมาชิก, บทความที่แก้ไข, ร้านค้า, และข้อความติดต่อเรา)
+[[d1_databases]]
+binding = "DB"
+database_name = "fitrah-shield-db"
+database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+migrations_dir = "migrations"
+
+# 2. Cloudflare R2 Object Storage (สำหรับเก็บไฟล์เสียงพอดแคสต์ 64 ไฟล์: น้ำตื้น 14 ไฟล์ + น้ำลึก 50 ไฟล์)
+[[r2_buckets]]
+binding = "MEDIA_BUCKET"
+bucket_name = "fitrah-shield-media"
+
+[vars]
+NEXT_PUBLIC_SITE_URL = "https://thefitrahshield.hardynaipayong.cloud"
+EMAIL_FROM = "The Fitrah Shield <sanctuary@thefitrahshield.hardynaipayong.cloud>"

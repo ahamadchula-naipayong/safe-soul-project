@@ -1,8 +1,45 @@
 import fs from 'fs';
 import path from 'path';
-import { Member, TierType } from '@/types';
+import { Member, TierType, PaymentStatus, MemberRole } from '@/types';
 
 const dataFilePath = path.join(process.cwd(), 'data', 'members.json');
+const slipsDir = path.join(process.cwd(), 'public', 'uploads', 'slips');
+
+/**
+ * Save a base64 data URL image/PDF slip into public/uploads/slips and return its public URL
+ */
+export function saveUploadedSlip(base64DataUrl: string, memberNumber: number): string {
+  if (!base64DataUrl) return '';
+  // If already a URL path (not data:...), return as-is
+  if (!base64DataUrl.startsWith('data:')) {
+    return base64DataUrl;
+  }
+
+  try {
+    if (!fs.existsSync(slipsDir)) {
+      fs.mkdirSync(slipsDir, { recursive: true });
+    }
+
+    const match = base64DataUrl.match(/^data:([A-Za-z0-9/+.-]+);base64,(.+)$/);
+    if (!match) return '';
+
+    const mimeType = match[1];
+    const base64Data = match[2];
+    let ext = 'png';
+    if (mimeType.includes('jpeg') || mimeType.includes('jpg')) ext = 'jpg';
+    else if (mimeType.includes('webp')) ext = 'webp';
+    else if (mimeType.includes('pdf')) ext = 'pdf';
+
+    const filename = `slip-member-${memberNumber}-${Date.now()}.${ext}`;
+    const fullPath = path.join(slipsDir, filename);
+    fs.writeFileSync(fullPath, Buffer.from(base64Data, 'base64'));
+
+    return `/uploads/slips/${filename}`;
+  } catch (error) {
+    console.error('Error saving payment slip:', error);
+    return '';
+  }
+}
 
 /**
  * Read all members from data/members.json
@@ -38,6 +75,15 @@ export function saveMembers(members: Member[]): void {
 }
 
 /**
+ * Find member by id
+ */
+export function findMemberById(id: string): Member | null {
+  if (!id) return null;
+  const members = getAllMembers();
+  return members.find((m) => m.id === id) || null;
+}
+
+/**
  * Find member by username or email (case-insensitive)
  */
 export function findMember(usernameOrEmail: string): Member | null {
@@ -64,25 +110,58 @@ export function getNextMemberNumber(): number {
 }
 
 /**
- * Register a new member with incremental sequence number
+ * Register a new member with incremental sequence number, phone, and optional QR slip
  */
 export function registerMember(params: {
   username: string;
   email: string;
+  phone?: string;
   password: string;
   name?: string;
   tier?: TierType;
+  role?: MemberRole;
+  paymentSlipDataUrl?: string;
+  paymentAmount?: number;
+  billingCycle?: 'free' | 'monthly' | 'yearly' | 'lifetime';
+  paymentStatus?: PaymentStatus;
+  notes?: string;
+  isAdminOverride?: boolean;
 }): { success: boolean; member?: Member; error?: string } {
-  const { username, email, password, name, tier = 'free_tier_1' } = params;
+  const {
+    username,
+    email,
+    phone = '',
+    password,
+    name,
+    tier = 'free_tier_1',
+    role = 'member',
+    paymentSlipDataUrl,
+    paymentAmount,
+    billingCycle,
+    paymentStatus,
+    notes,
+    isAdminOverride = false,
+  } = params;
 
   if (!username || !password || !email) {
     return { success: false, error: 'กรุณากรอกชื่อผู้ใช้, อีเมล, และรหัสผ่านให้ครบถ้วน' };
   }
 
+  if (!isAdminOverride && !phone.trim()) {
+    return { success: false, error: 'กรุณากรอกเบอร์โทรศัพท์สำหรับติดต่อและยืนยันสิทธิ์สมาชิก' };
+  }
+
+  const isPaidTier = tier === 'supporter_tier_2' || tier === 'founding_tier_3';
+  if (isPaidTier && !isAdminOverride && !paymentSlipDataUrl) {
+    return {
+      success: false,
+      error: 'กรุณาแนบไฟล์สลิปการโอนเงินเพื่อตรวจสอบสำหรับระดับสมาชิกที่เลือก',
+    };
+  }
+
   const cleanUsername = username.trim();
   const cleanEmail = email.trim();
 
-  // Check if username or email already exists
   const existing = findMember(cleanUsername) || findMember(cleanEmail);
   if (existing) {
     return {
@@ -94,14 +173,47 @@ export function registerMember(params: {
   const members = getAllMembers();
   const nextNumber = getNextMemberNumber();
 
+  let slipUrl = '';
+  if (paymentSlipDataUrl) {
+    slipUrl = saveUploadedSlip(paymentSlipDataUrl, nextNumber);
+  }
+
+  const defaultAmount =
+    tier === 'founding_tier_3'
+      ? 3990
+      : tier === 'supporter_tier_2'
+      ? billingCycle === 'yearly'
+        ? 1990
+        : 199
+      : 0;
+
+  const resolvedCycle =
+    billingCycle ||
+    (tier === 'founding_tier_3'
+      ? 'lifetime'
+      : tier === 'supporter_tier_2'
+      ? 'monthly'
+      : 'free');
+
+  const resolvedPaymentStatus: PaymentStatus =
+    paymentStatus ||
+    (tier === 'free_tier_1' ? 'free' : isAdminOverride ? 'verified' : 'pending_verification');
+
   const newMember: Member = {
     id: `mem_${String(nextNumber).padStart(3, '0')}`,
     memberNumber: nextNumber,
     username: cleanUsername,
     email: cleanEmail,
+    phone: phone.trim(),
     password: password.trim(),
     name: name?.trim() || cleanUsername,
     tier,
+    role,
+    paymentStatus: resolvedPaymentStatus,
+    paymentSlipUrl: slipUrl || undefined,
+    paymentAmount: paymentAmount !== undefined ? paymentAmount : defaultAmount,
+    billingCycle: resolvedCycle,
+    notes: notes?.trim() || '',
     createdAt: new Date().toISOString(),
   };
 
@@ -109,6 +221,56 @@ export function registerMember(params: {
   saveMembers(members);
 
   return { success: true, member: newMember };
+}
+
+/**
+ * Update an existing member (used by Admin Member Table or Tier Upgrade)
+ */
+export function updateMember(
+  id: string,
+  updates: Partial<Member> & { paymentSlipDataUrl?: string }
+): { success: boolean; member?: Member; error?: string } {
+  const members = getAllMembers();
+  const idx = members.findIndex((m) => m.id === id);
+  if (idx === -1) {
+    return { success: false, error: 'ไม่พบข้อมูลสมาชิกในระบบ' };
+  }
+
+  const current = members[idx];
+  let slipUrl = updates.paymentSlipUrl !== undefined ? updates.paymentSlipUrl : current.paymentSlipUrl;
+  if (updates.paymentSlipDataUrl) {
+    slipUrl = saveUploadedSlip(updates.paymentSlipDataUrl, current.memberNumber);
+  }
+
+  const { paymentSlipDataUrl: _, ...restUpdates } = updates;
+
+  const updated: Member = {
+    ...current,
+    ...restUpdates,
+    // Keep password if empty string passed during edit
+    password:
+      restUpdates.password && restUpdates.password.trim()
+        ? restUpdates.password.trim()
+        : current.password,
+    paymentSlipUrl: slipUrl,
+    updatedAt: new Date().toISOString(),
+  };
+
+  members[idx] = updated;
+  saveMembers(members);
+
+  return { success: true, member: updated };
+}
+
+/**
+ * Delete member by ID
+ */
+export function deleteMember(id: string): boolean {
+  const members = getAllMembers();
+  const filtered = members.filter((m) => m.id !== id);
+  if (filtered.length === members.length) return false;
+  saveMembers(filtered);
+  return true;
 }
 
 /**

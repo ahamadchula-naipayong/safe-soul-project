@@ -1,75 +1,89 @@
 'use client';
 
-import React, { useState } from 'react';
-import { FoundingCountdown } from '@/components/FoundingCountdown';
+import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { FreeEbookModal } from '@/components/FreeEbookModal';
-import { mockFoundingQuota } from '@/lib/supabase/mockData';
+import { AccessTierTable } from '@/components/AccessTierTable';
+import { QrSlipPaymentBox } from '@/components/QrSlipPaymentBox';
+import { useAuth } from '@/context/AuthContext';
 import {
-  Check,
   Crown,
   Sparkles,
-  ShieldCheck,
-  Zap,
   HelpCircle,
   ArrowRight,
-  Flame,
-  CreditCard,
   QrCode,
-  Lock,
+  Phone,
+  CheckCircle2,
+  UserCheck,
+  Anchor,
 } from 'lucide-react';
 
 export default function PricingPage() {
+  const { member, isLoggedIn, upgradeMembership } = useAuth();
+
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [isEbookModalOpen, setIsEbookModalOpen] = useState(false);
-  const [checkoutEmail, setCheckoutEmail] = useState('');
   const [selectedTier, setSelectedTier] = useState<'supporter_tier_2' | 'founding_tier_3'>('founding_tier_3');
+
+  const [phone, setPhone] = useState('');
+  const [slipDataUrl, setSlipDataUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState('');
+  const [upgradeSuccess, setUpgradeSuccess] = useState(false);
 
-  const handleCheckout = async (tier: 'supporter_tier_2' | 'founding_tier_3') => {
-    if (!checkoutEmail) {
-      setSelectedTier(tier);
-      const element = document.getElementById('checkout-box');
-      element?.scrollIntoView({ behavior: 'smooth' });
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const t = params.get('tier');
+      if (t === 'supporter_tier_2' || t === 'founding_tier_3') {
+        setSelectedTier(t);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (member?.phone && !phone) {
+      setPhone(member.phone);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [member]);
+
+  const handleUpgradeSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCheckoutError('');
+
+    if (!slipDataUrl) {
+      setCheckoutError('กรุณาแนบไฟล์สลิปการโอนเงินเพื่อให้ทีมงานตรวจสอบก่อนยืนยัน');
       return;
     }
 
+    const amount =
+      selectedTier === 'founding_tier_3'
+        ? 3990
+        : billingCycle === 'yearly'
+        ? 1990
+        : 199;
+
     setIsLoading(true);
-    setCheckoutError('');
+    const res = await upgradeMembership({
+      tier: selectedTier,
+      phone: phone.trim() || member?.phone || '',
+      paymentSlipDataUrl: slipDataUrl,
+      paymentAmount: amount,
+      billingCycle: selectedTier === 'founding_tier_3' ? 'lifetime' : billingCycle,
+    });
+    setIsLoading(false);
 
-    try {
-      const response = await fetch('/api/stripe/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          tier,
-          orderType: 'subscription',
-          customerEmail: checkoutEmail,
-          priceId:
-            tier === 'founding_tier_3'
-              ? process.env.STRIPE_PRICE_FOUNDING_100
-              : billingCycle === 'yearly'
-              ? process.env.STRIPE_PRICE_YEARLY_SUPPORTER
-              : process.env.STRIPE_PRICE_MONTHLY_SUPPORTER,
-        }),
-      });
-
-      const data = await response.json();
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        setCheckoutError(data.error || 'เกิดข้อผิดพลาดในการเชื่อมต่อ Stripe');
-      }
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'ไม่สามารถเริ่มการชำระเงินได้';
-      setCheckoutError(msg);
-    } finally {
-      setIsLoading(false);
+    if (!res.success) {
+      setCheckoutError(res.error || 'ไม่สามารถส่งหลักฐานการชำระเงินได้');
+    } else {
+      setUpgradeSuccess(true);
+      setSlipDataUrl('');
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-dark text-parchment-cream py-16 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-slate-dark text-parchment-cream py-16 px-4 sm:px-6 lg:px-8 font-thai">
       <div className="max-w-7xl mx-auto space-y-16">
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto space-y-4">
@@ -78,12 +92,12 @@ export default function PricingPage() {
             <span>ร่วมสนับสนุนและสร้างภูมิคุ้มกันทางจิตวิญญาณ</span>
           </div>
 
-          <h1 className="text-4xl sm:text-5xl font-serif font-black text-parchment-cream">
-            แผนสมาชิก & สิทธิพิเศษ 3 ระดับ
+          <h1 className="text-4xl sm:text-5xl font-thai-serif font-black text-parchment-cream">
+            แผนสมาชิก & สิทธิพิเศษ 3 ระดับเรือ
           </h1>
 
           <p className="text-sm sm:text-base text-parchment-muted max-w-xl mx-auto leading-relaxed">
-            เลือกรูปแบบการสนับสนุนที่สอดคล้องกับเจตจำนงของคุณ พร้อมรับสิทธิ์การเข้าถึงคลังปัญญาและการเชื่อมต่อชุมชนคุณภาพ
+            เลือกรูปแบบการสนับสนุนที่สอดคล้องกับเจตจำนงของคุณ ทันทีที่เลือกระดับเรือ ระบบจะแสดง QR เพื่อโอนเงินและช่องแนบสลิปตรวจสอบทันที
           </p>
 
           {/* Billing Cycle Switcher for Tier 2 */}
@@ -110,248 +124,200 @@ export default function PricingPage() {
           </div>
         </div>
 
-        {/* Founding 100 Live Quota Visualizer */}
-        <div id="founding-checkout" className="max-w-4xl mx-auto">
-          <FoundingCountdown
-            initialQuota={mockFoundingQuota}
-            showCheckoutButton={false}
+        {/* Unified Maritime Access Sanctuary & Active Dashboard */}
+        <div id="founding-checkout" className="scroll-mt-8">
+          <AccessTierTable
+            onOpenFreeModal={() => setIsEbookModalOpen(true)}
+            onSelectTier={(tier) => {
+              if (tier === 'free_tier_1') {
+                window.location.href = '/login?tab=register&tier=free_tier_1';
+              } else {
+                setSelectedTier(tier);
+                setUpgradeSuccess(false);
+                const el = document.getElementById('checkout-box');
+                el?.scrollIntoView({ behavior: 'smooth' });
+              }
+            }}
           />
         </div>
 
-        {/* 3 Tiers Comparison Cards */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
-          {/* TIER 1: FREE MEMBER */}
-          <div className="rounded-3xl p-6 sm:p-8 bg-emerald-card/60 border border-emerald-border/70 flex flex-col justify-between">
-            <div className="space-y-6">
-              <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-parchment-muted">
-                  Tier 1
-                </span>
-                <h3 className="text-2xl font-serif font-bold text-parchment-cream mt-1">
-                  Free Member
-                </h3>
-                <p className="text-xs text-parchment-muted mt-2">
-                  สำหรับผู้เริ่มต้นศึกษาและต้องการทดลองอ่าน
-                </p>
-              </div>
-
-              <div className="text-3xl font-serif font-black text-parchment-light">
-                ฿0 <span className="text-xs font-sans text-parchment-muted">/ ตลอดชีพ</span>
-              </div>
-
-              <ul className="space-y-3.5 text-xs text-parchment-muted border-t border-emerald-border/40 pt-6">
-                <li className="flex items-center gap-2.5">
-                  <Check className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>ดาวน์โหลด E-book 7 บทหลักฟรีทันที</span>
-                </li>
-                <li className="flex items-center gap-2.5">
-                  <Check className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>เข้าถึงเนื้อหาบทที่ 1 - 3 ได้ฟรีตลอดชีพ</span>
-                </li>
-                <li className="flex items-center gap-2.5">
-                  <Check className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>รับจดหมายข่าวสรุปแก่นปัญญาประจำเดือน</span>
-                </li>
-                <li className="flex items-center gap-2.5 text-parchment-muted/40">
-                  <span className="w-4 h-4 rounded-full border border-white/20 flex items-center justify-center text-[10px]">✕</span>
-                  <span>ปลดล็อกบทที่ 4 - 35</span>
-                </li>
-                <li className="flex items-center gap-2.5 text-parchment-muted/40">
-                  <span className="w-4 h-4 rounded-full border border-white/20 flex items-center justify-center text-[10px]">✕</span>
-                  <span>Discord & Telegram ชุมชนพิเศษ</span>
-                </li>
-              </ul>
+        {/* Immediate QR & Slip Upload Checkout Box */}
+        <div
+          id="checkout-box"
+          className="max-w-2xl mx-auto rounded-3xl p-6 sm:p-8 bg-gradient-to-b from-[#0E2218] via-[#091510] to-[#060D0A] border border-gold-warm/40 shadow-2xl space-y-6 scroll-mt-24"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-emerald-border/50 pb-4">
+            <div className="flex items-center gap-2 text-gold-warm text-xs font-bold uppercase tracking-wider">
+              <QrCode className="w-4 h-4" />
+              <span>ชำระเงินผ่าน QR Code & แนบสลิปตรวจสอบ (รอเชื่อมต่อ Stripe)</span>
             </div>
-
-            <button
-              onClick={() => setIsEbookModalOpen(true)}
-              className="mt-8 w-full py-3.5 rounded-xl bg-emerald-surface hover:bg-emerald-light border border-gold/30 text-gold-light text-xs font-bold transition shadow-sm"
-            >
-              รับสิทธิ์ Free Member ทันที
-            </button>
           </div>
 
-          {/* TIER 2: SUPPORTER */}
-          <div className="rounded-3xl p-6 sm:p-8 bg-emerald-surface/70 border-2 border-emerald-border/80 flex flex-col justify-between relative shadow-xl">
-            <div className="space-y-6">
-              <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-emerald-300">
-                  Tier 2 • ยอดนิยม
-                </span>
-                <h3 className="text-2xl font-serif font-bold text-parchment-cream mt-1">
-                  Supporter
-                </h3>
-                <p className="text-xs text-parchment-muted mt-2">
-                  ปลดล็อกคลังปัญญาครบวงจร ทั้งเสียงและบทความ
-                </p>
-              </div>
-
-              <div className="text-3xl font-serif font-black text-gold-light">
-                {billingCycle === 'monthly' ? '฿199' : '฿1,990'}
-                <span className="text-xs font-sans text-parchment-muted">
-                  {billingCycle === 'monthly' ? ' / เดือน' : ' / ปี (ประหยัด ฿398)'}
-                </span>
-              </div>
-
-              <ul className="space-y-3.5 text-xs text-parchment-cream/90 border-t border-emerald-border/40 pt-6">
-                <li className="flex items-center gap-2.5">
-                  <Check className="w-4 h-4 text-gold-warm shrink-0" />
-                  <span>ปลดล็อกครบ 35 บทใน Deep Mode (Easy Mode: Upcoming)</span>
-                </li>
-                <li className="flex items-center gap-2.5">
-                  <Check className="w-4 h-4 text-gold-warm shrink-0" />
-                  <span>ฟัง Sticky Podcast ความคมชัดสูงทุกตอน</span>
-                </li>
-                <li className="flex items-center gap-2.5">
-                  <Check className="w-4 h-4 text-gold-warm shrink-0" />
-                  <span>ดึงเข้า Discord พร้อมมอบบทบาท Supporter</span>
-                </li>
-                <li className="flex items-center gap-2.5">
-                  <Check className="w-4 h-4 text-gold-warm shrink-0" />
-                  <span>รับลิงก์เข้ากลุ่ม Telegram พิเศษสำหรับผู้สนับสนุน</span>
-                </li>
-                <li className="flex items-center gap-2.5 text-parchment-muted/50">
-                  <span className="w-4 h-4 rounded-full border border-white/20 flex items-center justify-center text-[10px]">✕</span>
-                  <span>E-book ฉบับเต็ม 240 หน้า (ต้องซื้อแยก ฿490)</span>
-                </li>
-              </ul>
-            </div>
-
-            <button
-              onClick={() => handleCheckout('supporter_tier_2')}
-              className="mt-8 w-full py-3.5 rounded-xl bg-gold-gradient text-slate-abyss text-xs font-bold hover:brightness-110 shadow-gold-sm transition"
-            >
-              เลือกแพ็กเกจ Supporter
-            </button>
-          </div>
-
-          {/* TIER 3: FOUNDING 100 LIFETIME */}
-          <div className="rounded-3xl p-6 sm:p-8 bg-gradient-to-b from-[#1E3B2E] via-[#12261C] to-slate-card border-2 border-gold-warm flex flex-col justify-between relative shadow-gold-md">
-            <div className="absolute -top-3.5 right-6 px-3 py-1 rounded-full bg-gold-gradient text-slate-abyss text-[10px] font-black uppercase tracking-wider shadow-sm flex items-center gap-1">
-              <Flame className="w-3.5 h-3.5 fill-current text-red-700" />
-              <span>เหลือ {mockFoundingQuota.remaining_slots} / 100 ที่</span>
-            </div>
-
-            <div className="space-y-6">
-              <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-gold-warm flex items-center gap-1">
-                  <Crown className="w-3.5 h-3.5 fill-current" />
-                  <span>Tier 3 • สิทธิพิเศษสูงสุดตลอดชีพ</span>
-                </span>
-                <h3 className="text-2xl font-serif font-bold text-parchment-light mt-1">
-                  Founding 100 Lifetime
-                </h3>
-                <p className="text-xs text-parchment-muted mt-2">
-                  ครั้งเดียวจบ เป็นผู้ร่วมก่อตั้งพร้อมสิทธิพิเศษพรีเมียมทุกมิติ
-                </p>
-              </div>
-
-              <div className="text-3xl font-serif font-black text-gold-light">
-                ฿3,990 <span className="text-xs font-sans text-parchment-muted">/ จ่ายครั้งเดียวตลอดชีพ</span>
-              </div>
-
-              <ul className="space-y-3.5 text-xs text-parchment-cream/95 border-t border-emerald-border/40 pt-6">
-                <li className="flex items-center gap-2.5">
-                  <Check className="w-4 h-4 text-gold-warm shrink-0" />
-                  <span>เข้าถึง 35 บทตลอดชีพใน Deep Mode (Easy Mode: Upcoming)</span>
-                </li>
-                <li className="flex items-center gap-2.5">
-                  <Check className="w-4 h-4 text-gold-warm shrink-0" />
-                  <span>ดาวน์โหลด Full Master E-book 240 หน้าฟรี (ประทับตราอีเมล)</span>
-                </li>
-                <li className="flex items-center gap-2.5">
-                  <Check className="w-4 h-4 text-gold-warm shrink-0" />
-                  <span>ส่วนลดพิเศษ 20% สำหรับสินค้า Physical Merch ทุกชิ้น</span>
-                </li>
-                <li className="flex items-center gap-2.5">
-                  <Check className="w-4 h-4 text-gold-warm shrink-0" />
-                  <span>บทบาท Founding Member สีทองใน Discord ผ่าน Webhook อัตโนมัติ</span>
-                </li>
-                <li className="flex items-center gap-2.5">
-                  <Check className="w-4 h-4 text-gold-warm shrink-0" />
-                  <span>ลิงก์เข้ากลุ่มลับ Telegram ส่วนตัวสำหรับผู้ร่วมก่อตั้ง</span>
-                </li>
-              </ul>
-            </div>
-
-            <button
-              onClick={() => handleCheckout('founding_tier_3')}
-              className="mt-8 w-full py-3.5 rounded-xl bg-gold-gradient text-slate-abyss text-xs font-bold hover:brightness-110 shadow-gold-sm transition flex items-center justify-center gap-2"
-            >
-              <span>จองสิทธิ์ Founding 100 ทันที</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-
-        {/* Checkout Execution Box */}
-        <div id="checkout-box" className="max-w-xl mx-auto rounded-2xl p-6 sm:p-8 bg-emerald-card border border-gold/30 shadow-2xl space-y-4">
-          <div className="flex items-center gap-2 text-gold-warm text-xs font-bold uppercase tracking-wider">
-            <Lock className="w-4 h-4" />
-            <span>ระบบชำระเงินปลอดภัยผ่าน Stripe Checkout</span>
-          </div>
-
-          <h3 className="text-xl font-serif font-bold text-parchment-cream">
-            ยืนยันอีเมลเพื่อเริ่มต้นชำระเงิน
-          </h3>
-
-          <div className="space-y-3">
-            <label className="block text-xs text-parchment-muted">
-              อีเมลของคุณ (สำหรับรับใบเสร็จ, สิทธิ์การเข้าถึง, Discord/Telegram invite)
+          {/* Tier Switcher Pills inside Checkout Box */}
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-gold-light block">
+              เลือกระดับเรือที่ต้องการอัปเกรด / สมัครสมาชิก:
             </label>
-            <input
-              type="email"
-              required
-              value={checkoutEmail}
-              onChange={(e) => setCheckoutEmail(e.target.value)}
-              placeholder="name@example.com"
-              className="w-full px-4 py-3 rounded-xl bg-slate-dark border border-emerald-border focus:border-gold-warm text-sm text-parchment-cream outline-none"
-            />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedTier('supporter_tier_2');
+                  setUpgradeSuccess(false);
+                }}
+                className={`p-4 rounded-2xl border text-left transition flex items-center justify-between ${
+                  selectedTier === 'supporter_tier_2'
+                    ? 'bg-cyan-950/60 border-cyan-400 text-parchment-cream shadow-md'
+                    : 'bg-black/35 border-emerald-border/60 text-parchment-muted hover:border-cyan-400/50'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <Anchor className="w-4 h-4 text-cyan-300 shrink-0" />
+                  <div>
+                    <div className="text-xs font-bold text-cyan-200">เรือประมงน้ำลึก</div>
+                    <div className="text-[11px] text-parchment-muted">Supporter Member</div>
+                  </div>
+                </div>
+                <span className="font-mono font-bold text-xs text-cyan-300">
+                  {billingCycle === 'yearly' ? '฿1,990/ปี' : '฿199/ด.'}
+                </span>
+              </button>
 
-            <div className="flex items-center gap-4 text-xs text-parchment-muted pt-1">
-              <span className="flex items-center gap-1.5">
-                <QrCode className="w-4 h-4 text-emerald-400" />
-                <span>PromptPay QR</span>
-              </span>
-              <span className="flex items-center gap-1.5">
-                <CreditCard className="w-4 h-4 text-gold-warm" />
-                <span>บัตรเครดิต / เดบิต</span>
-              </span>
-              <span className="flex items-center gap-1.5">
-                <Zap className="w-4 h-4 text-sky-400" />
-                <span>Apple Pay / Google Pay</span>
-              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedTier('founding_tier_3');
+                  setUpgradeSuccess(false);
+                }}
+                className={`p-4 rounded-2xl border text-left transition flex items-center justify-between ${
+                  selectedTier === 'founding_tier_3'
+                    ? 'bg-gold-warm/20 border-gold-warm text-parchment-cream shadow-gold-sm'
+                    : 'bg-black/35 border-emerald-border/60 text-parchment-muted hover:border-gold-warm/50'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <Crown className="w-4 h-4 text-gold-warm fill-current shrink-0" />
+                  <div>
+                    <div className="text-xs font-bold text-gold-light">เรือสำราญทุกมรสุม</div>
+                    <div className="text-[11px] text-parchment-muted">Founding 100 ตลอดชีพ</div>
+                  </div>
+                </div>
+                <span className="font-mono font-bold text-xs text-gold-light">฿3,990</span>
+              </button>
             </div>
+          </div>
 
-            {checkoutError && (
-              <p className="text-xs text-red-400 bg-red-950/40 p-2.5 rounded border border-red-500/30">
-                {checkoutError}
-              </p>
-            )}
+          {upgradeSuccess ? (
+            <div className="p-6 rounded-2xl bg-emerald-950/60 border border-emerald-400/50 text-center space-y-4">
+              <CheckCircle2 className="w-12 h-12 text-emerald-300 mx-auto" />
+              <div className="space-y-1">
+                <h4 className="text-xl font-thai-serif font-bold text-parchment-cream">
+                  ส่งหลักฐานสลิปโอนเงินสำเร็จแล้ว!
+                </h4>
+                <p className="text-xs sm:text-sm text-parchment-muted">
+                  ระบบได้บันทึกคำขออัปเกรดของ <strong>Member #{member?.memberNumber}</strong> เข้าสู่ตารางตรวจสอบของแอดมินเรียบร้อยแล้ว
+                </p>
+              </div>
+              <div className="flex justify-center gap-3 pt-2">
+                <Link
+                  href="/login"
+                  className="px-5 py-2.5 rounded-xl gold-bevel-button text-slate-abyss font-bold text-xs"
+                >
+                  ดูบัตรประจำตัวสมาชิก
+                </Link>
+                <Link
+                  href="/journey"
+                  className="px-5 py-2.5 rounded-xl bg-emerald-card border border-emerald-border text-parchment-cream font-semibold text-xs"
+                >
+                  ไปหน้า Safe for Journey
+                </Link>
+              </div>
+            </div>
+          ) : isLoggedIn && member ? (
+            <form onSubmit={handleUpgradeSubmit} className="space-y-4">
+              <div className="p-3.5 rounded-xl bg-emerald-950/50 border border-emerald-500/30 text-xs text-parchment-cream flex items-center justify-between">
+                <span>
+                  บัญชีปัจจุบัน: <strong className="text-gold-light">Member #{member.memberNumber} • {member.name}</strong>
+                </span>
+                <span className="font-mono text-parchment-muted">{member.email}</span>
+              </div>
 
-            <button
-              onClick={() => handleCheckout(selectedTier)}
-              disabled={isLoading}
-              className="w-full py-3.5 rounded-xl bg-gold-gradient text-slate-abyss font-bold text-sm hover:brightness-110 shadow-gold-sm transition flex items-center justify-center gap-2 mt-4"
-            >
-              {isLoading ? (
-                <div className="w-5 h-5 border-2 border-slate-abyss border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <>
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-gold-light flex items-center gap-1.5">
+                  <Phone className="w-3.5 h-3.5 text-gold-warm" />
+                  <span>เบอร์โทรศัพท์สำหรับติดต่อยืนยันสิทธิ์ *</span>
+                </label>
+                <input
+                  type="tel"
+                  required
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="08X-XXX-XXXX"
+                  className="w-full px-4 py-3 rounded-xl bg-slate-dark border border-emerald-border focus:border-gold-warm text-sm text-parchment-cream outline-none"
+                />
+              </div>
+
+              <QrSlipPaymentBox
+                tier={selectedTier}
+                billingCycle={billingCycle}
+                slipDataUrl={slipDataUrl}
+                onSlipChange={(url) => setSlipDataUrl(url)}
+              />
+
+              {checkoutError && (
+                <p className="text-xs text-red-300 bg-red-950/50 p-3 rounded-xl border border-red-500/30">
+                  {checkoutError}
+                </p>
+              )}
+
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full py-4 rounded-xl gold-bevel-button text-slate-abyss font-bold text-sm hover:brightness-110 shadow-gold-sm transition flex items-center justify-center gap-2 cursor-pointer"
+              >
+                {isLoading ? (
+                  <span>กำลังอัปโหลดสลิป...</span>
+                ) : (
+                  <>
+                    <span>ยืนยันการโอนเงิน & ส่งสลิปให้แอดมินตรวจสอบ</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+            </form>
+          ) : (
+            <div className="space-y-5">
+              {/* Show QR & Slip Preview immediately even before logging in, plus direct CTA to Register with preselected tier */}
+              <QrSlipPaymentBox
+                tier={selectedTier}
+                billingCycle={billingCycle}
+                slipDataUrl={slipDataUrl}
+                onSlipChange={(url) => setSlipDataUrl(url)}
+              />
+
+              <div className="p-4 rounded-2xl bg-gold-warm/10 border border-gold-warm/40 text-center space-y-3">
+                <p className="text-xs sm:text-sm text-parchment-cream">
+                  เพื่อบันทึกสลิปการโอนเงินผูกกับลำดับ <strong>Member Sequence</strong> และเบอร์โทรศัพท์ของคุณ กรุณาดำเนินการต่อในหน้าลงทะเบียนสมาชิก
+                </p>
+                <Link
+                  href={`/login?tab=register&tier=${selectedTier}`}
+                  className="w-full py-3.5 px-6 rounded-xl gold-bevel-button text-slate-abyss font-bold text-sm shadow-gold-sm inline-flex items-center justify-center gap-2 transition hover:brightness-105"
+                >
+                  <UserCheck className="w-4 h-4" />
                   <span>
-                    ดำเนินการชำระเงินสำหรับ{' '}
-                    {selectedTier === 'founding_tier_3' ? 'Founding 100 (฿3,990)' : 'Supporter'}
+                    สมัครสมาชิกพร้อมแนบสลิปสำหรับ{' '}
+                    {selectedTier === 'founding_tier_3' ? 'Founding 100 (฿3,990)' : 'Supporter (฿199)'}
                   </span>
                   <ArrowRight className="w-4 h-4" />
-                </>
-              )}
-            </button>
-          </div>
+                </Link>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* FAQ Section */}
         <div className="max-w-3xl mx-auto space-y-6 pt-8">
-          <h3 className="text-2xl font-serif font-bold text-center text-parchment-cream flex items-center justify-center gap-2">
+          <h3 className="text-2xl font-thai-serif font-bold text-center text-parchment-cream flex items-center justify-center gap-2">
             <HelpCircle className="w-5 h-5 text-gold-warm" />
             <span>คำถามที่พบบ่อย (FAQ)</span>
           </h3>
@@ -359,28 +325,19 @@ export default function PricingPage() {
           <div className="space-y-4 text-xs sm:text-sm text-parchment-muted">
             <div className="p-4 rounded-xl bg-emerald-card/50 border border-emerald-border/60">
               <h4 className="font-bold text-parchment-cream mb-1">
-                การเชื่อมต่อ Discord และ Telegram ทำงานอย่างไรหลังชำระเงิน?
+                การตรวจสอบสลิปโอนเงินใช้เวลานานเท่าใด และจะต่อ Stripe เมื่อไหร่?
               </h4>
               <p>
-                เมื่อคุณชำระเงินผ่าน Stripe สำเร็จ ระบบ Webhook หลังบ้านจะเชื่อมต่อกับ Discord Bot API โดยอัตโนมัติเพื่อมอบ Role ประจำ Tier ให้คุณทันที และสร้างลิงก์เชิญพิเศษเฉพาะคุณสำหรับเข้ากลุ่ม Telegram ส่วนตัว
+                ในช่วงเริ่มต้น คุณสามารถสแกน QR โอนเงินและแนบไฟล์สลิปในหน้าสมัครได้ทันที แอดมินจะตรวจสอบผ่านตารางสมาชิกหลังบ้านและเปิดสิทธิ์ให้โดยเร็วที่สุด และเร็วๆ นี้ระบบจะเชื่อมต่อกับ Stripe Checkout เพื่อตัดบัตรและอนุมัติอัตโนมัติทันที
               </p>
             </div>
 
             <div className="p-4 rounded-xl bg-emerald-card/50 border border-emerald-border/60">
               <h4 className="font-bold text-parchment-cream mb-1">
-                ระบบ Watermark บน E-book ทำงานอย่างไร?
+                ความแตกต่างหลักระหว่าง เรือประมงน้ำลึก (Supporter) กับ เรือสำราญทุกมรสุม (Founding 100)?
               </h4>
               <p>
-                สำหรับผู้ซื้อ E-book หรือสมาชิก Founding 100 ระบบจะประทับตราอีเมลและรหัสคำสั่งซื้อของคุณลงบนหัวกระดาษของไฟล์ PDF ทุกหน้า เพื่อรับรองความเป็นเจ้าของลิขสิทธิ์เฉพาะคุณ
-              </p>
-            </div>
-
-            <div className="p-4 rounded-xl bg-emerald-card/50 border border-emerald-border/60">
-              <h4 className="font-bold text-parchment-cream mb-1">
-                สามารถยกเลิกสมาชิกระดับ Supporter ได้ตลอดเวลาหรือไม่?
-              </h4>
-              <p>
-                ยกเลิกได้ตลอดเวลาผ่านหน้าโปรไฟล์ของคุณ โดยสิทธิ์การเข้าถึงจะยังคงอยู่จนครบกำหนดรอบบิลนั้นๆ
+                เรือประมงน้ำลึก (฿199/เดือน) จะปลดล็อกบทความทะเลน้ำลึกตามรอบสัปดาห์และข่าว Deepdive ทั้งหมด ส่วนเรือสำราญทุกมรสุม (฿3,990 จ่ายครั้งเดียวตลอดชีพ) จะปลดล็อกครบทั้ง 57 บทความทันทีโดยไม่ต้องรอรอบสัปดาห์ พร้อมรับ Master E-book 200+ หน้า
               </p>
             </div>
           </div>

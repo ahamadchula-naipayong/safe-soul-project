@@ -2,34 +2,37 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter, usePathname } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
-import { useAudio } from '@/context/AudioContext';
 import { useAuth } from '@/context/AuthContext';
-import { FreeEbookModal } from '@/components/FreeEbookModal';
 import {
   Compass,
   ShoppingBag,
   Menu,
   X,
-  Radio,
-  BookOpen,
   Crown,
-  Sparkles,
   SlidersHorizontal,
   UserCheck,
-  Layers,
-  Coffee,
   ChevronRight,
-  ExternalLink,
   FileText,
+  Mail,
+  Anchor,
 } from 'lucide-react';
 
 export function Navbar() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [isEbookModalOpen, setIsEbookModalOpen] = useState(false);
   const { totalItemsCount, openCart } = useCart();
-  const { currentTrack, isPlaying } = useAudio();
   const { member, isLoggedIn } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const handleCartClick = () => {
+    if (totalItemsCount === 0 && pathname !== '/store') {
+      router.push('/store');
+    } else {
+      openCart();
+    }
+  };
 
   // Prevent background scroll when off-canvas drawer is open
   useEffect(() => {
@@ -60,9 +63,9 @@ export function Navbar() {
         {/* Subtle Luxury Gold Filament at the top */}
         <div className="h-[2px] w-full bg-gradient-to-r from-transparent via-gold-warm/80 to-transparent" />
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-3">
           {/* Left: Off-canvas Drawer Trigger & Brand Logo (Acting as Home Button) */}
-          <div className="flex items-center gap-3 sm:gap-4">
+          <div className="flex items-center gap-3 sm:gap-4 shrink-0">
             {/* Auto-hide Off-canvas Drawer Trigger Button */}
             <button
               onClick={() => setIsDrawerOpen(true)}
@@ -80,32 +83,46 @@ export function Navbar() {
             <Link
               href="/"
               className="flex items-center gap-3 group transition transform hover:opacity-95"
-              aria-label="หน้าแรก Safe Soul Project"
+              aria-label="หน้าแรก The Fitrah Shield"
               title="กลับสู่หน้าแรก"
             >
-              <div className="relative w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-emerald-surface via-[#122A1E] to-slate-abyss border border-gold-warm/50 flex items-center justify-center shadow-gold-sm group-hover:border-gold-light group-hover:shadow-gold-md transition duration-500">
-                <Compass className="w-5 h-5 sm:w-6 sm:h-6 text-gold-warm group-hover:rotate-45 group-hover:text-gold-light transition duration-500" />
-                <div className="absolute inset-0 rounded-xl bg-gold-warm/10 opacity-0 group-hover:opacity-100 transition duration-500" />
+              <div className="relative w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-emerald-surface via-[#122A1E] to-slate-abyss border border-gold-warm/50 flex items-center justify-center p-1 shadow-gold-sm group-hover:border-gold-light group-hover:shadow-gold-md transition duration-500 overflow-hidden">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/images/logo/logo-transparent.png"
+                  alt="The Fitrah Shield Logo"
+                  className="w-full h-full object-contain group-hover:scale-110 transition duration-500"
+                />
               </div>
               <div className="flex flex-col">
                 <span className="font-cinzel font-extrabold text-sm sm:text-base tracking-[0.15em] text-parchment-cream group-hover:text-gold-luxury transition duration-300">
-                  THE SAFE SOUL
+                  THE FITRAH SHIELD
                 </span>
                 <span className="text-[10px] text-gold-warm/90 font-thai font-semibold tracking-wider uppercase flex items-center gap-1">
-                  <span>4 มิติแห่งปัญญา</span>
-                  <span className="text-white/30">•</span>
-                  <span>Safe from the Dunya</span>
+                  <span>เกราะพิทักษ์ฟิฏเราะฮฺ</span>
+                  <span className="text-white/30 hidden xs:inline">•</span>
+                  <span className="hidden xs:inline">4 มิติแห่งปัญญา</span>
                 </span>
               </div>
             </Link>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex items-center gap-2.5 sm:gap-3">
+          {/* Right Action Buttons */}
+          <div className="flex items-center gap-2 sm:gap-2.5">
+            {/* NEW: "โดดขึ้นเรือเลย!" Quick Jump to /journey (All Articles Hub) */}
+            <Link
+              href="/journey"
+              className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl gold-bevel-button text-slate-abyss font-extrabold text-xs shadow-gold-sm transition hover:scale-105 active:scale-95"
+              title="โดดขึ้นเรือเลย! • เข้าสู่คลังบทความ Safe for Journey ทั้งหมด"
+            >
+              <Anchor className="w-3.5 h-3.5 text-slate-abyss" />
+              <span>โดดขึ้นเรือเลย!</span>
+            </Link>
+
             {/* Direct Link to News Deepdive */}
             <Link
               href="/news"
-              className="hidden md:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-card/90 hover:bg-emerald-surface border border-gold-warm/50 hover:border-gold-light text-gold-light font-semibold text-xs shadow-gold-sm transition hover:scale-105 active:scale-95"
+              className="hidden lg:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-card/90 hover:bg-emerald-surface border border-gold-warm/50 hover:border-gold-light text-gold-light font-semibold text-xs shadow-gold-sm transition hover:scale-105 active:scale-95"
               title="สำนักข่าว The Key of Return • วิเคราะห์สถานการณ์โลกและภูมิรัฐศาสตร์"
             >
               <FileText className="w-3.5 h-3.5 text-gold-warm" />
@@ -133,28 +150,41 @@ export function Navbar() {
               </Link>
             )}
 
-            {/* Free E-book CTA */}
-            <button
-              onClick={() => setIsEbookModalOpen(true)}
-              className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-surface/80 hover:bg-emerald-light border border-gold/40 text-gold-light font-semibold text-xs shadow-gold-sm transition hover:scale-105 active:scale-95"
+            {/* Updated: "รับ E-Book ฟรี" -> "ติดต่อเรา" */}
+            <Link
+              href="/contact"
+              className="hidden md:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-surface/80 hover:bg-emerald-light border border-gold/40 text-gold-light font-semibold text-xs shadow-gold-sm transition hover:scale-105 active:scale-95"
+              title="ติดต่อเรา • ส่งข้อความ พูดคุย ร้องขอ หรือแจ้งปัญหา"
             >
-              <BookOpen className="w-3.5 h-3.5 text-gold-warm" />
-              <span>รับ E-Book ฟรี</span>
-            </button>
+              <Mail className="w-3.5 h-3.5 text-gold-warm" />
+              <span>ติดต่อเรา</span>
+            </Link>
 
-            {/* Cart Button */}
-            <button
-              onClick={openCart}
-              className="relative p-2.5 rounded-xl bg-emerald-dark/90 hover:bg-emerald-surface border border-gold/30 text-parchment-cream hover:text-gold-light transition shadow-sm"
-              aria-label="ตะกร้าสินค้า"
-            >
-              <ShoppingBag className="w-5 h-5" />
-              {totalItemsCount > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full gold-bevel-button text-slate-abyss text-[11px] font-bold flex items-center justify-center shadow-gold-sm transition-transform">
-                  {totalItemsCount}
-                </span>
-              )}
-            </button>
+            {/* Cart Button: Navigates directly to /store when empty, or opens CartDrawer when items exist */}
+            {totalItemsCount === 0 && pathname !== '/store' ? (
+              <Link
+                href="/store"
+                className="relative p-2.5 rounded-xl bg-emerald-dark/90 hover:bg-emerald-surface border border-gold/30 hover:border-gold-warm text-parchment-cream hover:text-gold-light transition shadow-sm cursor-pointer flex items-center gap-1.5"
+                aria-label="ไปยังร้านค้า Safe for Support"
+                title="ยังไม่มีสินค้าในตะกร้า • คลิกเพื่อไปยังหน้าร้านค้า Safe for Support ทันที"
+              >
+                <ShoppingBag className="w-5 h-5 text-gold-warm" />
+              </Link>
+            ) : (
+              <button
+                onClick={openCart}
+                className="relative p-2.5 rounded-xl bg-emerald-dark/90 hover:bg-emerald-surface border border-gold/30 hover:border-gold-warm text-parchment-cream hover:text-gold-light transition shadow-sm cursor-pointer"
+                aria-label="เปิดตะกร้าสินค้า Safe for Support"
+                title="เปิดตะกร้าสินค้าและสินค้าแนะนำ"
+              >
+                <ShoppingBag className="w-5 h-5 text-gold-warm" />
+                {totalItemsCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full gold-bevel-button text-slate-abyss text-[11px] font-bold flex items-center justify-center shadow-gold-sm transition-transform">
+                    {totalItemsCount}
+                  </span>
+                )}
+              </button>
+            )}
           </div>
         </div>
       </header>
@@ -177,19 +207,29 @@ export function Navbar() {
               {/* Drawer Header */}
               <div className="space-y-6">
                 <div className="flex items-center justify-between pb-5 border-b border-emerald-border/60">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-emerald-surface border border-gold-warm/40 flex items-center justify-center text-gold-warm">
-                      <Compass className="w-5 h-5" />
+                  <Link
+                    href="/"
+                    onClick={() => setIsDrawerOpen(false)}
+                    className="flex items-center gap-3 group cursor-pointer hover:opacity-90 transition"
+                    title="กลับสู่หน้าแรก The Fitrah Shield"
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-surface via-[#122A1E] to-slate-abyss border border-gold-warm/40 flex items-center justify-center p-1 text-gold-warm shadow-gold-sm overflow-hidden group-hover:scale-105 transition-transform">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src="/images/logo/logo-transparent.png"
+                        alt="The Fitrah Shield Logo"
+                        className="w-full h-full object-contain"
+                      />
                     </div>
                     <div>
-                      <div className="font-cinzel font-bold text-sm text-parchment-cream tracking-wider">
-                        THE SAFE SOUL
+                      <div className="font-cinzel font-bold text-sm text-parchment-cream tracking-wider group-hover:text-gold-light transition">
+                        THE FITRAH SHIELD
                       </div>
                       <div className="text-[10px] text-gold-warm/80 font-medium">
-                        4 มิติแห่งปัญญา
+                        เกราะพิทักษ์ฟิฏเราะฮฺ • 4 มิติแห่งปัญญา
                       </div>
                     </div>
-                  </div>
+                  </Link>
 
                   <button
                     onClick={() => setIsDrawerOpen(false)}
@@ -235,28 +275,39 @@ export function Navbar() {
                     <ChevronRight className="w-4 h-4 text-gold-warm group-hover:translate-x-1 transition" />
                   </Link>
 
+                  {/* Updated Sidebar Item: Safe for Journey -> /journey */}
                   <Link
-                    href="/"
+                    href="/journey"
                     onClick={() => setIsDrawerOpen(false)}
-                    className="flex items-center justify-between p-3 rounded-xl bg-emerald-card/40 hover:bg-emerald-surface/90 border border-transparent hover:border-gold-warm/30 text-parchment-cream transition group"
+                    className="flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-emerald-surface/80 via-emerald-card/60 to-black/40 border border-gold-warm/40 hover:border-gold-light text-parchment-cream transition group shadow-sm"
                   >
                     <div className="flex items-center gap-3">
-                      <Compass className="w-4 h-4 text-gold-warm" />
-                      <span className="text-sm font-semibold">หน้าแรก</span>
+                      <div className="w-8 h-8 rounded-lg bg-gold-warm/15 border border-gold-warm/40 flex items-center justify-center text-gold-warm group-hover:scale-110 transition-transform">
+                        <Compass className="w-4 h-4 text-gold-warm" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-bold text-gold-light flex items-center gap-1.5">
+                          <span>Safe for Journey</span>
+                        </div>
+                        <div className="text-xs text-parchment-muted font-light">
+                          มุ่งสู่ทะเลอันไร้ที่สิ้นสุดกัน
+                        </div>
+                      </div>
                     </div>
-                    <ChevronRight className="w-4 h-4 text-parchment-muted group-hover:translate-x-1 transition" />
+                    <ChevronRight className="w-4 h-4 text-gold-warm group-hover:translate-x-1 transition" />
                   </Link>
 
+                  {/* News Archive Link in Drawer as well for mobile convenience */}
                   <Link
-                    href="/articles/art-of-self-awareness"
+                    href="/news"
                     onClick={() => setIsDrawerOpen(false)}
                     className="flex items-center justify-between p-3 rounded-xl hover:bg-emerald-surface/80 border border-transparent hover:border-emerald-border text-parchment-cream transition group"
                   >
                     <div className="flex items-center gap-3">
-                      <BookOpen className="w-4 h-4 text-gold-warm" />
+                      <FileText className="w-4 h-4 text-gold-warm" />
                       <div>
-                        <div className="text-sm font-semibold">อ่านบทความ & พอดแคสต์</div>
-                        <div className="text-xs text-parchment-muted font-light">Deep Mode (Easy Mode: Upcoming)</div>
+                        <div className="text-sm font-semibold">สำนักข่าว The Key of Return</div>
+                        <div className="text-xs text-parchment-muted font-light">รายงานและบทวิเคราะห์สถานการณ์โลก</div>
                       </div>
                     </div>
                     <ChevronRight className="w-4 h-4 text-parchment-muted group-hover:translate-x-1 transition" />
@@ -301,7 +352,7 @@ export function Navbar() {
                       <UserCheck className="w-4 h-4 text-emerald-300" />
                       <div>
                         <div className="text-sm font-semibold text-emerald-300">พอร์ทัลสมาชิก (Member Sanctuary)</div>
-                        <div className="text-xs text-parchment-muted font-light">คลังเสียง, สรุปบทเรียน & บันทึก</div>
+                        <div className="text-xs text-parchment-muted font-light">สำรวจคลังสัมภาระบนเรือ</div>
                       </div>
                     </div>
                     <ChevronRight className="w-4 h-4 text-parchment-muted group-hover:translate-x-1 transition" />
@@ -321,32 +372,25 @@ export function Navbar() {
                 </nav>
               </div>
 
-              {/* Drawer Footer CTA */}
+              {/* Drawer Footer CTA -> Contact Us */}
               <div className="pt-5 border-t border-emerald-border/60 space-y-3">
-                <button
-                  onClick={() => {
-                    setIsDrawerOpen(false);
-                    setIsEbookModalOpen(true);
-                  }}
-                  className="w-full py-3 px-4 rounded-xl gold-bevel-button text-slate-abyss font-bold text-center text-xs shadow-gold-sm transition hover:brightness-105"
+                <Link
+                  href="/contact"
+                  onClick={() => setIsDrawerOpen(false)}
+                  className="w-full py-3 px-4 rounded-xl gold-bevel-button text-slate-abyss font-bold text-center text-xs shadow-gold-sm transition hover:brightness-105 flex items-center justify-center gap-2"
                 >
-                  รับฟรี E-Book 7 บทหลัก
-                </button>
+                  <Mail className="w-4 h-4" />
+                  <span>ติดต่อเรา (พูดคุย / ร้องขอ / แจ้งเรื่อง)</span>
+                </Link>
 
                 <div className="text-[11px] text-center text-parchment-muted/60 font-light">
-                  © Safe Soul Project • Digital Sanctuary
+                  © The Fitrah Shield • Digital Sanctuary
                 </div>
               </div>
             </div>
           </div>
         </div>
       )}
-
-      {/* Free Ebook Modal */}
-      <FreeEbookModal
-        isOpen={isEbookModalOpen}
-        onClose={() => setIsEbookModalOpen(false)}
-      />
     </>
   );
 }

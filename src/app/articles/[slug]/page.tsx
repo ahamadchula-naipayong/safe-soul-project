@@ -9,6 +9,7 @@ import { VideoPlayer } from '@/components/VideoPlayer';
 import { SponsorSlot } from '@/components/SponsorSlot';
 import { MarkdownRenderer } from '@/components/MarkdownRenderer';
 import { useAudio } from '@/context/AudioContext';
+import { useAuth } from '@/context/AuthContext';
 import { ContentMode } from '@/types';
 import {
   Headphones,
@@ -58,7 +59,9 @@ export default function ArticlePage() {
 
   const ambientAudioRef = useRef<HTMLAudioElement | null>(null);
 
+  const { member } = useAuth();
   const { playTrack, pauseTrack, currentTrack, isPlaying } = useAudio();
+  const [audioPromptMsg, setAudioPromptMsg] = useState<string | null>(null);
 
   // Find current chapter
   const chapter = mockChapters.find((c) => c.slug === slug) || mockChapters[0];
@@ -137,6 +140,14 @@ export default function ArticlePage() {
   }, []);
 
   const handleAudioToggle = () => {
+    const hasAudioAccess =
+      member?.tier === 'supporter_tier_2' || member?.tier === 'founding_tier_3';
+    if (!hasAudioAccess) {
+      setAudioPromptMsg('ระบบเสียงพอดแคสต์เปิดให้เฉพาะสมาชิกเรือประมงน้ำลึก (Supporter) และเรือสำราญทุกมรสุม (Founding 100) เท่านั้น');
+      setTimeout(() => setAudioPromptMsg(null), 5000);
+      return;
+    }
+
     if (isCurrentAudioPlaying) {
       pauseTrack();
     } else {
@@ -222,6 +233,18 @@ export default function ArticlePage() {
       {/* ---------------------------------------------------------------------- */}
       {/* Reader Sanctuary Sticky Toolbar */}
       {/* ---------------------------------------------------------------------- */}
+      {audioPromptMsg && (
+        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl bg-black/95 border border-gold-warm text-gold-light text-xs sm:text-sm font-semibold shadow-2xl backdrop-blur-md flex items-center gap-3 animate-fade-in">
+          <Headphones className="w-4 h-4 text-gold-warm shrink-0" />
+          <span>{audioPromptMsg}</span>
+          <Link
+            href="/pricing"
+            className="px-2.5 py-1 rounded-lg bg-gold-warm text-slate-abyss text-xs font-bold hover:brightness-110"
+          >
+            ดูแพ็กเกจ
+          </Link>
+        </div>
+      )}
       <header className="sticky top-0 z-30 bg-[#091510]/95 backdrop-blur-md py-3 px-4 sm:px-6 lg:px-8 border-b border-emerald-border/70 shadow-lg">
         <div className="max-w-4xl mx-auto flex flex-wrap items-center justify-between gap-4">
           {/* Dual-Mode Toggle */}
@@ -313,6 +336,32 @@ export default function ArticlePage() {
             >
               <Edit3 className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">บันทึกข้อคิด</span>
+            </button>
+
+            {/* Podcast Audio Toggle */}
+            <button
+              onClick={handleAudioToggle}
+              title="ฟังเสียงพอดแคสต์บรรยาย (เฉพาะสมาชิก Supporter และ Founding 100)"
+              className={`px-3 py-1.5 rounded-xl border flex items-center gap-1.5 transition ${
+                isCurrentAudioPlaying
+                  ? 'bg-gold-warm text-slate-abyss border-gold-light font-bold shadow-gold-sm'
+                  : 'bg-emerald-dark/80 text-parchment-muted hover:text-white border-emerald-border/70'
+              }`}
+            >
+              {isCurrentAudioPlaying ? (
+                <>
+                  <Pause className="w-3.5 h-3.5 fill-current" />
+                  <span className="hidden sm:inline">หยุดเสียง</span>
+                </>
+              ) : (
+                <>
+                  <Headphones className="w-3.5 h-3.5 text-gold-warm" />
+                  <span className="hidden sm:inline">พอดแคสต์</span>
+                  {!(member?.tier === 'supporter_tier_2' || member?.tier === 'founding_tier_3') && (
+                    <Lock className="w-3 h-3 text-parchment-muted/80 ml-0.5" />
+                  )}
+                </>
+              )}
             </button>
 
             {/* Share Button */}
@@ -484,14 +533,14 @@ export default function ArticlePage() {
               <div className="p-5 rounded-2xl bg-[#0F281B] border border-gold-warm/40 text-xs sm:text-sm text-parchment-muted space-y-2">
                 <div className="flex items-center gap-2 text-gold-light font-bold">
                   <Sparkles className="w-4 h-4 text-gold-warm" />
-                  <span>Easy Mode • Upcoming (เร็วๆ นี้)</span>
+                  <span>อ่าน Deep Mode ก่อนนะครับ โหมดนี้จะเพิ่มให้ทีหลังนะครับ</span>
                 </div>
                 <p>
-                  บทความในโหมดภาษาเล่าเรื่องย่อยง่าย (Easy Mode) กำลังอยู่ระหว่างการจัดทำเรียบเรียง ท่านสามารถสลับไปอ่านฉบับเต็มที่มีข้อมูลเชิงลึกและการอ้างอิงครบถ้วนใน <strong>Deep Mode</strong> ได้ทันที
+                  บทความในโหมดภาษาง่าย (Easy Mode) กำลังอยู่ระหว่างการจัดทำเรียบเรียง เพื่อความสมบูรณ์และถูกต้องของเนื้อหา แนะนำให้ท่านเข้าศึกษาฉบับเต็มใน <strong>Deep Mode</strong> ก่อนนะครับ
                 </p>
                 <button
                   onClick={() => setMode('deep')}
-                  className="mt-2 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl gold-bevel-button text-slate-abyss font-bold text-xs shadow-sm"
+                  className="mt-2 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl gold-bevel-button text-slate-abyss font-bold text-xs shadow-sm cursor-pointer"
                 >
                   <Brain className="w-3.5 h-3.5" />
                   <span>เปิดอ่านใน Deep Mode (ฉบับสมบูรณ์)</span>

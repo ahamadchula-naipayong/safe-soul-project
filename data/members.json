@@ -4,19 +4,32 @@
     "memberNumber": 1,
     "username": "admin",
     "email": "admin@safesoul.com",
+    "phone": "081-999-0001",
     "password": "password123",
     "name": "ผู้ดูแลระบบ The Safe Soul",
     "tier": "founding_tier_3",
-    "createdAt": "2026-01-01T00:00:00.000Z"
+    "paymentStatus": "verified",
+    "paymentAmount": 3990,
+    "billingCycle": "lifetime",
+    "notes": "ผู้ก่อตั้งและผู้ดูแลระบบหลัก",
+    "createdAt": "2026-01-01T00:00:00.000Z",
+    "ebookClaimed": true,
+    "ebookClaimedAt": "2026-11-09T15:40:04.415Z",
+    "updatedAt": "2026-11-09T15:40:04.415Z"
   },
   {
     "id": "mem_002",
     "memberNumber": 2,
     "username": "founding02",
     "email": "founding02@safesoul.com",
+    "phone": "089-123-4502",
     "password": "password123",
     "name": "ผู้ร่วมก่อตั้งลำดับที่ 2",
     "tier": "founding_tier_3",
+    "paymentStatus": "verified",
+    "paymentAmount": 3990,
+    "billingCycle": "lifetime",
+    "notes": "ชำระครบถ้วน Founding 100",
     "createdAt": "2026-01-15T10:30:00.000Z"
   },
   {
@@ -24,9 +37,14 @@
     "memberNumber": 3,
     "username": "seeker_soul",
     "email": "soul.seeker@example.com",
+    "phone": "086-555-0303",
     "password": "password123",
     "name": "ผู้แสวงหาปัญญา",
     "tier": "supporter_tier_2",
+    "paymentStatus": "verified",
+    "paymentAmount": 199,
+    "billingCycle": "monthly",
+    "notes": "สมาชิกรายเดือน เรือประมงน้ำลึก",
     "createdAt": "2026-02-01T14:20:00.000Z"
   },
   {
@@ -34,9 +52,14 @@
     "memberNumber": 4,
     "username": "new_explorer",
     "email": "explorer@safesoul.project",
+    "phone": "092-888-0404",
     "password": "password123",
     "name": "นักเดินทางผู้ตื่นรู้",
     "tier": "founding_tier_3",
+    "paymentStatus": "verified",
+    "paymentAmount": 3990,
+    "billingCycle": "lifetime",
+    "notes": "ผู้ร่วมก่อตั้งตลอดชีพ",
     "createdAt": "2026-10-30T07:40:07.394Z"
   },
   {
@@ -44,9 +67,14 @@
     "memberNumber": 5,
     "username": "free_member",
     "email": "free.member@safesoul.project",
+    "phone": "084-777-0505",
     "password": "password123",
     "name": "สมาชิกทั่วไป (Free Tier)",
     "tier": "free_tier_1",
+    "paymentStatus": "free",
+    "paymentAmount": 0,
+    "billingCycle": "free",
+    "notes": "สมัครสมาชิกเรือประมงน้ำตื้น",
     "createdAt": "2026-10-31T00:00:00.000Z"
   }
 ]

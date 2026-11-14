@@ -11,9 +11,30 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { username, email, password, name, tier } = body;
+    const {
+      username,
+      email,
+      phone,
+      password,
+      name,
+      tier,
+      paymentSlipDataUrl,
+      paymentAmount,
+      billingCycle,
+    } = body;
 
-    const result = registerMember({ username, email, password, name, tier });
+    const result = registerMember({
+      username,
+      email,
+      phone,
+      password,
+      name,
+      tier,
+      paymentSlipDataUrl,
+      paymentAmount,
+      billingCycle,
+    });
+
     if (!result.success || !result.member) {
       return NextResponse.json({ error: result.error }, { status: 400 });
     }

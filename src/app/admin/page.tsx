@@ -1,27 +1,53 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { mockSeries, mockChapters, mockFoundingQuota, mockSponsors } from '@/lib/supabase/mockData';
+import { mockFoundingQuota, mockSponsors } from '@/lib/supabase/mockData';
 import {
-  Layers,
   BookOpen,
   Crown,
   Megaphone,
   Sparkles,
-  TrendingUp,
-  Image,
   ArrowRight,
-  ShieldCheck,
   CheckCircle,
   Users,
-  Settings,
-  Plus,
+  ShoppingBag,
+  Mail,
+  FileSpreadsheet,
+  Clock,
 } from 'lucide-react';
 
 export default function AdminHubPage() {
   const [quota, setQuota] = useState(mockFoundingQuota);
   const [quotaSaved, setQuotaSaved] = useState(false);
+
+  const [stats, setStats] = useState({
+    oceanArticles: 57,
+    membersTotal: 5,
+    pendingSlips: 0,
+    storeTotal: 5,
+    storeDrafts: 0,
+    storeScheduled: 0,
+    unreadContacts: 0,
+  });
+
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/admin/members', { cache: 'no-store' }).then((r) => r.json()).catch(() => null),
+      fetch('/api/admin/store', { cache: 'no-store' }).then((r) => r.json()).catch(() => null),
+      fetch('/api/contact', { cache: 'no-store' }).then((r) => r.json()).catch(() => null),
+    ]).then(([memData, storeData, contactData]) => {
+      setStats((prev) => ({
+        ...prev,
+        membersTotal: memData?.total ?? prev.membersTotal,
+        pendingSlips: memData?.counts?.pending_slip ?? 0,
+        storeTotal: storeData?.total ?? prev.storeTotal,
+        storeDrafts: storeData?.counts?.draft ?? 0,
+        storeScheduled: storeData?.counts?.scheduled ?? 0,
+        unreadContacts: contactData?.unreadCount ?? 0,
+      }));
+    });
+  }, []);
 
   const handleAdjustQuota = (newClaimed: number) => {
     if (newClaimed < 0 || newClaimed > quota.max_slots) return;
@@ -36,162 +62,153 @@ export default function AdminHubPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-dark text-parchment-cream py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-slate-dark text-parchment-cream py-12 px-4 sm:px-6 lg:px-8 font-thai">
       <div className="max-w-7xl mx-auto space-y-10">
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-gold/30 pb-6">
           <div>
             <div className="inline-flex items-center gap-2 text-gold-warm text-xs font-cinzel font-bold uppercase tracking-widest mb-1.5">
               <Sparkles className="w-4 h-4" />
-              <span>THE SAFE SOUL EXECUTIVE CONTROL CENTER</span>
+              <span>THE FITRAH SHIELD EXECUTIVE CONTROL CENTER</span>
             </div>
-            <h1 className="text-3xl sm:text-4xl font-serif font-black text-parchment-cream">
-              ระบบควบคุม & จัดการเนื้อหาหลังบ้าน
+            <h1 className="text-3xl sm:text-4xl font-thai-serif font-black text-parchment-cream">
+              ระบบควบคุม & จัดการเนื้อหาหลังบ้าน (Admin Control)
             </h1>
-            <p className="text-xs sm:text-sm text-parchment-muted mt-1">
-              แผงควบคุมระดับสูง ออกแบบให้ใช้งานง่าย เปลี่ยนรูปภาพ แก้ไขบทความ Easy/Deep Mode และคุมโควตาได้ในคลิกเดียว
+            <p className="text-xs sm:text-sm text-parchment-muted mt-1 font-light">
+              จัดการคลังบทความมหาสมุทร, ส่วน Safe for Support (Draft/ตั้งเวลา/Publish), ตารางสมาชิก Excel/CSV, ข้อความติดต่อเรา และสปอนเซอร์ครบวงจร
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <Link
+              href="/admin/guide"
+              className="px-4 py-2.5 rounded-xl bg-cyan-950/90 hover:bg-cyan-900 border border-cyan-400/50 text-cyan-200 font-bold text-xs flex items-center gap-1.5 transition"
+            >
+              <Sparkles className="w-4 h-4 text-cyan-300" />
+              <span>คู่มือ Admin & การเพิ่ม Co-Admin</span>
+            </Link>
+            <Link
+              href="/admin/store"
+              className="px-4 py-2.5 rounded-xl bg-emerald-card hover:bg-emerald-surface border border-gold-warm/40 text-gold-light font-bold text-xs flex items-center gap-1.5 transition"
+            >
+              <ShoppingBag className="w-4 h-4 text-gold-warm" />
+              <span>จัดการ Safe for Support</span>
+            </Link>
             <Link
               href="/admin/articles"
-              className="px-4 py-2.5 rounded-xl gold-bevel-button text-slate-abyss font-bold text-xs flex items-center gap-2 shadow-gold-sm"
+              className="px-5 py-2.5 rounded-xl gold-bevel-button text-slate-abyss font-bold text-xs flex items-center gap-2 shadow-gold-sm"
             >
-              <BookOpen className="w-4 h-4 fill-current" />
-              <span>จัดการ 35 บทความ</span>
+              <BookOpen className="w-4 h-4" />
+              <span>จัดการบทความ</span>
             </Link>
           </div>
         </div>
 
-        {/* Quick Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {/* Total Chapters */}
-          <div className="luxury-glass rounded-2xl p-6 relative overflow-hidden">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-medium text-parchment-muted">จำนวนบทความทั้งหมด</span>
-              <BookOpen className="w-5 h-5 text-gold-warm" />
+        {/* Quick Overview Metrics */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className="p-5 rounded-2xl bg-emerald-card/60 border border-emerald-border space-y-2">
+            <div className="flex items-center justify-between text-xs text-parchment-muted">
+              <span>บทความ Safe for Journey</span>
+              <BookOpen className="w-4 h-4 text-gold-warm" />
             </div>
-            <div className="text-3xl font-serif font-black text-parchment-light">
-              {mockChapters.length} <span className="text-sm font-sans text-parchment-muted">/ 35 ตอน</span>
+            <div className="text-2xl font-mono font-bold text-parchment-cream">
+              {stats.oceanArticles} บทความ
             </div>
-            <div className="mt-3 flex items-center gap-1.5 text-xs text-emerald-400">
-              <CheckCircle className="w-3.5 h-3.5" />
-              <span>รองรับ Dual-Mode ทุกบท</span>
+            <div className="text-[11px] text-emerald-400">
+              ทะเลน้ำตื้น 7 เกาะ + ทะเลน้ำลึก 50 เกาะย่อย
             </div>
           </div>
 
-          {/* Founding 100 Quota */}
-          <div className="luxury-glass rounded-2xl p-6 relative overflow-hidden">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-medium text-parchment-muted">สิทธิ์ Founding 100 ที่เหลือ</span>
-              <Crown className="w-5 h-5 text-amber-400" />
+          <div className="p-5 rounded-2xl bg-emerald-card/60 border border-emerald-border space-y-2">
+            <div className="flex items-center justify-between text-xs text-parchment-muted">
+              <span>รายการ Safe for Support</span>
+              <ShoppingBag className="w-4 h-4 text-gold-warm" />
             </div>
-            <div className="text-3xl font-serif font-black text-gold-light">
-              {quota.remaining_slots} <span className="text-sm font-sans text-parchment-muted">สิทธิ์</span>
+            <div className="text-2xl font-mono font-bold text-gold-light">
+              {stats.storeTotal} รายการ
             </div>
-            <div className="mt-3 flex items-center gap-1.5 text-xs text-gold-warm">
-              <TrendingUp className="w-3.5 h-3.5" />
-              <span>จองแล้ว {quota.claimed_slots}% ของโควตา</span>
+            <div className="text-[11px] text-parchment-muted">
+              Draft {stats.storeDrafts} • ตั้งเวลา {stats.storeScheduled}
             </div>
           </div>
 
-          {/* Active Sponsors */}
-          <div className="luxury-glass rounded-2xl p-6 relative overflow-hidden">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-medium text-parchment-muted">แบนเนอร์สปอนเซอร์</span>
-              <Megaphone className="w-5 h-5 text-sky-400" />
+          <div className="p-5 rounded-2xl bg-emerald-card/60 border border-emerald-border space-y-2">
+            <div className="flex items-center justify-between text-xs text-parchment-muted">
+              <span>สมาชิกทั้งหมดในตาราง</span>
+              <Users className="w-4 h-4 text-gold-warm" />
             </div>
-            <div className="text-3xl font-serif font-black text-parchment-light">
-              {mockSponsors.filter((s) => s.is_active).length} <span className="text-sm font-sans text-parchment-muted">แบนเนอร์</span>
+            <div className="text-2xl font-mono font-bold text-parchment-cream">
+              {stats.membersTotal} บัญชี
             </div>
-            <div className="mt-3 text-xs text-parchment-muted">
-              เปิดแสดงผลในหน้าบทความ & พอดแคสต์
+            <div className="text-[11px] text-amber-300">
+              {stats.pendingSlips > 0
+                ? `รอตรวจสอบสลิปโอนเงิน ${stats.pendingSlips} รายการ!`
+                : 'ตรวจสอบสลิปครบถ้วนแล้ว'}
             </div>
           </div>
 
-          {/* Series Dimension */}
-          <div className="luxury-glass rounded-2xl p-6 relative overflow-hidden">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-medium text-parchment-muted">ซีรีส์หลักแห่งปัญญา</span>
-              <Layers className="w-5 h-5 text-emerald-400" />
+          <div className="p-5 rounded-2xl bg-emerald-card/60 border border-emerald-border space-y-2">
+            <div className="flex items-center justify-between text-xs text-parchment-muted">
+              <span>โควตา Founding 100</span>
+              <Crown className="w-4 h-4 text-gold-warm fill-current" />
             </div>
-            <div className="text-3xl font-serif font-black text-parchment-light">
-              {mockSeries.length} <span className="text-sm font-sans text-parchment-muted">ซีรีส์</span>
+            <div className="text-2xl font-mono font-bold text-gold-light">
+              {quota.claimed_slots} / {quota.max_slots}
             </div>
-            <div className="mt-3 text-xs text-parchment-muted">
-              4 มิติ: กาย, ใจ, ปัญญา, มรดกนิรันดร์
+            <div className="text-[11px] text-parchment-muted">
+              คงเหลือ {quota.remaining_slots} สิทธิ์ • สปอนเซอร์ {mockSponsors.filter((s) => s.is_active).length} จุด
             </div>
           </div>
         </div>
 
-        {/* Founding 100 Quota Direct Controller Box */}
-        <div className="luxury-glass rounded-3xl p-6 sm:p-8 space-y-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2 text-xs font-bold text-gold-warm uppercase tracking-wider mb-1">
-                <Crown className="w-4 h-4 fill-current" />
-                <span>ตัวปรับสิทธิ์ Founding 100 Quota Controller</span>
-              </div>
-              <h3 className="text-xl font-serif font-bold text-parchment-cream">
-                ควบคุมจำนวนสิทธิ์คงเหลือบนหน้าเว็บแบบสด
-              </h3>
-              <p className="text-xs text-parchment-muted mt-1">
-                คุณสามารถปรับตัวเลขจำนวนสิทธิ์ที่ถูกจองแล้ว เพื่อสร้างความต้องการ (Urgency) หรืออัปเดตตามยอดจริง
-              </p>
+        {/* Founding 100 Live Quota Control */}
+        <div className="luxury-glass rounded-3xl p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-1">
+            <div className="inline-flex items-center gap-2 text-xs font-bold text-gold-warm uppercase tracking-wider">
+              <Crown className="w-4 h-4 fill-current" />
+              <span>Real-time Founding 100 Quota Adjuster</span>
             </div>
+            <h3 className="text-xl font-thai-serif font-bold text-parchment-cream">
+              ปรับจำนวนโควตาผู้ร่วมก่อตั้งตลอดชีพ (Founding 100)
+            </h3>
+            <p className="text-xs text-parchment-muted font-light">
+              ปรับตัวเลขผู้ถือสิทธิ์เพื่อให้แถบสถานะโควตาบนหน้าแรกและหน้าแผนสมาชิกอัปเดตตรงตามจริง
+            </p>
+          </div>
 
+          <div className="flex items-center gap-3 shrink-0">
+            <button
+              type="button"
+              onClick={() => handleAdjustQuota(quota.claimed_slots - 1)}
+              className="w-10 h-10 rounded-xl bg-emerald-surface hover:bg-emerald-light border border-gold-warm/40 text-gold-light font-mono font-bold text-lg"
+            >
+              -
+            </button>
+            <div className="px-5 py-2 rounded-xl bg-black/50 border border-gold-warm/40 text-center min-w-[110px]">
+              <div className="text-xl font-mono font-black text-gold-light">
+                {quota.claimed_slots} / 100
+              </div>
+              <div className="text-[10px] text-parchment-muted">สิทธิ์ที่จองแล้ว</div>
+            </div>
+            <button
+              type="button"
+              onClick={() => handleAdjustQuota(quota.claimed_slots + 1)}
+              className="w-10 h-10 rounded-xl bg-emerald-surface hover:bg-emerald-light border border-gold-warm/40 text-gold-light font-mono font-bold text-lg"
+            >
+              +
+            </button>
             {quotaSaved && (
-              <span className="px-3 py-1.5 rounded-lg bg-emerald-950/80 border border-emerald-500 text-xs text-emerald-300 flex items-center gap-1.5 animate-fade-in">
-                <CheckCircle className="w-4 h-4 text-emerald-400" />
-                <span>บันทึกสถานะโควตาสำเร็จ!</span>
+              <span className="text-xs text-emerald-400 flex items-center gap-1 font-semibold">
+                <CheckCircle className="w-4 h-4" />
+                <span>อัปเดตแล้ว</span>
               </span>
             )}
           </div>
-
-          <div className="p-4 sm:p-6 rounded-2xl bg-black/50 border border-gold/20 flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="space-y-2 w-full md:w-1/2">
-              <div className="flex justify-between text-xs">
-                <span className="text-parchment-muted">ความคืบหน้าการจอง:</span>
-                <span className="font-bold text-gold-light">{quota.claimed_slots} / 100 สิทธิ์</span>
-              </div>
-              <div className="w-full h-3 bg-emerald-dark rounded-full overflow-hidden border border-gold/30">
-                <div
-                  className="h-full bg-gold-gradient rounded-full transition-all duration-500 shadow-sm"
-                  style={{ width: `${quota.percentage_claimed}%` }}
-                />
-              </div>
-              <span className="text-[11px] text-amber-300 font-semibold block">
-                แสดงผลบนหน้าบ้าน: เหลือเพียง {quota.remaining_slots} สิทธิ์สุดท้าย!
-              </span>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => handleAdjustQuota(quota.claimed_slots - 1)}
-                className="px-3 py-2 rounded-xl bg-emerald-surface hover:bg-emerald-light border border-gold/30 text-parchment-cream text-xs font-bold transition"
-              >
-                - ลดคนจอง 1
-              </button>
-              <button
-                onClick={() => handleAdjustQuota(quota.claimed_slots + 1)}
-                className="px-3 py-2 rounded-xl bg-gold-gradient text-slate-abyss text-xs font-bold hover:brightness-110 shadow-gold-sm transition"
-              >
-                + เพิ่มคนจอง 1
-              </button>
-              <button
-                onClick={() => handleAdjustQuota(83)}
-                className="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-parchment-muted text-xs transition"
-              >
-                รีเซ็ตค่ามาตรฐาน (83)
-              </button>
-            </div>
-          </div>
         </div>
 
-        {/* Admin Navigation Hub Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Card 1: Article & Content Engine Manager */}
+        {/* Main Management Modules Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Card 1: Ocean Articles Engine */}
           <Link
             href="/admin/articles"
             className="group luxury-glass rounded-3xl p-6 sm:p-8 flex flex-col justify-between hover:border-gold/60 transition-all duration-300"
@@ -201,42 +218,136 @@ export default function AdminHubPage() {
                 <BookOpen className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="text-2xl font-serif font-bold text-parchment-cream group-hover:text-gold-light transition">
-                  ระบบจัดการบทความ & สื่อมัลติมีเดีย (Article Engine)
+                <h3 className="text-2xl font-thai-serif font-bold text-parchment-cream group-hover:text-gold-light transition">
+                  จัดการบทความ Safe for Journey
                 </h3>
-                <p className="text-xs sm:text-sm text-parchment-muted mt-2 leading-relaxed">
-                  เปลี่ยนรูปภาพหน้าปกบทความได้ง่ายๆ ในคลิกเดียว แก้ไขเนื้อหา Easy Mode และ Deep Mode แยกกันได้อย่างชัดเจน พร้อมทดสอบเสียงพอดแคสต์และคลิปวิดีโอแอนิเมชันทันที
+                <p className="text-xs sm:text-sm text-parchment-muted mt-2 leading-relaxed font-light">
+                  เขียน แก้ไข ลบ เพิ่มหมวดหมู่ เปลี่ยนปกภาพ บันทึกฉบับร่าง (Draft) ตั้งเวลาเผยแพร่ (Schedule) หรือเผยแพร่ทันทีทั้งทะเลน้ำตื้นและทะเลน้ำลึก
                 </p>
               </div>
             </div>
 
             <div className="pt-6 mt-6 border-t border-emerald-border/40 flex items-center justify-between text-xs font-semibold text-gold-warm group-hover:text-gold-light">
-              <span>เข้าสู่หน้าแก้ไขบทความทั้ง 35 ตอน</span>
+              <span>เข้าสู่ระบบจัดการบทความทั้งหมด</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition" />
             </div>
           </Link>
 
-          {/* Card 2: Sponsor Slots Manager */}
+          {/* Card 2: NEW Safe for Support Manager */}
           <Link
-            href="/admin/sponsors"
+            href="/admin/store"
             className="group luxury-glass rounded-3xl p-6 sm:p-8 flex flex-col justify-between hover:border-gold/60 transition-all duration-300"
           >
             <div className="space-y-4">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-surface border border-gold/40 flex items-center justify-center text-gold-warm group-hover:scale-110 transition duration-300 shadow-gold-sm">
-                <Megaphone className="w-6 h-6" />
+              <div className="flex items-center justify-between">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-surface border border-gold/40 flex items-center justify-center text-gold-warm group-hover:scale-110 transition duration-300 shadow-gold-sm">
+                  <ShoppingBag className="w-6 h-6" />
+                </div>
+                <span className="px-3 py-1 rounded-full bg-gold-warm/20 border border-gold-warm/50 text-gold-light text-[11px] font-bold flex items-center gap-1">
+                  <Clock className="w-3 h-3" />
+                  <span>Draft • ตั้งเวลา • Publish ทันที</span>
+                </span>
               </div>
               <div>
-                <h3 className="text-2xl font-serif font-bold text-parchment-cream group-hover:text-gold-light transition">
-                  ระบบจัดการแบนเนอร์สปอนเซอร์ (Sponsor Slots)
+                <h3 className="text-2xl font-thai-serif font-bold text-parchment-cream group-hover:text-gold-light transition">
+                  จัดการส่วน Safe for Support
                 </h3>
-                <p className="text-xs sm:text-sm text-parchment-muted mt-2 leading-relaxed">
-                  เปิดหรือปิดการแสดงผลแบนเนอร์ผู้สนับสนุนในหน้าบทความและหน้าเครื่องเล่นพอดแคสต์ได้ทันที ดูสถิติคนดู (Impressions) และยอดคลิก (Clicks) แบบ Real-time
+                <p className="text-xs sm:text-sm text-parchment-muted mt-2 leading-relaxed font-light">
+                  จัดการสินค้าของที่ระลึกและผลงานดิจิทัลได้ง่ายเหมือนระบบบทความ อัปโหลดรูปภาพ ตั้งราคา เก็บเป็นฉบับร่าง ตั้งเวลาปล่อยล่วงหน้า หรือกดเผยแพร่ขึ้นหน้าเว็บทันที
                 </p>
               </div>
             </div>
 
             <div className="pt-6 mt-6 border-t border-emerald-border/40 flex items-center justify-between text-xs font-semibold text-gold-warm group-hover:text-gold-light">
-              <span>เข้าสู่หน้าคุมแบนเนอร์ผู้สนับสนุน</span>
+              <span>เข้าสู่หน้าจัดการ Safe for Support</span>
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition" />
+            </div>
+          </Link>
+
+          {/* Card 3: NEW Members Table & Slip Verification + Excel/CSV */}
+          <Link
+            href="/admin/members"
+            className="group luxury-glass rounded-3xl p-6 sm:p-8 flex flex-col justify-between hover:border-gold/60 transition-all duration-300"
+          >
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-surface border border-gold/40 flex items-center justify-center text-gold-warm group-hover:scale-110 transition duration-300 shadow-gold-sm">
+                  <Users className="w-6 h-6" />
+                </div>
+                <span className="px-3 py-1 rounded-full bg-emerald-950 border border-emerald-400/40 text-emerald-300 text-[11px] font-bold flex items-center gap-1">
+                  <FileSpreadsheet className="w-3 h-3" />
+                  <span>Export / Import Excel & CSV</span>
+                </span>
+              </div>
+              <div>
+                <h3 className="text-2xl font-thai-serif font-bold text-parchment-cream group-hover:text-gold-light transition">
+                  ตารางข้อมูลสมาชิก & ตรวจสอบสลิปโอนเงิน
+                </h3>
+                <p className="text-xs sm:text-sm text-parchment-muted mt-2 leading-relaxed font-light">
+                  ดูรายละเอียดสมาชิก เบอร์โทรศัพท์ อีเมล แยกหมวดหมู่ระดับเรือ ตรวจสลิปโอนเงิน แก้ไขสิทธิ์ และส่งออกหรือนำเข้าปรับแต่งเป็นไฟล์ Excel (.xlsx) และ CSV (.csv)
+                </p>
+              </div>
+            </div>
+
+            <div className="pt-6 mt-6 border-t border-emerald-border/40 flex items-center justify-between text-xs font-semibold text-gold-warm group-hover:text-gold-light">
+              <span>เปิดตารางจัดการสมาชิก ({stats.membersTotal} บัญชี)</span>
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition" />
+            </div>
+          </Link>
+
+          {/* Card 4: Contact Us Inbox */}
+          <Link
+            href="/admin/contacts"
+            className="group luxury-glass rounded-3xl p-6 sm:p-8 flex flex-col justify-between hover:border-gold/60 transition-all duration-300"
+          >
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-surface border border-gold/40 flex items-center justify-center text-gold-warm group-hover:scale-110 transition duration-300 shadow-gold-sm">
+                  <Mail className="w-6 h-6" />
+                </div>
+                {stats.unreadContacts > 0 && (
+                  <span className="px-3 py-1 rounded-full bg-amber-400 text-slate-abyss text-[11px] font-black">
+                    ข้อความใหม่ {stats.unreadContacts} รายการ
+                  </span>
+                )}
+              </div>
+              <div>
+                <h3 className="text-2xl font-thai-serif font-bold text-parchment-cream group-hover:text-gold-light transition">
+                  กล่องข้อความติดต่อเรา (พูดคุย / ร้องขอ / ร้องเรียน)
+                </h3>
+                <p className="text-xs sm:text-sm text-parchment-muted mt-2 leading-relaxed font-light">
+                  อ่านข้อความที่ผู้ใช้งานส่งเข้ามาผ่านหน้า &ldquo;ติดต่อเรา&rdquo; แยกตามหมวดหมู่ พร้อมคลิกตอบกลับไปยังอีเมลของผู้ติดต่อได้ทันที
+                </p>
+              </div>
+            </div>
+
+            <div className="pt-6 mt-6 border-t border-emerald-border/40 flex items-center justify-between text-xs font-semibold text-gold-warm group-hover:text-gold-light">
+              <span>เปิดอ่านข้อความติดต่อทั้งหมด</span>
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition" />
+            </div>
+          </Link>
+
+          {/* Card 5: Sponsor Slots Manager */}
+          <Link
+            href="/admin/sponsors"
+            className="md:col-span-2 group luxury-glass rounded-3xl p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-6 hover:border-gold/60 transition-all duration-300"
+          >
+            <div className="flex items-start sm:items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-surface border border-gold/40 flex items-center justify-center text-gold-warm shrink-0 group-hover:scale-110 transition duration-300 shadow-gold-sm">
+                <Megaphone className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-xl font-thai-serif font-bold text-parchment-cream group-hover:text-gold-light transition">
+                  ระบบจัดการแบนเนอร์สปอนเซอร์ (Sponsor Slots)
+                </h3>
+                <p className="text-xs sm:text-sm text-parchment-muted mt-1 leading-relaxed font-light">
+                  เปิดหรือปิดการแสดงผลแบนเนอร์ผู้สนับสนุนในหน้าบทความและเครื่องเล่นพอดแคสต์ พร้อมดูสถิติ Impressions และ Clicks
+                </p>
+              </div>
+            </div>
+
+            <div className="shrink-0 flex items-center gap-2 text-xs font-semibold text-gold-warm group-hover:text-gold-light">
+              <span>เข้าสู่หน้าคุมแบนเนอร์</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition" />
             </div>
           </Link>

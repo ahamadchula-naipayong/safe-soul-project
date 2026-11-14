@@ -33,7 +33,7 @@ export async function generateMetadata({
   const news = await getNewsById(params.id);
   if (!news) {
     return {
-      title: 'ไม่พบข่าวสาร | The Safe Soul Project',
+      title: 'ไม่พบข่าวสาร | The Fitrah Shield',
     };
   }
 

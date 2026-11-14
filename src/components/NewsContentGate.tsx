@@ -206,7 +206,7 @@ export function NewsContentGate({
                   กรุณาเข้าสู่ระบบเพื่ออ่านเนื้อหาฉบับเต็ม
                 </h2>
                 <p className="text-sm text-parchment-muted leading-relaxed font-light">
-                  เนื้อหาบทวิเคราะห์ข่าวสารเปิดให้อ่านสำหรับสมาชิก The Safe Soul
+                  เนื้อหาบทวิเคราะห์ข่าวสารเปิดให้อ่านสำหรับสมาชิก The Fitrah Shield
                   โดยสมาชิกทั่วไป (Free Tier) สามารถเข้าสู่ระบบเพื่ออ่านเนื้อหาข่าวสารได้ทันที
                 </p>
               </div>

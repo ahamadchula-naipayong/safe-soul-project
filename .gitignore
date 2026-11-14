@@ -31,3 +31,18 @@ yarn-error.log*
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts
+
+# Ignore duplicate raw media inside Assets/ (already copied to public/ and data/private_ebooks/)
+Assets/**/*.mp3
+Assets/**/*.wav
+Assets/**/*.png
+Assets/**/*.jpg
+Assets/**/*.jpeg
+Assets/**/*.webp
+Assets/**/*.pdf
+Assets/**/*_old.md
+
+# Deep Ocean 50 MP3s (811 MB) are served locally from public/audio/deep-ocean/ and uploaded to Cloudflare R2 via scripts/upload-r2.mjs
+public/audio/deep-ocean/*.mp3
+*.gdoc
+Assets/**/*.zip

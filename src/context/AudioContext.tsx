@@ -7,6 +7,9 @@ export interface AudioTrack {
   title: string;
   seriesTitle?: string;
   chapterNumber?: number;
+  partNumber?: number;
+  partTitle?: string;
+  nextTrack?: AudioTrack;
   audioUrl: string;
   duration?: string;
   coverImage?: string;
@@ -40,6 +43,11 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
   const [volume, setVolume] = useState<number>(0.85);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const currentTrackRef = useRef<AudioTrack | null>(null);
+
+  useEffect(() => {
+    currentTrackRef.current = currentTrack;
+  }, [currentTrack]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -55,8 +63,17 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
       };
 
       const handleEnded = () => {
-        setIsPlaying(false);
-        setCurrentTime(0);
+        if (currentTrackRef.current?.nextTrack) {
+          const next = currentTrackRef.current.nextTrack;
+          currentTrackRef.current = next;
+          setCurrentTrack(next);
+          audio.src = next.audioUrl;
+          audio.currentTime = 0;
+          audio.play().then(() => setIsPlaying(true)).catch(console.error);
+        } else {
+          setIsPlaying(false);
+          setCurrentTime(0);
+        }
       };
 
       audio.addEventListener('timeupdate', handleTimeUpdate);
@@ -83,6 +100,7 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
+    currentTrackRef.current = track;
     setCurrentTrack(track);
     audio.src = track.audioUrl;
     audio.playbackRate = playbackRate;

@@ -128,6 +128,11 @@ export function StickyAudioPlayer() {
                       {currentTrack.seriesTitle}
                     </span>
                   )}
+                  {currentTrack.partTitle && (
+                    <span className="text-[10px] text-emerald-300 font-semibold px-2 py-0.5 rounded-full bg-emerald-950/70 border border-emerald-500/40 shrink-0">
+                      {currentTrack.partTitle}
+                    </span>
+                  )}
                 </div>
                 <h4 className="text-sm font-semibold text-parchment-cream truncate">
                   {currentTrack.title}

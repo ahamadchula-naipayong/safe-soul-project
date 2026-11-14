@@ -1,10 +1,10 @@
 import React from 'react';
 import Link from 'next/link';
-import { Compass, Shield, BookOpen, Crown, MessageSquare, Send } from 'lucide-react';
+import { Compass, BookOpen, Crown, MessageSquare, Send, FileText } from 'lucide-react';
 
 export function Footer() {
   return (
-    <footer className="w-full bg-[#070D0B] border-t border-emerald-border/80 text-parchment-cream relative overflow-hidden pt-16 pb-12">
+    <footer className="w-full bg-[#070D0B] border-t border-emerald-border/80 text-parchment-cream relative overflow-hidden pt-16 pb-12 font-thai">
       {/* Subtle gold glow line on top */}
       <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-gold-warm to-transparent opacity-40" />
 
@@ -13,16 +13,21 @@ export function Footer() {
           {/* Brand Info */}
           <div className="lg:col-span-2 space-y-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-surface to-emerald-dark border border-gold/40 flex items-center justify-center shadow-gold-sm">
-                <Compass className="w-6 h-6 text-gold-warm" />
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-surface via-[#122A1E] to-slate-abyss border border-gold-warm/40 flex items-center justify-center p-1.5 shadow-gold-sm overflow-hidden">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/images/logo/logo-transparent.png"
+                  alt="The Fitrah Shield Logo"
+                  className="w-full h-full object-contain"
+                />
               </div>
-              <span className="font-serif font-extrabold text-base tracking-wide text-parchment-cream">
-                THE SAFE SOUL PROJECT
+              <span className="font-cinzel font-extrabold text-base tracking-wider text-parchment-cream">
+                THE FITRAH SHIELD
               </span>
             </div>
 
             <p className="text-xs sm:text-sm text-parchment-muted/90 leading-relaxed max-w-sm">
-              แพลตฟอร์มความรู้ พอดแคสต์ และแอนิเมชันแห่งปัญญา &quot;4 มิติแห่งปัญญา&quot; เพื่อการสร้างภูมิคุ้มกันทางจิตวิญญาณ อยู่ร่วมกับโลกยุคใหม่โดยไม่ยอมให้โลกกลืนกินหัวใจ
+              แพลตฟอร์มความรู้ พอดแคสต์ และแอนิเมชันแห่งปัญญา &quot;4 มิติแห่งปัญญา&quot; เพื่อการสร้างภูมิคุ้มกันทางจิตวิญญาณเดิมแท้ อยู่ร่วมกับโลกยุคใหม่โดยไม่ยอมให้โลกกลืนกินหัวใจ
             </p>
 
             <div className="flex items-center gap-3 pt-2 text-xs text-parchment-muted">
@@ -43,10 +48,10 @@ export function Footer() {
               4 มิติแห่งปัญญา
             </h4>
             <ul className="space-y-2 text-xs text-parchment-muted">
-              <li>มิติที่ 1: มิติแห่งตน & การครองสติ</li>
-              <li>มิติที่ 2: ปัญญา ตรรกศาสตร์ & วิทยาศาสตร์</li>
-              <li>มิติที่ 3: จิตวิญญาณ & ความสงบแท้จริง</li>
-              <li>มิติที่ 4: ความสัมพันธ์ ครอบครัว & มรดกนิรันดร์</li>
+              <li>มิติที่ 1: มิติแห่งตน & การครองสติ (Self)</li>
+              <li>มิติที่ 2: ปัญญา ตรรกศาสตร์ & วิทยาศาสตร์ (Awareness)</li>
+              <li>มิติที่ 3: จิตวิญญาณ & ความศรัทธาแท้จริง (Faith)</li>
+              <li>มิติที่ 4: จริยธรรมเชิงประจักษ์ & มรดกนิรันดร์ (Ethics)</li>
             </ul>
           </div>
 
@@ -57,13 +62,15 @@ export function Footer() {
             </h4>
             <ul className="space-y-2 text-xs text-parchment-muted">
               <li>
-                <Link href="/series" className="hover:text-gold-light transition">
-                  7 ธีมหลัก (Safe Series)
+                <Link href="/journey" className="hover:text-gold-light transition flex items-center gap-1.5">
+                  <Compass className="w-3.5 h-3.5 text-gold-warm" />
+                  <span>Safe for Journey (รวมบทความ)</span>
                 </Link>
               </li>
               <li>
-                <Link href="/articles/art-of-self-awareness" className="hover:text-gold-light transition">
-                  Dual-Mode Article Engine
+                <Link href="/news" className="hover:text-gold-light transition flex items-center gap-1.5">
+                  <FileText className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>สำนักข่าว The Key of Return</span>
                 </Link>
               </li>
               <li>
@@ -73,12 +80,12 @@ export function Footer() {
               </li>
               <li>
                 <Link href="/store" className="hover:text-gold-light transition">
-                  Merch & Digital Delivery
+                  Safe for Support (สนับสนุน)
                 </Link>
               </li>
               <li>
-                <Link href="/admin/sponsors" className="hover:text-gold-light transition">
-                  จัดการ Sponsor Slots (Admin)
+                <Link href="/contact" className="hover:text-gold-light transition">
+                  ติดต่อเรา (พูดคุย / ร้องขอ / ร้องเรียน)
                 </Link>
               </li>
             </ul>
@@ -104,7 +111,7 @@ export function Footer() {
 
         {/* Bottom copyright */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-parchment-muted/60">
-          <p>© {new Date().getFullYear()} The Safe Soul Project. สงวนลิขสิทธิ์ทุกประการ.</p>
+          <p>© {new Date().getFullYear()} The Fitrah Shield. สงวนลิขสิทธิ์ทุกประการ.</p>
           <div className="flex items-center gap-4">
             <span className="hover:text-parchment-cream cursor-pointer transition">นโยบายความเป็นส่วนตัว</span>
             <span className="hover:text-parchment-cream cursor-pointer transition">ข้อกำหนดการใช้งาน</span>

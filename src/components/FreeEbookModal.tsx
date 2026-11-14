@@ -1,7 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
-import { X, BookOpen, Download, CheckCircle2, Sparkles } from 'lucide-react';
+import React from 'react';
+import Link from 'next/link';
+import { X, BookOpen, Mail, ShoppingBag, Sparkles, CheckCircle2, UserCheck } from 'lucide-react';
+import { useCart } from '@/context/CartContext';
+import { useAuth } from '@/context/AuthContext';
+import { mockProducts } from '@/lib/supabase/mockData';
 
 interface FreeEbookModalProps {
   isOpen: boolean;
@@ -9,127 +13,123 @@ interface FreeEbookModalProps {
 }
 
 export function FreeEbookModal({ isOpen, onClose }: FreeEbookModalProps) {
-  const [email, setEmail] = useState('');
-  const [name, setName] = useState('');
-  const [isSubmitted, setIsSubmitted] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const { addToCart } = useCart();
+  const { member, isLoggedIn } = useAuth();
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email) return;
+  const shallowEbookProduct = mockProducts[0];
 
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      setIsSubmitted(true);
-    }, 1000);
+  const handleAddEbookToCart = () => {
+    onClose();
+    addToCart(shallowEbookProduct, 1);
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
-      <div className="relative w-full max-w-lg p-6 sm:p-8 rounded-2xl bg-gradient-to-b from-[#13281E] via-[#0D1D16] to-[#0B1310] border border-gold/40 shadow-2xl text-parchment-cream">
-        {/* Close button */}
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in font-thai">
+      {/* Backdrop */}
+      <div
+        onClick={onClose}
+        className="absolute inset-0 bg-black/80 backdrop-blur-md"
+      />
+
+      {/* Modal Content */}
+      <div className="relative w-full max-w-lg rounded-3xl bg-gradient-to-b from-[#11261B] via-[#0B1912] to-[#07100C] border border-gold/40 shadow-2xl overflow-hidden text-parchment-cream z-10">
+        {/* Top Accent Banner */}
+        <div className="h-1.5 w-full bg-gold-gradient" />
+
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 text-parchment-muted hover:text-white rounded-full bg-white/5 hover:bg-white/10 transition"
+          className="absolute top-4 right-4 p-2 rounded-full bg-white/5 hover:bg-white/10 text-parchment-muted hover:text-white transition cursor-pointer"
+          aria-label="ปิดหน้าต่าง"
         >
-          <X className="w-5 h-5" />
+          <X className="w-4 h-4" />
         </button>
 
-        {!isSubmitted ? (
-          <div>
-            <div className="flex items-center gap-2 mb-2 text-gold-warm text-xs font-semibold uppercase tracking-wider">
-              <Sparkles className="w-4 h-4" />
-              <span>Tier 1: Free Member Privilege</span>
-            </div>
-
-            <h3 className="text-2xl font-serif font-bold text-parchment-cream mb-2">
-              รับฟรีทันที! E-book 7 บทหลัก
-            </h3>
-            <p className="text-sm text-parchment-muted mb-6 leading-relaxed">
-              ก้าวแรกสู่การสร้างภูมิคุ้มกันทางจิตวิญญาณ ดาวน์โหลดสรุปแก่นความคิด 7 บทแรกจากโปรเจกต์
-              <span className="text-gold-light font-semibold"> The Safe Soul (4 มิติแห่งปัญญา)</span> ส่งตรงถึงอีเมลของคุณ
-            </p>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-xs font-medium text-parchment-muted mb-1">
-                  ชื่อของคุณ (สำหรับประทับตราดิจิทัล)
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="เช่น สมชาย ใจสงบ"
-                  className="w-full px-4 py-2.5 rounded-lg bg-emerald-dark/80 border border-emerald-border focus:border-gold-warm focus:ring-1 focus:ring-gold-warm text-parchment-cream text-sm outline-none transition"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-parchment-muted mb-1">
-                  อีเมล (รับลิงก์ดาวน์โหลดฉบับเต็ม)
-                </label>
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@example.com"
-                  className="w-full px-4 py-2.5 rounded-lg bg-emerald-dark/80 border border-emerald-border focus:border-gold-warm focus:ring-1 focus:ring-gold-warm text-parchment-cream text-sm outline-none transition"
-                />
-              </div>
-
-              <div className="p-3 rounded-lg bg-emerald-deep/40 border border-gold/20 text-xs text-parchment-muted flex items-center gap-2.5">
-                <BookOpen className="w-4 h-4 text-gold-warm shrink-0" />
-                <span>ฟรีสมาชิก Tier 1: ปลดล็อกการอ่านบทที่ 1-3 บนเว็บไซต์ได้ทันทีตลอดชีพ</span>
-              </div>
-
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full py-3 px-4 rounded-xl bg-gold-gradient text-slate-abyss font-bold text-sm hover:brightness-110 shadow-gold-sm transition flex items-center justify-center gap-2"
-              >
-                {isLoading ? (
-                  <div className="w-5 h-5 border-2 border-slate-abyss border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <>
-                    <Download className="w-4 h-4" />
-                    <span>ดาวน์โหลด E-book ฟรี (PDF)</span>
-                  </>
-                )}
-              </button>
-            </form>
+        <div className="p-6 sm:p-8 space-y-6">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gold-dim/30 border border-gold/30 text-gold-light text-xs font-semibold">
+            <Sparkles className="w-3.5 h-3.5 text-gold-warm" />
+            <span>DIGITAL SANCTUARY • จัดส่งทางอีเมลสมาชิกเท่านั้น</span>
           </div>
-        ) : (
-          <div className="text-center py-6">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gold/20 border border-gold-warm flex items-center justify-center text-gold-light animate-bounce">
-              <CheckCircle2 className="w-8 h-8 text-gold-warm" />
-            </div>
-            <h3 className="text-2xl font-serif font-bold text-parchment-cream mb-2">
-              ยินดีต้อนรับสู่ The Safe Soul
+
+          <div className="space-y-2">
+            <h3 className="text-2xl sm:text-3xl font-thai-serif font-bold text-parchment-cream leading-snug">
+              รับ E-Book &ldquo;เกราะพิทักษ์ฟิฏเราะฮฺ&rdquo; (ฉบับเกาะทะเลน้ำตื้น 73 หน้า)
             </h3>
-            <p className="text-sm text-parchment-muted mb-6 max-w-sm mx-auto">
-              ระบบได้ส่งลิงก์ดาวน์โหลด E-book 7 บทหลักไปยังอีเมล <strong className="text-gold-light">{email}</strong> แล้ว พร้อมเปิดสิทธิ์สมาชิก Free Member เรียบร้อย
+            <p className="text-xs sm:text-sm text-parchment-muted leading-relaxed font-light">
+              สรุปเนื้อหา 7 เกาะแห่งปัญญา (S.A.F.E. Series) ฉบับสมบูรณ์ 73 หน้า สำหรับอ่านทบทวนส่วนตัว จัดส่งเป็นไฟล์ดิจิทัลเข้าสู่อีเมลที่คุณใช้สมัครสมาชิกเท่านั้น (ไม่มีปุ่มดาวน์โหลดบนหน้าเว็บ)
             </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <a
-                href="/articles/art-of-self-awareness"
-                className="py-2.5 px-5 rounded-lg bg-emerald-surface hover:bg-emerald-light border border-gold/30 text-gold-light font-semibold text-xs transition"
-              >
-                เริ่มอ่านบทที่ 1 ทันที
-              </a>
-              <button
-                onClick={onClose}
-                className="py-2.5 px-5 rounded-lg bg-white/10 hover:bg-white/20 text-parchment-cream text-xs font-semibold transition"
-              >
-                ปิดหน้าต่าง
-              </button>
-            </div>
           </div>
-        )}
+
+          {/* Price & Policy Box */}
+          <div className="p-4 rounded-2xl bg-black/50 border border-gold-warm/35 space-y-3">
+            <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
+              <span className="text-xs text-parchment-muted flex items-center gap-1.5">
+                <BookOpen className="w-4 h-4 text-gold-warm" />
+                <span>ราคาสินค้าดิจิทัลในตะกร้า</span>
+              </span>
+              <div className="flex items-baseline gap-2">
+                <span className="text-xs font-mono text-parchment-muted/60 line-through">
+                  ฿199
+                </span>
+                <span className="text-lg font-mono font-black text-emerald-300">
+                  ฟรี ฿0 (สำหรับสมาชิก)
+                </span>
+              </div>
+            </div>
+
+            <ul className="text-xs text-parchment-muted space-y-1.5 leading-relaxed">
+              <li className="flex items-start gap-2">
+                <Mail className="w-3.5 h-3.5 text-gold-warm shrink-0 mt-0.5" />
+                <span>
+                  จัดส่งเฉพาะทาง <strong className="text-parchment-cream">อีเมลที่สมัครสมาชิกเท่านั้น</strong> (ไม่เปิดให้ดาวน์โหลดไฟล์โดยตรงจากหน้าเว็บ)
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
+                <span>
+                  จำกัดสิทธิ์รับฟรี <strong className="text-emerald-300">1 ครั้ง ต่อ 1 บัญชีอีเมลสมาชิก</strong>
+                </span>
+              </li>
+            </ul>
+          </div>
+
+          {/* Action CTA */}
+          {member?.ebookClaimed ? (
+            <div className="p-4 rounded-2xl bg-emerald-950/70 border border-emerald-400/40 text-center space-y-2">
+              <div className="text-sm font-bold text-emerald-300">
+                ✓ คุณใช้สิทธิ์รับ E-Book เล่มนี้ทางอีเมล ({member.email}) เรียบร้อยแล้ว
+              </div>
+              <p className="text-xs text-parchment-muted">
+                จำกัดสิทธิ์รับฟรี 1 ครั้งต่ออีเมลที่สมัครสมาชิก (ส่วน E-Book ฉบับทะเลน้ำลึก สถานะ: Coming Soon)
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <button
+                type="button"
+                onClick={handleAddEbookToCart}
+                className="w-full py-3.5 px-6 rounded-xl gold-bevel-button text-slate-abyss font-bold text-sm hover:brightness-110 shadow-gold-sm flex items-center justify-center gap-2 transition cursor-pointer"
+              >
+                <ShoppingBag className="w-4 h-4" />
+                <span>หยิบใส่ตะกร้า (จาก ฿199 เหลือ ฟรี ฿0 • ส่งทางอีเมล)</span>
+              </button>
+
+              {!isLoggedIn && (
+                <div className="text-center">
+                  <Link
+                    href="/login"
+                    onClick={onClose}
+                    className="inline-flex items-center gap-1.5 text-xs text-gold-light hover:text-gold-warm underline"
+                  >
+                    <UserCheck className="w-3.5 h-3.5" />
+                    <span>ยังไม่ได้เป็นสมาชิก? คลิกสมัครสมาชิกฟรีก่อนรับ E-Book</span>
+                  </Link>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
