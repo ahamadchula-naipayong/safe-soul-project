@@ -1,4 +1,5 @@
 name = "the-fitrah-shield"
+account_id = "2e1b9f31899de83cd61c91278688516c"
 compatibility_date = "2025-02-01"
 compatibility_flags = ["nodejs_compat"]
 pages_build_output_dir = ".vercel/output/static"
@@ -7,7 +8,7 @@ pages_build_output_dir = ".vercel/output/static"
 [[d1_databases]]
 binding = "DB"
 database_name = "fitrah-shield-db"
-database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+database_id = "ef9f1b15-1d70-4213-9be3-2069f2f406d2"
 migrations_dir = "migrations"
 
 # 2. Cloudflare R2 Object Storage (สำหรับเก็บไฟล์เสียงพอดแคสต์ 64 ไฟล์: น้ำตื้น 14 ไฟล์ + น้ำลึก 50 ไฟล์)

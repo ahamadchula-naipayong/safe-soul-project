@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { Member, TierType, PaymentStatus, MemberRole } from '@/types';
+import { executeD1Query } from '@/lib/cloudflareD1';
 
 const dataFilePath = path.join(process.cwd(), 'data', 'members.json');
 const slipsDir = path.join(process.cwd(), 'public', 'uploads', 'slips');
@@ -69,8 +70,38 @@ export function saveMembers(members: Member[]): void {
     }
     fs.writeFileSync(dataFilePath, JSON.stringify(members, null, 2), 'utf8');
   } catch (error) {
-    console.error('Error saving members data:', error);
-    throw error;
+    console.error('Error saving members data locally:', error);
+  }
+
+  // Asynchronously mirror member records to Cloudflare D1 (fitrah-shield-db) when CLOUDFLARE_API_TOKEN is configured
+  if (process.env.CLOUDFLARE_API_TOKEN) {
+    Promise.all(
+      members.map((m) =>
+        executeD1Query(
+          `INSERT OR REPLACE INTO members (id, member_number, username, email, phone, password, name, tier, role, payment_status, payment_slip_url, payment_amount, billing_cycle, ebook_claimed, ebook_claimed_at, notes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            m.id,
+            m.memberNumber,
+            m.username,
+            m.email,
+            m.phone || '',
+            m.password || 'password123',
+            m.name,
+            m.tier,
+            m.role || (m.memberNumber === 1 ? 'admin' : 'member'),
+            m.paymentStatus || 'free',
+            m.paymentSlipUrl || null,
+            m.paymentAmount || 0,
+            m.billingCycle || 'free',
+            m.ebookClaimed ? 1 : 0,
+            m.ebookClaimedAt || null,
+            m.notes || '',
+            m.createdAt,
+            m.updatedAt || null,
+          ]
+        )
+      )
+    ).catch((err) => console.error('Cloudflare D1 member sync error:', err));
   }
 }
 
