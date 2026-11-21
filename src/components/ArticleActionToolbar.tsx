@@ -116,7 +116,8 @@ export function ArticleActionToolbar({
           (inferredRealm === 'shallow'
             ? `/audio/oneshot/island${audioTrack.chapterNumber}-full.mp3`
             : undefined),
-        audioTrack.chapterNumber
+        audioTrack.chapterNumber,
+        audioTrack.id
       )
     : '';
 
@@ -473,7 +474,7 @@ export function ArticleActionToolbar({
 
   return (
     <>
-      <div className={`flex flex-wrap items-center gap-2 print:hidden ${className}`}>
+      <div className={`flex flex-wrap items-center gap-1.5 sm:gap-2 print:hidden ${className}`}>
         {/* 1. Font Size Adjuster (ปุ่มปรับไซส์ตัวหนังสือ ก- / ก+) */}
         <div
           className="inline-flex items-center rounded-xl bg-black/65 border border-white/15 p-0.5 shadow-sm"
@@ -483,7 +484,7 @@ export function ArticleActionToolbar({
             type="button"
             onClick={handleDecreaseFont}
             disabled={fontScale <= FONT_SCALE_STEPS[0]}
-            className="px-2.5 py-1.5 rounded-lg text-xs font-bold text-parchment-cream hover:text-gold-light hover:bg-emerald-surface/80 disabled:opacity-35 transition cursor-pointer flex items-center gap-0.5"
+            className="p-2 sm:px-2.5 sm:py-1.5 rounded-lg text-xs font-bold text-parchment-cream hover:text-gold-light hover:bg-emerald-surface/80 disabled:opacity-35 transition cursor-pointer flex items-center gap-0.5"
             aria-label="ลดขนาดตัวอักษร"
             title="ลดขนาดตัวหนังสือ (ก-)"
           >
@@ -494,7 +495,7 @@ export function ArticleActionToolbar({
           <button
             type="button"
             onClick={handleResetFont}
-            className="px-2 py-1 text-[11px] font-mono font-bold text-gold-light hover:text-gold-warm transition cursor-pointer"
+            className="hidden sm:inline-block px-2 py-1 text-[11px] font-mono font-bold text-gold-light hover:text-gold-warm transition cursor-pointer"
             title="คลิกเพื่อรีเซ็ตขนาดตัวอักษรมาตรฐาน (100%)"
           >
             {Math.round(fontScale * 100)}%
@@ -504,7 +505,7 @@ export function ArticleActionToolbar({
             type="button"
             onClick={handleIncreaseFont}
             disabled={fontScale >= FONT_SCALE_STEPS[FONT_SCALE_STEPS.length - 1]}
-            className="px-2.5 py-1.5 rounded-lg text-xs font-bold text-parchment-cream hover:text-gold-light hover:bg-emerald-surface/80 disabled:opacity-35 transition cursor-pointer flex items-center gap-0.5"
+            className="p-2 sm:px-2.5 sm:py-1.5 rounded-lg text-xs font-bold text-parchment-cream hover:text-gold-light hover:bg-emerald-surface/80 disabled:opacity-35 transition cursor-pointer flex items-center gap-0.5"
             aria-label="เพิ่มขนาดตัวอักษร"
             title="เพิ่มขนาดตัวหนังสือ (ก+)"
           >
@@ -513,12 +514,13 @@ export function ArticleActionToolbar({
           </button>
         </div>
 
-        {/* 2. Audio Podcast Button (if audioTrack provided) */}
+        {/* 2. Audio Podcast Button (Icon-only on narrow mobile portrait, icon+text on sm+) */}
         {audioTrack && (
           <button
             type="button"
             onClick={handleAudioClick}
-            className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border text-xs font-semibold transition shadow-sm group cursor-pointer ${
+            aria-label={isCurrentPlaying ? 'หยุดเสียงพอดแคสต์' : 'ฟังเสียงพอดแคสต์'}
+            className={`inline-flex items-center justify-center gap-2 p-2.5 sm:px-3.5 sm:py-2 rounded-xl border text-xs font-semibold transition shadow-sm group cursor-pointer ${
               isCurrentPlaying
                 ? 'bg-gold-warm text-slate-abyss border-gold-light shadow-gold-sm'
                 : 'bg-black/60 hover:bg-emerald-surface/90 border-white/15 hover:border-gold-warm/50 text-parchment-cream hover:text-gold-light'
@@ -527,48 +529,50 @@ export function ArticleActionToolbar({
           >
             {isCurrentPlaying ? (
               <>
-                <Pause className="w-3.5 h-3.5 fill-current" />
-                <span>หยุดเสียง</span>
+                <Pause className="w-4 h-4 sm:w-3.5 sm:h-3.5 fill-current" />
+                <span className="hidden sm:inline">หยุดเสียง</span>
               </>
             ) : (
               <>
-                <Headphones className="w-3.5 h-3.5 text-gold-warm group-hover:scale-110 transition-transform" />
-                <span>ฟังเสียงพอดแคสต์</span>
+                <Headphones className="w-4 h-4 sm:w-3.5 sm:h-3.5 text-gold-warm group-hover:scale-110 transition-transform" />
+                <span className="hidden sm:inline">ฟังเสียงพอดแคสต์</span>
                 {!hasAudioAccess && <Lock className="w-3 h-3 text-parchment-muted/80 ml-0.5" />}
               </>
             )}
           </button>
         )}
 
-        {/* 3. Share Button */}
+        {/* 3. Share Button (Icon-only on narrow mobile portrait, icon+text on sm+) */}
         <button
           type="button"
           onClick={handleShare}
-          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-black/60 hover:bg-emerald-surface/90 border border-white/15 hover:border-gold-warm/50 text-xs text-parchment-cream hover:text-gold-light transition shadow-sm group cursor-pointer"
+          aria-label="แชร์บทความ"
+          className="inline-flex items-center justify-center gap-1.5 p-2.5 sm:px-3 sm:py-2 rounded-xl bg-black/60 hover:bg-emerald-surface/90 border border-white/15 hover:border-gold-warm/50 text-xs text-parchment-cream hover:text-gold-light transition shadow-sm group cursor-pointer"
           title="แชร์บทเรียนนี้สู่เครือข่ายสังคม หรือคัดลอกลิงก์"
         >
           {copied ? (
             <>
-              <Check className="w-3.5 h-3.5 text-emerald-400" />
-              <span className="text-emerald-300 font-medium">คัดลอกแล้ว!</span>
+              <Check className="w-4 h-4 sm:w-3.5 sm:h-3.5 text-emerald-400" />
+              <span className="hidden sm:inline text-emerald-300 font-medium">คัดลอกแล้ว!</span>
             </>
           ) : (
             <>
-              <Share2 className="w-3.5 h-3.5 text-gold-warm group-hover:scale-110 transition-transform" />
-              <span>แชร์</span>
+              <Share2 className="w-4 h-4 sm:w-3.5 sm:h-3.5 text-gold-warm group-hover:scale-110 transition-transform" />
+              <span className="hidden sm:inline">แชร์</span>
             </>
           )}
         </button>
 
-        {/* 4. Print / B&W Plain-Text PDF Export Button */}
+        {/* 4. Print / B&W Plain-Text PDF Export Button (Icon-only on narrow mobile portrait, icon+text on sm+) */}
         <button
           type="button"
           onClick={handlePrint}
-          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-black/60 hover:bg-emerald-surface/90 border border-white/15 hover:border-gold-warm/50 text-xs text-parchment-cream hover:text-gold-light transition shadow-sm group cursor-pointer"
+          aria-label="พิมพ์ หรือ บันทึกเป็น PDF"
+          className="inline-flex items-center justify-center gap-1.5 p-2.5 sm:px-3 sm:py-2 rounded-xl bg-black/60 hover:bg-emerald-surface/90 border border-white/15 hover:border-gold-warm/50 text-xs text-parchment-cream hover:text-gold-light transition shadow-sm group cursor-pointer"
           title="ส่งออกบทความแบบ Plain Text ขาวดำอ่านสบายตา พร้อม QR เลี้ยงกาแฟท้ายบทความ"
         >
-          <Printer className="w-3.5 h-3.5 text-gold-warm group-hover:scale-110 transition-transform" />
-          <span>พิมพ์ / PDF</span>
+          <Printer className="w-4 h-4 sm:w-3.5 sm:h-3.5 text-gold-warm group-hover:scale-110 transition-transform" />
+          <span className="hidden sm:inline">พิมพ์ / PDF</span>
         </button>
       </div>
 

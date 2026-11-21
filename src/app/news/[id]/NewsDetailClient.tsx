@@ -146,7 +146,7 @@ export default function NewsDetailClient({
               description={news.topicLead || news.excerpt}
             />
 
-            <div className="flex items-center gap-2">
+            <div className="hidden md:flex items-center gap-2">
               <span className="px-3 py-1 rounded-xl bg-black/75 backdrop-blur-md text-xs font-bold text-gold-light border border-gold-warm/40 font-mono shadow-sm">
                 {news.korNo}
               </span>

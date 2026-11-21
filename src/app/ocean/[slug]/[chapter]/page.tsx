@@ -131,7 +131,7 @@ export default async function DeepOceanReaderPage({
               }}
             />
 
-            <div className="flex items-center gap-2 font-mono">
+            <div className="hidden md:flex items-center gap-2 font-mono">
               <span className="px-3 py-1 rounded-xl bg-cyan-950/90 text-cyan-300 border border-cyan-400/50 text-xs font-bold">
                 ทะเลน้ำลึก • หมู่เกาะ {archipelago.archipelagoNumber}
               </span>

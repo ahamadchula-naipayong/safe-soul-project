@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
-import { useAudio } from '@/context/AudioContext';
+import { useAudio, normalizeAudioUrl } from '@/context/AudioContext';
 import { MarkdownRenderer } from '@/components/MarkdownRenderer';
 import {
   checkOceanArticleAccess,
@@ -60,7 +60,7 @@ export function OceanContentGate({
   coverImage,
 }: OceanContentGateProps) {
   const { member, isLoggedIn } = useAuth();
-  const { currentTrack, isPlaying, playTrack, togglePlay } = useAudio();
+  const { currentTrack, isPlaying, playTrack, pauseTrack } = useAudio();
 
   const access = checkOceanArticleAccess({
     realm: 'deep',
@@ -83,19 +83,22 @@ export function OceanContentGate({
   });
 
   const trackId = `ocean-${archipelagoSlug || archipelagoNumber}-${chapterNumber}`;
-  const isCurrentTrack = currentTrack?.id === trackId;
+  const canonicalAudioUrl = normalizeAudioUrl(audioUrl, chapterNumber, trackId);
+  const isCurrentTrack =
+    !!currentTrack &&
+    (currentTrack.audioUrl === canonicalAudioUrl || currentTrack.id === trackId);
 
   const handlePlayDeepOceanAudio = () => {
-    if (!audioAccess.canAccess || !audioUrl) return;
-    if (isCurrentTrack) {
-      togglePlay();
+    if (!audioAccess.canAccess || !canonicalAudioUrl) return;
+    if (isCurrentTrack && currentTrack?.audioUrl === canonicalAudioUrl && isPlaying) {
+      pauseTrack();
     } else {
       playTrack({
         id: trackId,
         title: `${chapterTitle} (${archipelagoTitleEn})`,
         seriesTitle: `ทะเลน้ำลึก • หมู่เกาะที่ ${archipelagoNumber}: ${archipelagoTitleTh}`,
         chapterNumber,
-        audioUrl,
+        audioUrl: canonicalAudioUrl,
         duration: audioDuration || '18 นาที',
         coverImage,
       });

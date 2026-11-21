@@ -26,19 +26,21 @@ export function OneshotAudioSuite({
   className = '',
 }: OneshotAudioSuiteProps) {
   const { member } = useAuth();
-  const { playTrack, togglePlay, currentTrack, isPlaying } = useAudio();
+  const { playTrack, pauseTrack, currentTrack, isPlaying } = useAudio();
   const [showTierModal, setShowTierModal] = useState(false);
 
   const num = chapter.chapterNumber;
+  const trackId = chapter.id || `oneshot-${num}`;
   const fullDur = chapter.audio?.full?.duration || chapter.audioDuration || '16:30';
   const fullUrl = normalizeAudioUrl(
     chapter.audio?.full?.url || chapter.audioUrl || `/audio/oneshot/island${num}-full.mp3`,
-    num
+    num,
+    trackId
   );
 
-  const trackId = chapter.id || `oneshot-${num}`;
   const isCurrentTrack =
-    currentTrack?.id === trackId || currentTrack?.audioUrl === fullUrl;
+    !!currentTrack &&
+    (currentTrack.audioUrl === fullUrl || currentTrack.id === trackId);
 
   const audioAccess = checkOceanAudioAccess({
     realm: 'shallow',
@@ -66,8 +68,8 @@ export function OneshotAudioSuite({
       return;
     }
 
-    if (isCurrentTrack) {
-      togglePlay();
+    if (isCurrentTrack && currentTrack?.audioUrl === fullUrl && isPlaying) {
+      pauseTrack();
     } else {
       playTrack(fullTrack);
     }

@@ -119,16 +119,13 @@ export default function PortalPage() {
     if (currentTrack?.id === track.id && isPlaying) {
       pauseTrack();
     } else {
-      const realAudio =
-        track.audioUrl || `/audio/oneshot/island${track.chapterNumber}-part1.mp3`;
-
       playTrack({
         id: track.id,
         title: track.title,
         seriesTitle: track.seriesTitle,
         chapterNumber: track.chapterNumber,
-        audioUrl: realAudio,
-        duration: track.duration || '16:00',
+        audioUrl: track.audioUrl || `/audio/oneshot/island${track.chapterNumber}-full.mp3`,
+        duration: track.duration || '16:30',
         coverImage: track.coverImage || `/images/oneshot/Oneshot${track.chapterNumber}_main.jpg`,
       });
     }
@@ -547,10 +544,11 @@ export default function PortalPage() {
                             onClick={() =>
                               handlePlayAudio({
                                 id: ch.id,
-                                title: ch.titleEn,
-                                seriesTitle: 'ทะเลน้ำตื้น (S.A.F.E.)',
+                                title: `${ch.titleEn}: ${ch.titleTh}`,
+                                seriesTitle: `ทะเลน้ำตื้น (S.A.F.E.) • เกาะที่ ${ch.chapterNumber}/7`,
                                 chapterNumber: ch.chapterNumber,
-                                duration: `${ch.readingTimeMinutes || 15} นาที`,
+                                audioUrl: ch.audio?.full?.url || ch.audioUrl,
+                                duration: ch.audio?.full?.duration || ch.audioDuration || `${ch.readingTimeMinutes || 15} นาที`,
                                 coverImage: ch.image,
                               })
                             }
@@ -735,9 +733,10 @@ export default function PortalPage() {
                                           onClick={() =>
                                             handlePlayAudio({
                                               id: `ocean-${arch.slug}-${sub.chapterNumber}`,
-                                              title: sub.title,
-                                              seriesTitle: arch.titleEn,
+                                              title: `${sub.title} (${arch.titleEn})`,
+                                              seriesTitle: `ทะเลน้ำลึก • หมู่เกาะที่ ${arch.archipelagoNumber}: ${arch.titleTh}`,
                                               chapterNumber: sub.chapterNumber,
+                                              audioUrl: sub.audioUrl,
                                               duration: `${sub.readingTimeMinutes || 15} นาที`,
                                               coverImage: sub.coverImage || arch.coverImage,
                                             })

@@ -62,7 +62,7 @@ interface UnifiedJourneyItem {
 
 export default function JourneyArchivePage() {
   const { member, isLoggedIn } = useAuth();
-  const { playTrack, currentTrack, isPlaying } = useAudio();
+  const { playTrack, pauseTrack, currentTrack, isPlaying } = useAudio();
 
   const [shallowChapters, setShallowChapters] = useState<OneshotChapter[]>([]);
   const [deepArchipelagos, setDeepArchipelagos] = useState<DeepOceanArchipelago[]>([]);
@@ -116,7 +116,7 @@ export default function JourneyArchivePage() {
 
     shallowChapters.forEach((ch) => {
       items.push({
-        id: ch.id || `shallow-${ch.chapterNumber}`,
+        id: ch.id || `oneshot-${ch.chapterNumber}`,
         realm: 'shallow',
         realmLabel: 'ทะเลน้ำตื้น (7 เกาะเปิด)',
         chapterNumber: ch.chapterNumber,
@@ -137,7 +137,7 @@ export default function JourneyArchivePage() {
     deepArchipelagos.forEach((arch) => {
       arch.subIslands.forEach((sub) => {
         items.push({
-          id: `deep-${arch.slug}-${sub.chapterNumber}`,
+          id: `ocean-${arch.slug}-${sub.chapterNumber}`,
           realm: 'deep',
           realmLabel: `หมู่เกาะ ${arch.archipelagoNumber}: ${arch.titleTh}`,
           archipelagoNumber: arch.archipelagoNumber,
@@ -227,6 +227,10 @@ export default function JourneyArchivePage() {
     e.preventDefault();
     e.stopPropagation();
     if (!item.audioUrl) return;
+    if (currentTrack?.id === item.id && isPlaying) {
+      pauseTrack();
+      return;
+    }
     playTrack({
       id: item.id,
       title: item.title,

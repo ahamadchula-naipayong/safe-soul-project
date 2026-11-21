@@ -107,21 +107,23 @@ export function Navbar() {
             </Link>
           </div>
 
-          {/* Right Action Buttons */}
-          <div className="flex items-center gap-2 sm:gap-2.5">
-            {/* NEW: "โดดขึ้นเรือเลย!" Quick Jump to /journey (All Articles Hub) */}
+          {/* Right Action Buttons (Icon-only symbols on narrow mobile portrait, icon+text on sm+) */}
+          <div className="flex items-center gap-1.5 sm:gap-2.5">
+            {/* 1. "โดดขึ้นเรือเลย!" Quick Jump to /journey (All Articles Hub) */}
             <Link
               href="/journey"
-              className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl gold-bevel-button text-slate-abyss font-extrabold text-xs shadow-gold-sm transition hover:scale-105 active:scale-95"
+              aria-label="โดดขึ้นเรือเลย! เข้าสู่คลังบทความ Safe for Journey"
+              className="inline-flex items-center justify-center gap-1.5 p-2.5 sm:px-4 sm:py-2 rounded-xl gold-bevel-button text-slate-abyss font-extrabold text-xs shadow-gold-sm transition hover:scale-105 active:scale-95"
               title="โดดขึ้นเรือเลย! • เข้าสู่คลังบทความ Safe for Journey ทั้งหมด"
             >
-              <Anchor className="w-3.5 h-3.5 text-slate-abyss" />
-              <span>โดดขึ้นเรือเลย!</span>
+              <Anchor className="w-4 h-4 sm:w-3.5 sm:h-3.5 text-slate-abyss" />
+              <span className="hidden sm:inline">โดดขึ้นเรือเลย!</span>
             </Link>
 
-            {/* Direct Link to News Deepdive */}
+            {/* 2. Direct Link to News Deepdive */}
             <Link
               href="/news"
+              aria-label="สำนักข่าว The Key of Return"
               className="hidden lg:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-card/90 hover:bg-emerald-surface border border-gold-warm/50 hover:border-gold-light text-gold-light font-semibold text-xs shadow-gold-sm transition hover:scale-105 active:scale-95"
               title="สำนักข่าว The Key of Return • วิเคราะห์สถานการณ์โลกและภูมิรัฐศาสตร์"
             >
@@ -129,28 +131,30 @@ export function Navbar() {
               <span>สำนักข่าว The Key of Return</span>
             </Link>
 
-            {/* Member Identity / Login Status */}
+            {/* 3. Member Identity / Login Status (Icon symbol on mobile portrait, icon+text on sm+) */}
             {isLoggedIn && member ? (
               <Link
                 href="/login"
-                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gold-warm/15 hover:bg-gold-warm/25 border border-gold-warm/60 text-gold-light font-bold text-xs shadow-gold-sm transition hover:scale-105 active:scale-95"
+                aria-label={`บัตรสมาชิก Member #${member.memberNumber}`}
+                className="inline-flex items-center justify-center gap-1.5 p-2.5 sm:px-3 sm:py-2 rounded-xl bg-gold-warm/15 hover:bg-gold-warm/25 border border-gold-warm/60 text-gold-light font-bold text-xs shadow-gold-sm transition hover:scale-105 active:scale-95"
                 title={`คุณคือ ${member.name} (คลิกดูบัตรสมาชิก)`}
               >
-                <Crown className="w-3.5 h-3.5 text-gold-warm fill-current" />
-                <span>Member #{member.memberNumber}</span>
+                <Crown className="w-4 h-4 sm:w-3.5 sm:h-3.5 text-gold-warm fill-current" />
+                <span className="hidden sm:inline">Member #{member.memberNumber}</span>
               </Link>
             ) : (
               <Link
                 href="/login"
-                className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-surface/80 hover:bg-emerald-light border border-gold/40 text-gold-light font-semibold text-xs shadow-gold-sm transition hover:scale-105 active:scale-95"
+                aria-label="เข้าสู่ระบบ หรือ สมัครสมาชิก"
+                className="inline-flex items-center justify-center gap-1.5 p-2.5 sm:px-3.5 sm:py-2 rounded-xl bg-emerald-surface/80 hover:bg-emerald-light border border-gold/40 text-gold-light font-semibold text-xs shadow-gold-sm transition hover:scale-105 active:scale-95"
                 title="เข้าสู่ระบบหรือลงทะเบียนรับสิทธิ์ Member"
               >
-                <UserCheck className="w-3.5 h-3.5 text-gold-warm" />
-                <span>เข้าสู่ระบบ / สมาชิก</span>
+                <UserCheck className="w-4 h-4 sm:w-3.5 sm:h-3.5 text-gold-warm" />
+                <span className="hidden sm:inline">เข้าสู่ระบบ / สมาชิก</span>
               </Link>
             )}
 
-            {/* Updated: "รับ E-Book ฟรี" -> "ติดต่อเรา" */}
+            {/* 4. "ติดต่อเรา" */}
             <Link
               href="/contact"
               className="hidden md:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-surface/80 hover:bg-emerald-light border border-gold/40 text-gold-light font-semibold text-xs shadow-gold-sm transition hover:scale-105 active:scale-95"

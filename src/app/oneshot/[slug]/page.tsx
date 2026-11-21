@@ -139,11 +139,11 @@ export default async function OneshotDetailPage({ params }: OneshotDetailPagePro
               }}
             />
 
-            <div className="flex items-center gap-2 font-mono">
+            <div className="hidden md:flex items-center gap-2 font-mono">
               <span className="px-3 py-1 rounded-xl bg-gold-warm text-slate-abyss text-xs font-black uppercase tracking-wider shadow-gold-sm">
                 เกาะที่ {chapter.chapterNumber} / 7
               </span>
-              <span className="hidden sm:inline-block px-3 py-1 rounded-xl bg-black/75 backdrop-blur-md text-xs font-semibold text-emerald-300 border border-emerald-500/40">
+              <span className="px-3 py-1 rounded-xl bg-black/75 backdrop-blur-md text-xs font-semibold text-emerald-300 border border-emerald-500/40">
                 S.A.F.E. SERIES
               </span>
             </div>
