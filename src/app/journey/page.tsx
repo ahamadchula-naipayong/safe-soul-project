@@ -647,8 +647,19 @@ export default function JourneyArchivePage() {
 
                     {/* Text Body */}
                     <div className="p-5 space-y-2.5">
-                      <div className="text-[11px] font-semibold text-gold-warm/90 line-clamp-1">
-                        {item.realmLabel}
+                      <div className="flex flex-wrap items-center justify-between gap-1.5 text-[11px]">
+                        <span className="font-semibold text-gold-warm/90 line-clamp-1">
+                          {item.realmLabel}
+                        </span>
+                        <span
+                          className={`px-2 py-0.5 rounded-md font-mono text-[10px] border ${
+                            access.isReleased
+                              ? 'bg-emerald-950/80 border-emerald-500/30 text-emerald-300'
+                              : 'bg-amber-950/70 border-gold-warm/40 text-gold-light'
+                          }`}
+                        >
+                          {access.isReleased ? 'เผยแพร่แล้ว' : `เปิด: ${access.scheduledText}`}
+                        </span>
                       </div>
 
                       <h3 className="text-lg font-thai-serif font-bold text-parchment-cream group-hover:text-gold-light transition line-clamp-2 leading-snug">
@@ -658,6 +669,10 @@ export default function JourneyArchivePage() {
                       <p className="text-xs text-parchment-muted/85 font-light line-clamp-2 leading-relaxed">
                         {item.excerpt}
                       </p>
+
+                      <div className="text-[11px] text-parchment-muted/80 pt-1">
+                        กำหนดเผยแพร่: <strong className="text-gold-light/90">{access.scheduledText}</strong>
+                      </div>
                     </div>
                   </div>
 
@@ -719,7 +734,7 @@ export default function JourneyArchivePage() {
                         {item.title}
                       </div>
                       <div className="text-xs text-parchment-muted/75 truncate">
-                        {item.realmLabel} • {item.subtitle}
+                        {item.realmLabel} • {item.subtitle} • <span className="text-gold-light/90">เผยแพร่: {access.scheduledText}</span>
                       </div>
                     </div>
                   </div>

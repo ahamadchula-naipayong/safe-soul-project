@@ -22,7 +22,7 @@ import {
 export function Navbar() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const { totalItemsCount, openCart } = useCart();
-  const { member, isLoggedIn } = useAuth();
+  const { member, isLoggedIn, isAdmin } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -395,17 +395,19 @@ export function Navbar() {
                     <ChevronRight className="w-4 h-4 text-parchment-muted group-hover:translate-x-1 transition" />
                   </Link>
 
-                  <Link
-                    href="/admin"
-                    onClick={() => setIsDrawerOpen(false)}
-                    className="flex items-center justify-between p-3 rounded-xl hover:bg-white/5 text-parchment-muted hover:text-parchment-cream transition group"
-                  >
-                    <div className="flex items-center gap-3">
-                      <SlidersHorizontal className="w-4 h-4 text-gold-warm" />
-                      <div className="text-xs">แผงควบคุมระบบ (Admin Control)</div>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-parchment-muted group-hover:translate-x-1 transition" />
-                  </Link>
+                  {isAdmin && (
+                    <Link
+                      href="/admin"
+                      onClick={() => setIsDrawerOpen(false)}
+                      className="flex items-center justify-between p-3 rounded-xl bg-gold-warm/10 hover:bg-gold-warm/20 border border-gold-warm/30 text-gold-light transition group"
+                    >
+                      <div className="flex items-center gap-3">
+                        <SlidersHorizontal className="w-4 h-4 text-gold-warm" />
+                        <div className="text-xs font-bold">แผงควบคุมระบบ (Admin Control)</div>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-gold-warm group-hover:translate-x-1 transition" />
+                    </Link>
+                  )}
                 </nav>
               </div>
 

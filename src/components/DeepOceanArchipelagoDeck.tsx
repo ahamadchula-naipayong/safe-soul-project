@@ -3,6 +3,13 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { DeepOceanArchipelago } from '@/types';
+import { useAuth } from '@/context/AuthContext';
+import { checkOceanArticleAccess } from '@/lib/oceanAccess';
+import {
+  formatThaiScheduleDate,
+  getDeepOceanScheduledIso,
+  isReleasedBySchedule,
+} from '@/lib/releaseSchedule';
 import {
   Compass,
   ArrowRight,
@@ -25,6 +32,7 @@ export function DeepOceanArchipelagoDeck({
   archipelagos,
 }: DeepOceanArchipelagoDeckProps) {
   const [activeIndex, setActiveIndex] = useState(0);
+  const { member } = useAuth();
 
   if (!archipelagos || archipelagos.length === 0) return null;
 
@@ -224,7 +232,20 @@ export function DeepOceanArchipelagoDeck({
 
                       <div className="grid grid-cols-1 gap-2">
                         {arch.subIslands.map((sub) => {
-                          const isSubOpen = !archUpcoming && sub.chapterNumber === 1;
+                          const scheduledIso =
+                            sub.publishedAt ||
+                            getDeepOceanScheduledIso(arch.archipelagoNumber, sub.chapterNumber);
+                          const scheduleShort = formatThaiScheduleDate(scheduledIso, false);
+                          const subAccess = checkOceanArticleAccess({
+                            realm: 'deep',
+                            archipelagoNumber: arch.archipelagoNumber,
+                            chapterNumber: sub.chapterNumber,
+                            isUnlocked: sub.isUnlocked,
+                            status: sub.status,
+                            publishedAt: scheduledIso,
+                            member,
+                          });
+                          const isSubOpen = subAccess.canAccess;
 
                           return (
                             <div
@@ -232,10 +253,10 @@ export function DeepOceanArchipelagoDeck({
                               className={`p-3.5 rounded-xl border transition flex items-center justify-between gap-3 ${
                                 isSubOpen
                                   ? 'bg-emerald-950/50 border-gold-warm/50 hover:bg-emerald-900/40 hover:border-gold-light'
-                                  : 'bg-black/50 border-white/10 opacity-75'
+                                  : 'bg-black/50 border-white/10 opacity-85'
                               }`}
                             >
-                              <div className="flex items-center gap-3">
+                              <div className="flex items-center gap-3 min-w-0">
                                 {sub.coverImage ? (
                                   <div className="relative w-11 h-11 rounded-lg overflow-hidden border border-gold-warm/40 shrink-0 bg-black shadow-sm">
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -259,12 +280,14 @@ export function DeepOceanArchipelagoDeck({
                                     {sub.chapterNumber}
                                   </span>
                                 )}
-                                <div>
+                                <div className="min-w-0">
                                   <div className="text-xs sm:text-sm font-thai font-semibold text-parchment-cream line-clamp-1">
                                     {sub.title}
                                   </div>
-                                  <div className="text-[11px] text-parchment-muted font-light line-clamp-1">
-                                    {sub.excerpt}
+                                  <div className="text-[11px] text-gold-light/85 font-light line-clamp-1">
+                                    {isReleasedBySchedule(scheduledIso)
+                                      ? `เผยแพร่แล้ว (${scheduleShort})`
+                                      : `กำหนดเผยแพร่: ${scheduleShort}`}
                                   </div>
                                 </div>
                               </div>
@@ -275,14 +298,17 @@ export function DeepOceanArchipelagoDeck({
                                     href={`/ocean/${arch.slug}/${sub.chapterNumber}`}
                                     className="px-3.5 py-1.5 rounded-lg gold-bevel-button text-slate-abyss text-xs font-bold shadow-sm hover:scale-105 transition flex items-center gap-1"
                                   >
-                                    <span>อ่านบทที่ 1</span>
+                                    <span>เข้าอ่านบทที่ {sub.chapterNumber}</span>
                                     <ArrowRight className="w-3.5 h-3.5" />
                                   </Link>
                                 ) : (
-                                  <span className="text-[11px] font-mono text-parchment-muted/60 flex items-center gap-1 bg-black/60 px-2.5 py-1 rounded border border-white/5">
-                                    <Lock className="w-3 h-3" />
-                                    <span>{archUpcoming ? 'เร็วๆ นี้' : 'สิทธิ์สมาชิก'}</span>
-                                  </span>
+                                  <Link
+                                    href={`/ocean/${arch.slug}/${sub.chapterNumber}`}
+                                    className="text-[11px] font-mono text-gold-light/90 hover:text-gold-warm flex items-center gap-1 bg-black/60 px-2.5 py-1.5 rounded-lg border border-gold-warm/30 transition"
+                                  >
+                                    <Lock className="w-3 h-3 text-gold-warm" />
+                                    <span>{scheduleShort}</span>
+                                  </Link>
                                 )}
                               </div>
                             </div>
@@ -368,7 +394,20 @@ export function DeepOceanArchipelagoDeck({
                 5 เกาะย่อยที่ล้อมรอบเกาะหลัก:
               </div>
               {active.subIslands.map((sub) => {
-                const isSubOpen = !isUpcoming && sub.chapterNumber === 1;
+                const scheduledIso =
+                  sub.publishedAt ||
+                  getDeepOceanScheduledIso(active.archipelagoNumber, sub.chapterNumber);
+                const scheduleShort = formatThaiScheduleDate(scheduledIso, false);
+                const subAccess = checkOceanArticleAccess({
+                  realm: 'deep',
+                  archipelagoNumber: active.archipelagoNumber,
+                  chapterNumber: sub.chapterNumber,
+                  isUnlocked: sub.isUnlocked,
+                  status: sub.status,
+                  publishedAt: scheduledIso,
+                  member,
+                });
+                const isSubOpen = subAccess.canAccess;
 
                 return (
                   <div
@@ -379,9 +418,14 @@ export function DeepOceanArchipelagoDeck({
                       <span className="w-6 h-6 rounded-md bg-gold-warm/20 text-gold-warm text-xs font-mono flex items-center justify-center shrink-0">
                         {sub.chapterNumber}
                       </span>
-                      <span className="text-xs text-parchment-cream truncate">
-                        {sub.title}
-                      </span>
+                      <div className="min-w-0">
+                        <div className="text-xs text-parchment-cream truncate">
+                          {sub.title}
+                        </div>
+                        <div className="text-[10px] text-gold-light/80">
+                          {scheduleShort}
+                        </div>
+                      </div>
                     </div>
 
                     {isSubOpen ? (
@@ -392,9 +436,12 @@ export function DeepOceanArchipelagoDeck({
                         อ่าน
                       </Link>
                     ) : (
-                      <span className="text-[10px] text-parchment-muted shrink-0">
-                        {isUpcoming ? 'เร็วๆ นี้' : 'สมาชิก'}
-                      </span>
+                      <Link
+                        href={`/ocean/${active.slug}/${sub.chapterNumber}`}
+                        className="text-[10px] text-gold-light/80 bg-black/60 px-2 py-1 rounded border border-white/10 shrink-0"
+                      >
+                        {scheduleShort.split(' ')[0]} {scheduleShort.split(' ')[1]}
+                      </Link>
                     )}
                   </div>
                 );

@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { OneshotChapter, OneshotSection, OneshotSectionKey } from '@/types';
+import { SHALLOW_WATERS_RELEASE_ISO } from '@/lib/releaseSchedule';
 
 // In-memory cache for high-speed retrieval
 let cachedChapters: OneshotChapter[] | null = null;
@@ -344,6 +345,8 @@ function parseChapterChunk(
     audio: audioInfo || undefined,
     audioUrl,
     audioDuration,
+    status: 'published',
+    publishedAt: SHALLOW_WATERS_RELEASE_ISO,
   };
 }
 

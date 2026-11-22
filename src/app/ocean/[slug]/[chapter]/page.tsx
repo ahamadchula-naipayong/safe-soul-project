@@ -16,6 +16,11 @@ import {
   Lock,
 } from 'lucide-react';
 import { getDeepOceanSubIsland, getAllDeepOceanArchipelagos } from '@/lib/deepOcean';
+import {
+  formatThaiScheduleDate,
+  getDeepOceanScheduleWeek,
+  isReleasedBySchedule,
+} from '@/lib/releaseSchedule';
 import { ArticleActionToolbar } from '@/components/ArticleActionToolbar';
 import { OceanContentGate } from '@/components/OceanContentGate';
 import { ArticleCoffeeSupport } from '@/components/ArticleCoffeeSupport';
@@ -172,16 +177,32 @@ export default async function DeepOceanReaderPage({
             </p>
           </div>
 
-          {/* Reading Time Meta */}
+          {/* Reading Time & Official Publication Schedule Meta */}
           <div className="flex flex-wrap items-center gap-3 text-xs sm:text-sm text-gold-light/90 font-thai pt-2">
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-black/60 backdrop-blur-md border border-white/10 font-mono">
               <Clock className="w-3.5 h-3.5 text-gold-warm" />
               <span>เวลาอ่านประมาณ {subIsland.readingTimeMinutes} นาที</span>
             </div>
             {subIsland.publishedAt && (
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-black/60 backdrop-blur-md border border-white/10 font-mono text-parchment-muted">
-                <Calendar className="w-3.5 h-3.5 text-emerald-400" />
-                <span>เผยแพร่เมื่อ: {subIsland.publishedAt}</span>
+              <div
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg backdrop-blur-md border font-thai ${
+                  isReleasedBySchedule(subIsland.publishedAt)
+                    ? 'bg-emerald-950/75 border-emerald-400/40 text-emerald-200'
+                    : 'bg-amber-950/80 border-gold-warm/50 text-gold-light'
+                }`}
+              >
+                <Calendar className="w-3.5 h-3.5 text-gold-warm shrink-0" />
+                <span>
+                  {isReleasedBySchedule(subIsland.publishedAt)
+                    ? 'เผยแพร่แล้วเมื่อ: '
+                    : 'กำหนดเผยแพร่: '}
+                  <strong>{formatThaiScheduleDate(subIsland.publishedAt, true)}</strong> (
+                  {getDeepOceanScheduleWeek(
+                    archipelago.archipelagoNumber,
+                    subIsland.chapterNumber
+                  )}
+                  )
+                </span>
               </div>
             )}
           </div>

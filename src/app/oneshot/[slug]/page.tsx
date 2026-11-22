@@ -25,6 +25,7 @@ import {
   getAdjacentOneshotChapter,
   getAllOneshotChapters,
 } from '@/lib/oneshot';
+import { formatThaiScheduleDate } from '@/lib/releaseSchedule';
 import { MarkdownRenderer } from '@/components/MarkdownRenderer';
 import { ArticleActionToolbar } from '@/components/ArticleActionToolbar';
 import { OneshotAudioSuite } from '@/components/OneshotAudioSuite';
@@ -178,11 +179,15 @@ export default async function OneshotDetailPage({ params }: OneshotDetailPagePro
             </p>
           </div>
 
-          {/* Reading Time Meta */}
+          {/* Reading Time & Official Publication Date Meta */}
           <div className="flex flex-wrap items-center gap-3 text-xs sm:text-sm text-gold-light/90 font-thai pt-2">
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-black/60 backdrop-blur-md border border-white/10 font-mono">
               <Clock className="w-3.5 h-3.5 text-gold-warm" />
               <span>เวลาอ่านประมาณ {chapter.readingTimeMinutes} นาที</span>
+            </div>
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-950/75 backdrop-blur-md border border-emerald-400/40 text-emerald-200 font-thai">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+              <span>เผยแพร่เมื่อ: {formatThaiScheduleDate(chapter.publishedAt, true)} (W1)</span>
             </div>
           </div>
         </div>

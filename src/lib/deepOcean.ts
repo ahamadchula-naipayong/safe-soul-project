@@ -1,6 +1,10 @@
 import fs from 'fs';
 import path from 'path';
 import { DeepOceanArchipelago, DeepOceanSubIsland, ArticleStatus } from '@/types';
+import {
+  getDeepOceanScheduledIso,
+  isReleasedBySchedule,
+} from '@/lib/releaseSchedule';
 
 // In-memory cache
 let cachedArchipelagos: DeepOceanArchipelago[] | null = null;
@@ -250,9 +254,13 @@ export async function getAllDeepOceanArchipelagos(): Promise<DeepOceanArchipelag
           const overrideKey = `${baseSlug}-ch-${c}`;
           const override = overrides[overrideKey] || {};
 
-          // Default unlock: Chapter 1 of Archipelagos 1-7 is unlocked for Free Tier 1
+          // Default unlock: Chapter 1 of Archipelagos 1-7 is unlocked for Free Tier 1 once its scheduled release date arrives
           const defaultUnlocked = archipelagoNumber <= 7 && c === 1;
-          const defaultStatus: ArticleStatus = 'published';
+          const defaultPublishedAt = getDeepOceanScheduledIso(archipelagoNumber, c);
+          const finalPublishedAt = override.publishedAt || defaultPublishedAt;
+          const defaultStatus: ArticleStatus = isReleasedBySchedule(finalPublishedAt)
+            ? 'published'
+            : 'scheduled';
 
           const defaultCoverImage = `/images/deep-ocean/${imagePrefix}_0${c}_HiRes.jpg`;
           const defaultAudioUrl = `${audioBase}/audio/deep-ocean/${imagePrefix}_0${c}_normalized.mp3`;
@@ -264,7 +272,7 @@ export async function getAllDeepOceanArchipelagos(): Promise<DeepOceanArchipelag
             excerpt: override.excerpt || excerpt,
             content: override.content || content,
             status: override.status || defaultStatus,
-            publishedAt: override.publishedAt,
+            publishedAt: finalPublishedAt,
             isUnlocked:
               override.isUnlocked !== undefined ? override.isUnlocked : defaultUnlocked,
             audioUrl: override.audioUrl || defaultAudioUrl,

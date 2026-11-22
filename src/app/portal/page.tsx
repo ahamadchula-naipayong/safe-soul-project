@@ -5,6 +5,11 @@ import Link from 'next/link';
 import { useAudio } from '@/context/AudioContext';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
+import {
+  formatThaiScheduleDate,
+  isReleasedBySchedule,
+  getDeepOceanScheduledIso,
+} from '@/lib/releaseSchedule';
 import { mockProducts } from '@/lib/supabase/mockData';
 import { TierType, OneshotChapter, DeepOceanArchipelago } from '@/types';
 import {
@@ -55,9 +60,7 @@ export default function PortalPage() {
   const { playTrack, currentTrack, isPlaying, pauseTrack } = useAudio();
 
   useEffect(() => {
-    if (member?.tier) {
-      setActiveTier(member.tier);
-    }
+    setActiveTier(member?.tier || 'free_tier_1');
   }, [member]);
 
   // Load real ocean data from API
@@ -661,30 +664,36 @@ export default function PortalPage() {
                         {isExpanded && (
                           <div className="p-4 pt-0 space-y-2 border-t border-white/5 bg-black/40">
                             {arch.subIslands.map((sub) => {
-                              // Unlock rules:
-                              // - Lifetime: always unlocked
-                              // - Supporter: archipelago 1-7 sub 1-3 unlocked, rest upcoming
-                              // - Free: archipelago 1-7 sub 1 unlocked, rest locked
+                              const scheduledIso =
+                                sub.publishedAt ||
+                                getDeepOceanScheduledIso(arch.archipelagoNumber, sub.chapterNumber);
+                              const isReleased = isReleasedBySchedule(scheduledIso);
+                              const scheduleLabel = formatThaiScheduleDate(scheduledIso, false);
+
                               let isSubUnlocked = false;
-                              let statusText = 'ล็อก (สิทธิ์สมาชิก)';
+                              let statusText = `กำหนดเผยแพร่: ${scheduleLabel}`;
 
                               if (activeTier === 'founding_tier_3') {
                                 isSubUnlocked = true;
-                                statusText = 'ปลดล็อกแล้ว';
+                                statusText = isReleased
+                                  ? 'ปลดล็อกแล้ว (Founding 100)'
+                                  : `Founding 100 อ่านล่วงหน้า (เผยแพร่ ${scheduleLabel})`;
                               } else if (activeTier === 'supporter_tier_2') {
-                                if (arch.archipelagoNumber <= 7 && sub.chapterNumber <= 3) {
+                                if (isReleased) {
                                   isSubUnlocked = true;
-                                  statusText = 'ปลดล็อกตามรอบ';
+                                  statusText = `ปลดล็อกแล้ว (${scheduleLabel})`;
                                 } else {
-                                  statusText = 'รอเปิดรอบสัปดาห์ถัดไป';
+                                  statusText = `เปิดอ่าน: ${scheduleLabel}`;
                                 }
                               } else {
                                 // free_tier_1
-                                if (arch.archipelagoNumber <= 7 && sub.chapterNumber === 1) {
+                                if (arch.archipelagoNumber <= 7 && sub.chapterNumber === 1 && isReleased) {
                                   isSubUnlocked = true;
                                   statusText = 'อ่านฟรีเกาะย่อยแรก';
+                                } else if (arch.archipelagoNumber <= 7 && sub.chapterNumber === 1 && !isReleased) {
+                                  statusText = `เปิดอ่านฟรี: ${scheduleLabel}`;
                                 } else {
-                                  statusText = 'ต้องปลดล็อกสมาชิก';
+                                  statusText = `เฉพาะสมาชิก (เผยแพร่ ${scheduleLabel})`;
                                 }
                               }
 

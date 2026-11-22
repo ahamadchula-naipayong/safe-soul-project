@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { mockFoundingQuota, mockSponsors } from '@/lib/supabase/mockData';
+import { useAuth, ViewAsMode } from '@/context/AuthContext';
 import {
   BookOpen,
   Crown,
@@ -15,9 +16,15 @@ import {
   Mail,
   FileSpreadsheet,
   Clock,
+  Eye,
+  Compass,
+  Anchor,
+  Shield,
+  Calendar,
 } from 'lucide-react';
 
 export default function AdminHubPage() {
+  const { viewAsMode, setViewAsMode } = useAuth();
   const [quota, setQuota] = useState(mockFoundingQuota);
   const [quotaSaved, setQuotaSaved] = useState(false);
 
@@ -158,6 +165,118 @@ export default function AdminHubPage() {
             <div className="text-[11px] text-parchment-muted">
               คงเหลือ {quota.remaining_slots} สิทธิ์ • สปอนเซอร์ {mockSponsors.filter((s) => s.is_active).length} จุด
             </div>
+          </div>
+        </div>
+
+        {/* Admin "View As" Perspective Switcher & Tier Comparison Matrix */}
+        <div className="luxury-glass rounded-3xl p-6 sm:p-8 space-y-5 border-2 border-gold-warm/45">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-emerald-border/60 pb-4">
+            <div className="space-y-1">
+              <div className="inline-flex items-center gap-2 text-xs font-bold text-gold-warm uppercase tracking-wider">
+                <Eye className="w-4 h-4" />
+                <span>Admin Perspective Simulator • จำลองมุมมองสมาชิก (View As)</span>
+              </div>
+              <h3 className="text-xl sm:text-2xl font-thai-serif font-bold text-parchment-cream">
+                สลับทดสอบมุมมองเว็บไซต์แต่ละระดับสมาชิก (Free-tier / รายเดือน / ตลอดชีพ)
+              </h3>
+              <p className="text-xs text-parchment-muted font-light">
+                คลิกเลือกระดับมุมมองด้านล่าง (หรือใช้แถบปุ่มลอยมุมซ้ายล่างของหน้าจอ) เพื่อดูหน้าเว็บไซต์จริงในมุมมองของสมาชิกแต่ละกลุ่ม
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <Link
+                href="/journey"
+                className="px-4 py-2 rounded-xl gold-bevel-button text-slate-abyss font-bold text-xs shadow-gold-sm"
+              >
+                ไปดูหน้าคลังบทความในมุมมองนี้ →
+              </Link>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            {[
+              {
+                id: 'actual' as ViewAsMode,
+                title: 'มุมมองจริง (Admin)',
+                badge: 'Admin / Co-Admin',
+                shallow: 'อ่าน + ฟังเสียงครบ 7 เกาะ',
+                deep: 'เข้าถึงทุกบท + จัดการหลังบ้าน',
+                news: 'อ่านครบทุกหมวดหมู่',
+              },
+              {
+                id: 'visitor' as ViewAsMode,
+                title: 'ผู้มาเยือน (ยังไม่ล็อกอิน)',
+                badge: 'Guest Visitor',
+                shallow: 'อ่านครบ 7 เกาะ • ฟังเสียงเฉพาะเกาะ 1–3',
+                deep: 'ล็อกทั้งหมด (แสดงตัวอย่าง + วันเผยแพร่)',
+                news: 'ล็อกให้อ่านเฉพาะสมาชิกที่เข้าสู่ระบบ',
+              },
+              {
+                id: 'free_tier_1' as ViewAsMode,
+                title: 'Free-tier (฿0)',
+                badge: 'เรือประมงน้ำตื้น',
+                shallow: 'อ่าน + ฟังเสียงครบทั้ง 7 เกาะ + รับ E-Book 73 หน้า',
+                deep: 'อ่านฟรีบทที่ 1 ของหมู่เกาะ 1–7 (เมื่อถึงวันเผยแพร่ 05:00 น.)',
+                news: 'อ่านข่าวทั่วไป + West Asia (ล็อก Deepdive)',
+              },
+              {
+                id: 'supporter_tier_2' as ViewAsMode,
+                title: 'รายเดือน (฿199/ด.)',
+                badge: 'เรือประมงน้ำลึก (Supporter)',
+                shallow: 'อ่าน + ฟังเสียงครบทั้ง 7 เกาะ',
+                deep: 'ปลดล็อกบทความ + เสียงน้ำลึกทุกบทที่ถึงกำหนดตารางเผยแพร่ (05:00 น.)',
+                news: 'ปลดล็อกข่าวทั้งหมดรวมถึงหมวด Deepdive',
+              },
+              {
+                id: 'founding_tier_3' as ViewAsMode,
+                title: 'ตลอดชีพ (฿3,990)',
+                badge: 'เรือสำราญทุกมรสุม (Founding 100)',
+                shallow: 'อ่าน + ฟังเสียงครบทั้ง 7 เกาะ',
+                deep: 'ปลดล็อกล่วงหน้าครบ 100% (50 บท + 50 ไฟล์เสียง) ทันทีไม่ต้องรอตารางสัปดาห์',
+                news: 'ปลดล็อกข่าวทั้งหมดรวมถึงหมวด Deepdive ตลอดชีพ',
+              },
+            ].map((item) => {
+              const active = viewAsMode === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setViewAsMode(item.id)}
+                  className={`p-4 rounded-2xl border text-left transition flex flex-col justify-between space-y-3 cursor-pointer ${
+                    active
+                      ? 'bg-gold-warm/20 border-gold-warm ring-2 ring-gold-warm shadow-gold-sm'
+                      : 'bg-black/45 hover:bg-emerald-surface/40 border-emerald-border/70'
+                  }`}
+                >
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full bg-black/60 text-gold-light border border-gold-warm/30">
+                        {item.badge}
+                      </span>
+                      {active && (
+                        <span className="text-[10px] font-bold text-emerald-300">● กำลังใช้งาน</span>
+                      )}
+                    </div>
+                    <div className="text-sm font-bold text-parchment-cream pt-1">
+                      {item.title}
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5 text-[11px] text-parchment-muted border-t border-white/10 pt-2">
+                    <div>
+                      <strong className="text-gold-light">น้ำตื้น:</strong> {item.shallow}
+                    </div>
+                    <div>
+                      <strong className="text-cyan-300">น้ำลึก:</strong> {item.deep}
+                    </div>
+                    <div>
+                      <strong className="text-emerald-300">สำนักข่าว:</strong> {item.news}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
 

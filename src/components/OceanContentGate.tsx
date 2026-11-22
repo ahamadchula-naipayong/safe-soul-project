@@ -197,9 +197,9 @@ export function OceanContentGate({
         {/* Deep Ocean Audio Suite Player Bar */}
         {renderDeepOceanAudioBar()}
 
-        {/* Unlocked Vessel Status Banner */}
+        {/* Unlocked Vessel Status & Release Schedule Banner */}
         <div className="p-4 rounded-2xl bg-[#0E261A] border border-gold-warm/40 text-xs text-parchment-cream flex flex-wrap items-center justify-between gap-3 shadow-sm">
-          <div className="flex items-center gap-2.5">
+          <div className="flex flex-wrap items-center gap-2.5">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_#34D399]" />
             <span className="font-semibold text-gold-light">
               สิทธิ์การเดินเรือ: {access.badgeText}
@@ -214,10 +214,15 @@ export function OceanContentGate({
             )}
           </div>
 
-          <span className="text-[11px] text-emerald-300 font-mono flex items-center gap-1">
-            <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>เข้าถึงฉบับสมบูรณ์</span>
-          </span>
+          <div className="flex flex-wrap items-center gap-2 text-[11px]">
+            <span className="px-2.5 py-0.5 rounded-lg bg-black/50 border border-white/10 text-gold-light">
+              กำหนดเผยแพร่: {access.scheduledText}
+            </span>
+            <span className="text-emerald-300 font-mono flex items-center gap-1">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>เข้าถึงฉบับสมบูรณ์</span>
+            </span>
+          </div>
         </div>
 
         {/* Full Markdown Article Content */}
@@ -275,27 +280,37 @@ export function OceanContentGate({
               : access.lockReason === 'pending_slip'
               ? 'สลิปการโอนเงินของคุณอยู่ระหว่างรอแอดมินตรวจสอบ'
               : access.lockReason === 'weekly_release_wait'
-              ? 'บทเรียนนี้อยู่ในตารางปล่อยรายสัปดาห์ (ปลดล็อกล่วงหน้าสำหรับ Founding 100)'
+              ? `บทเรียนนี้จะเปิดเผยแพร่ใน${access.scheduledText}`
               : 'อัปเกรดระดับเรือเพื่อดำดิ่งสู่เนื้อหาทะเลน้ำลึกฉบับเต็ม'}
           </h2>
+
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-xl bg-black/55 border border-gold-warm/35 text-xs text-gold-light font-semibold">
+            <Clock className="w-3.5 h-3.5 text-gold-warm shrink-0" />
+            <span>ตารางเผยแพร่บทนี้: {access.scheduledText}</span>
+          </div>
 
           <p className="text-sm text-parchment-muted leading-relaxed font-light">
             {access.lockReason === 'login_required' ? (
               <>
                 บทความ <strong>&ldquo;{chapterTitle}&rdquo;</strong> ({archipelagoTitleEn} • {archipelagoTitleTh}) อยู่ในเขต{' '}
-                <strong className="text-cyan-300">ทะเลน้ำลึก</strong> — สมัครสมาชิกเรือประมงน้ำตื้น (ฟรี) เพื่ออ่านบทที่ 1 ของทั้ง 7 หมู่เกาะเปิด หรือเลือกเรือประมงน้ำลึก / Founding 100 เพื่อปลดล็อกเนื้อหาเชิงลึก
+                <strong className="text-cyan-300">ทะเลน้ำลึก</strong> (กำหนดเผยแพร่:{' '}
+                <strong className="text-gold-light">{access.scheduledText}</strong>) — สมัครสมาชิกเรือประมงน้ำตื้น (ฟรี) เพื่ออ่านบทที่ 1 ของหมู่เกาะที่ 1–7 เมื่อถึงกำหนดเผยแพร่ หรือเลือกเรือประมงน้ำลึก / Founding 100 เพื่อปลดล็อกเนื้อหาเชิงลึก
               </>
             ) : access.lockReason === 'pending_slip' ? (
               <>
-                ทีมงานได้รับหลักฐานการโอนเงินของ <strong>Member #{member?.memberNumber}</strong> แล้ว และกำลังตรวจสอบความถูกต้อง ในระหว่างนี้คุณสามารถอ่านทะเลน้ำตื้นครบ 7 เกาะ และบทที่ 1 ของทะเลน้ำลึกได้ทันที
+                ทีมงานได้รับหลักฐานการโอนเงินของ <strong>Member #{member?.memberNumber}</strong> แล้ว และกำลังตรวจสอบความถูกต้อง ในระหว่างนี้คุณสามารถอ่านทะเลน้ำตื้นครบ 7 เกาะได้ทันที
               </>
             ) : access.lockReason === 'weekly_release_wait' ? (
               <>
-                คุณอยู่ในระดับ <strong className="text-cyan-300">เรือประมงน้ำลึก (Supporter)</strong> ซึ่งจะทยอยปลดล็อกบทใหม่สัปดาห์ละ 1 บท หากต้องการอ่านครบทั้ง 10 หมู่เกาะ (50 บท) ทันทีโดยไม่ต้องรอรอบสัปดาห์ สามารถอัปเกรดเป็น <strong className="text-gold-light">เรือสำราญทุกมรสุม (Founding 100)</strong>
+                บทความนี้มีกำหนดเปิดเผยแพร่ใน <strong className="text-gold-light">{access.scheduledText}</strong> สำหรับสมาชิก{' '}
+                <strong className="text-cyan-300">{getVesselDisplayName(access.effectiveTier)}</strong>{' '}
+                หากต้องการเปิดอ่านล่วงหน้าครบทั้ง 10 หมู่เกาะ (50 บท) ทันทีโดยไม่ต้องรอตารางเวลาเผยแพร่รายสัปดาห์ สามารถอัปเกรดเป็น{' '}
+                <strong className="text-gold-light">เรือสำราญทุกมรสุม (Founding 100 ตลอดชีพ)</strong>
               </>
             ) : (
               <>
-                ขณะนี้คุณเดินเรือในระดับ <strong className="text-emerald-300">{getVesselDisplayName(access.effectiveTier)}</strong> — เนื้อหาเกาะย่อยที่ {chapterNumber} นี้สงวนสิทธิ์สำหรับผู้ถือตั๋ว{' '}
+                ขณะนี้คุณเดินเรือในระดับ <strong className="text-emerald-300">{getVesselDisplayName(access.effectiveTier)}</strong> — เนื้อหาเกาะย่อยที่ {chapterNumber} นี้มีกำหนดเผยแพร่ใน{' '}
+                <strong className="text-gold-light">{access.scheduledText}</strong> และสงวนสิทธิ์สำหรับผู้ถือตั๋ว{' '}
                 <strong className="text-gold-light">{access.requiredVesselName}</strong>
               </>
             )}

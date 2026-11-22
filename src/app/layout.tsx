@@ -8,6 +8,7 @@ import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { StickyAudioPlayer } from '@/components/StickyAudioPlayer';
 import { CartDrawer } from '@/components/CartDrawer';
+import { AdminViewAsBar } from '@/components/AdminViewAsBar';
 
 const cinzel = Cinzel({
   subsets: ['latin'],
@@ -82,6 +83,9 @@ export default function RootLayout({
 
               {/* Slide-over Shopping Cart */}
               <CartDrawer />
+
+              {/* Floating Admin / Co-Admin "View As" Perspective Switcher */}
+              <AdminViewAsBar />
             </CartProvider>
           </AudioProvider>
         </AuthProvider>
