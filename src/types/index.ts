@@ -51,8 +51,6 @@ export interface Profile {
   tier: TierType;
   discord_user_id?: string | null;
   discord_username?: string | null;
-  telegram_username?: string | null;
-  telegram_invited?: boolean;
   ebook_downloaded?: boolean;
   created_at?: string;
 }

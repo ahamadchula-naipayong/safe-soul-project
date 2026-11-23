@@ -35,21 +35,21 @@ export default function NewsIndexPage() {
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(12);
+  const [limit, setLimit] = useState(48);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [subcategory, setSubcategory] = useState('all');
   const [subcategories, setSubcategories] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<'latest' | 'oldest'>('latest');
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<ViewMode>('details');
+  const [viewMode, setViewMode] = useState<ViewMode>('content');
   const [isPending, startTransition] = useTransition();
   const { member, isLoggedIn } = useAuth();
 
-  // Load preferred viewMode from localStorage (defaulting to 'details' - fastest)
+  // Load preferred viewMode from localStorage (defaulting to 'content' with 48 items/page)
   useEffect(() => {
     try {
-      const saved = localStorage.getItem('safesoul_news_view_mode') as ViewMode | null;
+      const saved = localStorage.getItem('safesoul_news_view_mode_v2') as ViewMode | null;
       if (saved && (saved === 'details' || saved === 'tiles' || saved === 'content')) {
         setViewMode(saved);
       }
@@ -59,7 +59,7 @@ export default function NewsIndexPage() {
   const handleViewModeChange = (mode: ViewMode) => {
     setViewMode(mode);
     try {
-      localStorage.setItem('safesoul_news_view_mode', mode);
+      localStorage.setItem('safesoul_news_view_mode_v2', mode);
     } catch {}
   };
 

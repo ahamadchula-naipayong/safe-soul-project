@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { Member, TierType } from '@/types';
+import { trackActivityEvent } from '@/lib/analytics';
 
 export type ViewAsMode =
   | 'actual'
@@ -166,6 +167,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setViewAsMode('actual');
       if (typeof window !== 'undefined') {
         localStorage.setItem('safesoul_member', JSON.stringify(data.member));
+        trackActivityEvent({
+          eventType: 'login',
+          path: '/login',
+          targetId: data.member.id,
+          targetTitle: `เข้าสู่ระบบ: ${data.member.name}`,
+          member: data.member,
+        });
       }
       return { success: true, member: data.member };
     } catch {
@@ -190,6 +198,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setViewAsMode('actual');
       if (typeof window !== 'undefined') {
         localStorage.setItem('safesoul_member', JSON.stringify(resData.member));
+        trackActivityEvent({
+          eventType: 'login',
+          path: '/login',
+          targetId: resData.member.id,
+          targetTitle: `ลงทะเบียน & เข้าสู่ระบบ: ${resData.member.name}`,
+          member: resData.member,
+        });
       }
       return { success: true, member: resData.member };
     } catch {

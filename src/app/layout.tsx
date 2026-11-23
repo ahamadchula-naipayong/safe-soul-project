@@ -4,11 +4,13 @@ import './globals.css';
 import { AudioProvider } from '@/context/AudioContext';
 import { CartProvider } from '@/context/CartContext';
 import { AuthProvider } from '@/context/AuthContext';
+import { ThemeProvider } from '@/context/ThemeContext';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { StickyAudioPlayer } from '@/components/StickyAudioPlayer';
 import { CartDrawer } from '@/components/CartDrawer';
 import { AdminViewAsBar } from '@/components/AdminViewAsBar';
+import { ActivityTracker } from '@/components/ActivityTracker';
 
 const cinzel = Cinzel({
   subsets: ['latin'],
@@ -66,29 +68,43 @@ export default function RootLayout({
   return (
     <html
       lang="th"
+      data-theme="dark"
+      suppressHydrationWarning
       className={`scroll-smooth ${cinzel.variable} ${playfair.variable} ${prompt.variable} ${notoSerifThai.variable} ${mali.variable}`}
     >
-      <body className="min-h-screen bg-slate-dark text-parchment-cream font-thai antialiased flex flex-col justify-between selection:bg-gold-warm selection:text-slate-abyss">
-        <AuthProvider>
-          <AudioProvider>
-            <CartProvider>
-              <div className="flex flex-col min-h-screen">
-                <Navbar />
-                <main className="flex-1">{children}</main>
-                <Footer />
-              </div>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('fitrah_theme');if(t==='light'||t==='dark'){document.documentElement.dataset.theme=t;}}catch(e){}})();`,
+          }}
+        />
+      </head>
+      <body className="min-h-screen bg-slate-dark text-parchment-cream font-thai antialiased flex flex-col justify-between selection:bg-gold-warm selection:text-slate-abyss transition-colors duration-300">
+        <ThemeProvider>
+          <AuthProvider>
+            <AudioProvider>
+              <CartProvider>
+                <div className="flex flex-col min-h-screen">
+                  <Navbar />
+                  <main className="flex-1">{children}</main>
+                  <Footer />
+                </div>
 
-              {/* Persistent Sticky Audio Player (Audio plays across all routes) */}
-              <StickyAudioPlayer />
+                {/* Automatic Site Traffic & Member Activity Tracker */}
+                <ActivityTracker />
 
-              {/* Slide-over Shopping Cart */}
-              <CartDrawer />
+                {/* Persistent Sticky Audio Player (Audio plays across all routes) */}
+                <StickyAudioPlayer />
 
-              {/* Floating Admin / Co-Admin "View As" Perspective Switcher */}
-              <AdminViewAsBar />
-            </CartProvider>
-          </AudioProvider>
-        </AuthProvider>
+                {/* Slide-over Shopping Cart */}
+                <CartDrawer />
+
+                {/* Floating Admin / Co-Admin "View As" Perspective Switcher */}
+                <AdminViewAsBar />
+              </CartProvider>
+            </AudioProvider>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

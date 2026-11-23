@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { mockFoundingQuota, mockSponsors } from '@/lib/supabase/mockData';
 import { useAuth, ViewAsMode } from '@/context/AuthContext';
+import { GeminiCoAdminWidget } from '@/components/GeminiCoAdminWidget';
+import { AdminAnalyticsPanel } from '@/components/AdminAnalyticsPanel';
 import {
   BookOpen,
   Crown,
@@ -38,7 +40,7 @@ export default function AdminHubPage() {
     unreadContacts: 0,
   });
 
-  useEffect(() => {
+  const refreshStats = () => {
     Promise.all([
       fetch('/api/admin/members', { cache: 'no-store' }).then((r) => r.json()).catch(() => null),
       fetch('/api/admin/store', { cache: 'no-store' }).then((r) => r.json()).catch(() => null),
@@ -54,6 +56,10 @@ export default function AdminHubPage() {
         unreadContacts: contactData?.unreadCount ?? 0,
       }));
     });
+  };
+
+  useEffect(() => {
+    refreshStats();
   }, []);
 
   const handleAdjustQuota = (newClaimed: number) => {
@@ -168,6 +174,9 @@ export default function AdminHubPage() {
           </div>
         </div>
 
+        {/* Gemini AI Co-Admin Console & Google AI Studio Login Popup */}
+        <GeminiCoAdminWidget onActionSuccess={refreshStats} />
+
         {/* Admin "View As" Perspective Switcher & Tier Comparison Matrix */}
         <div className="luxury-glass rounded-3xl p-6 sm:p-8 space-y-5 border-2 border-gold-warm/45">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-emerald-border/60 pb-4">
@@ -279,6 +288,9 @@ export default function AdminHubPage() {
             })}
           </div>
         </div>
+
+        {/* Traffic & Member Activity Records Dashboard */}
+        <AdminAnalyticsPanel />
 
         {/* Founding 100 Live Quota Control */}
         <div className="luxury-glass rounded-3xl p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6">

@@ -1,5 +1,6 @@
 import { getEbookEmailTemplateForTier } from '../../src/lib/emailTemplates';
 import { getEffectiveMemberTier } from '../../src/lib/oceanAccess';
+import { aggregateAnalyticsEvents } from '../../src/lib/analyticsAggregator';
 import { Member, TierType, PaymentStatus } from '../../src/types';
 
 interface Env {
@@ -9,6 +10,156 @@ interface Env {
   EASYSLIP_API_KEY?: string;
   RESEND_API_KEY?: string;
   EMAIL_FROM?: string;
+  GEMINI_API_KEY?: string;
+  GOOGLE_API_KEY?: string;
+}
+
+async function fetchGoogleDriveTextEdge(rawUrl: string): Promise<{ ok: boolean; text: string; sourceType: string }> {
+  try {
+    const docMatch = rawUrl.match(/docs\.google\.com\/document\/d\/([a-zA-Z0-9_-]+)/);
+    if (docMatch) {
+      const res = await fetch(`https://docs.google.com/document/d/${docMatch[1]}/export?format=txt`);
+      if (res.ok) {
+        return { ok: true, text: (await res.text()).slice(0, 15000), sourceType: 'Google Docs' };
+      }
+    }
+    const sheetMatch = rawUrl.match(/docs\.google\.com\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);
+    if (sheetMatch) {
+      const res = await fetch(`https://docs.google.com/spreadsheets/d/${sheetMatch[1]}/export?format=csv`);
+      if (res.ok) {
+        return { ok: true, text: (await res.text()).slice(0, 15000), sourceType: 'Google Sheets (CSV)' };
+      }
+    }
+    const driveMatch =
+      rawUrl.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/) || rawUrl.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+    if (driveMatch) {
+      const res = await fetch(`https://drive.google.com/uc?export=download&id=${driveMatch[1]}`);
+      if (res.ok) {
+        return { ok: true, text: (await res.text()).slice(0, 15000), sourceType: 'Google Drive File' };
+      }
+    }
+    return {
+      ok: false,
+      text: 'ไม่สามารถดึงไฟล์ได้ กรุณาตรวจสอบว่าตั้งค่าแชร์ไฟล์ใน Google Drive เป็น "ทุกคนที่มีลิงก์อ่านได้"',
+      sourceType: 'Unknown',
+    };
+  } catch (err: any) {
+    return { ok: false, text: `เกิดข้อผิดพลาดในการดึงลิงก์: ${err?.message || 'Error'}`, sourceType: 'Error' };
+  }
+}
+
+async function callGeminiEdge(
+  apiKey: string,
+  preferredModel: string,
+  systemInstruction: string,
+  contents: Array<{ role: 'user' | 'model'; parts: Array<{ text: string }> }>
+) {
+  const modelsToTry = Array.from(
+    new Set([
+      preferredModel || 'gemini-3.8-flash',
+      'gemini-3.8-flash',
+      'gemini-3.6-flash',
+      'gemini-3.5-flash-lite',
+      'gemini-3.1-flash-lite',
+      'gemma-4-31b-it',
+    ])
+  );
+  let lastError = '';
+  for (const model of modelsToTry) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: systemInstruction }] },
+          contents,
+          generationConfig: { temperature: 0.4, maxOutputTokens: 4096 },
+        }),
+      });
+      const data: any = await res.json();
+      if (res.ok && data?.candidates?.[0]?.content?.parts) {
+        const reply = data.candidates[0].content.parts.map((p: any) => p.text || '').join('');
+        return { ok: true, reply, modelUsed: model };
+      }
+      lastError = data?.error?.message || `HTTP ${res.status}`;
+      if (res.status === 400 && lastError.toLowerCase().includes('api key not valid')) break;
+    } catch (err: any) {
+      lastError = err?.message || 'Network error';
+    }
+  }
+  return { ok: false, error: lastError || 'ไม่สามารถเชื่อมต่อ Gemini API ได้' };
+}
+
+function escapeHtml(str: string): string {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+async function sendResendNotification(
+  env: Env,
+  params: {
+    to: string[];
+    fallbackTo?: string[];
+    replyTo?: string;
+    subject: string;
+    html: string;
+    text?: string;
+  }
+): Promise<{ sent: boolean; via: string; error?: string }> {
+  if (!env.RESEND_API_KEY) {
+    return { sent: false, via: 'none', error: 'RESEND_API_KEY not configured' };
+  }
+  const primaryFrom = env.EMAIL_FROM || 'The Fitrah Shield <sanctuary@hardynaipayong.cloud>';
+  try {
+    const primaryRes = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${env.RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: primaryFrom,
+        to: params.to,
+        reply_to: params.replyTo,
+        subject: params.subject,
+        html: params.html,
+        text: params.text,
+      }),
+    });
+    if (primaryRes.ok) {
+      return { sent: true, via: primaryFrom };
+    }
+    // Automatic fallback when custom domain is not yet verified in Resend
+    const fallbackRecipients = params.fallbackTo && params.fallbackTo.length > 0
+      ? params.fallbackTo
+      : ['n.ahamadchula@gmail.com'];
+    const fbRes = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${env.RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: 'The Fitrah Shield <onboarding@resend.dev>',
+        to: fallbackRecipients,
+        reply_to: params.replyTo,
+        subject: params.subject,
+        html: params.html,
+        text: params.text,
+      }),
+    });
+    if (fbRes.ok) {
+      return { sent: true, via: 'onboarding@resend.dev' };
+    }
+    const errText = await fbRes.text();
+    return { sent: false, via: 'resend_error', error: errText };
+  } catch (err: any) {
+    return { sent: false, via: 'exception', error: err?.message || 'Resend fetch failed' };
+  }
 }
 
 function jsonResponse(data: unknown, status = 200, headers: Record<string, string> = {}) {
@@ -175,7 +326,7 @@ export const onRequest = async (context: {
     // -----------------------------------------------------------------------
     if (path === '/api/news' && method === 'GET') {
       const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10));
-      const limit = Math.max(1, Math.min(100, parseInt(url.searchParams.get('limit') || '12', 10)));
+      const limit = Math.max(1, Math.min(100, parseInt(url.searchParams.get('limit') || '48', 10)));
       const search = (url.searchParams.get('search') || '').trim().toLowerCase();
       const subcategory = (url.searchParams.get('subcategory') || '').trim();
       const sortBy = (url.searchParams.get('sortBy') || 'latest').trim();
@@ -726,6 +877,94 @@ export const onRequest = async (context: {
           items,
         });
       }
+
+      if (method === 'POST') {
+        const body: any = await request.json();
+        const id = body.id || `prod-${Date.now()}`;
+        const slug = body.slug || `support-${Date.now()}`;
+        const status = body.status || 'published';
+        const isActive = status !== 'draft' ? 1 : 0;
+        const now = new Date().toISOString();
+        const imageUrl =
+          body.imageDataUrl ||
+          body.image_url ||
+          'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80';
+
+        await env.DB.prepare(
+          `INSERT OR REPLACE INTO store_products (id, slug, title, description, type, price_thb, compare_at_price_thb, image_url, badge, stock_quantity, is_active, status, published_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        )
+          .bind(
+            id,
+            slug,
+            body.title || 'สินค้าใหม่',
+            body.description || '',
+            body.type || 'physical',
+            Number(body.price_thb || 0),
+            body.compare_at_price_thb !== undefined && body.compare_at_price_thb !== null
+              ? Number(body.compare_at_price_thb)
+              : null,
+            imageUrl,
+            body.badge || null,
+            Number(body.stock_quantity ?? 50),
+            isActive,
+            status,
+            body.published_at || now.slice(0, 16),
+            now
+          )
+          .run();
+
+        return jsonResponse({
+          success: true,
+          product: { id, slug, title: body.title, status, price_thb: Number(body.price_thb || 0) },
+        });
+      }
+
+      if (method === 'DELETE') {
+        const id = url.searchParams.get('id');
+        if (id) {
+          await env.DB.prepare('DELETE FROM store_products WHERE id = ?').bind(id).run();
+        }
+        return jsonResponse({ success: true });
+      }
+    }
+
+    // -----------------------------------------------------------------------
+    // 6.5 /api/admin/articles (Cloudflare D1 article_overrides)
+    // -----------------------------------------------------------------------
+    if (path === '/api/admin/articles') {
+      if (method === 'GET') {
+        const { results } = await env.DB.prepare('SELECT * FROM article_overrides').all();
+        return jsonResponse({ success: true, items: results || [] });
+      }
+
+      if (method === 'POST') {
+        const body: any = await request.json();
+        const articleKey = body.articleKey || body.key;
+        const updates = body.updates || body;
+        if (!articleKey) {
+          return jsonResponse({ success: false, error: 'Missing articleKey' }, 400);
+        }
+        const now = new Date().toISOString();
+        await env.DB.prepare(
+          `INSERT OR REPLACE INTO article_overrides (key, title, excerpt, content, status, published_at, is_unlocked, cover_image, audio_url, is_deleted, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        )
+          .bind(
+            articleKey,
+            updates.title || null,
+            updates.excerpt || null,
+            updates.content || null,
+            updates.status || 'published',
+            updates.publishedAt || updates.published_at || null,
+            updates.isUnlocked !== undefined ? (updates.isUnlocked ? 1 : 0) : null,
+            updates.coverImage || updates.cover_image || null,
+            updates.audioUrl || updates.audio_url || null,
+            updates.isDeleted ? 1 : 0,
+            now
+          )
+          .run();
+
+        return jsonResponse({ success: true, message: 'Article updated successfully' });
+      }
     }
 
     // -----------------------------------------------------------------------
@@ -757,24 +996,418 @@ export const onRequest = async (context: {
 
       if (method === 'POST') {
         const body: any = await request.json();
+        const name = String(body.name || '').trim();
+        const replyEmail = String(body.replyEmail || '').trim();
+        const phone = String(body.phone || '').trim();
+        const category = String(body.category || 'discussion').trim();
+        const subject = String(body.subject || '').trim() || `ข้อความจากหน้าติดต่อเรา โดย ${name}`;
+        const message = String(body.message || '').trim();
+
+        if (!name || !replyEmail || !message) {
+          return jsonResponse(
+            { success: false, error: 'กรุณากรอกชื่อ อีเมลติดต่อกลับ และรายละเอียดข้อความให้ครบถ้วน' },
+            400
+          );
+        }
+
         const id = `msg_${Date.now()}`;
         const now = new Date().toISOString();
         await env.DB.prepare(
           'INSERT INTO contact_messages (id, category, name, reply_email, phone, subject, message, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
         )
+          .bind(id, category, name, replyEmail, phone, subject, message, 'new', now)
+          .run();
+
+        const categoryMap: Record<string, string> = {
+          discussion: 'พูดคุย / แลกเปลี่ยน',
+          request: 'ร้องขอเนื้อหา / เสนอแนะ',
+          complaint: 'ร้องเรียน / แจ้งปัญหา',
+          membership: 'เรื่องสมาชิก / การชำระเงิน',
+        };
+        const catLabel = categoryMap[category] || category;
+
+        const emailHtml = `
+          <div style="font-family: 'Noto Sans Thai', Arial, sans-serif; max-width: 640px; margin: 0 auto; background: #0B1912; color: #F4F1EA; padding: 24px; border-radius: 16px; border: 1px solid #D9A94F;">
+            <div style="font-size: 12px; color: #F59E0B; font-weight: bold; letter-spacing: 1px;">THE FITRAH SHIELD • แจ้งเรื่องถึงทีมงาน</div>
+            <h2 style="margin: 8px 0 16px; color: #FDE68A;">[${escapeHtml(catLabel)}] ${escapeHtml(subject)}</h2>
+            <table style="width: 100%; font-size: 13px; border-collapse: collapse; margin-bottom: 16px;">
+              <tr><td style="padding: 6px 0; color: #A7B8AD; width: 130px;">รหัสอ้างอิง:</td><td style="color: #F4F1EA; font-family: monospace;">${escapeHtml(id)}</td></tr>
+              <tr><td style="padding: 6px 0; color: #A7B8AD;">ชื่อผู้ส่ง:</td><td style="color: #F4F1EA; font-weight: bold;">${escapeHtml(name)}</td></tr>
+              <tr><td style="padding: 6px 0; color: #A7B8AD;">อีเมลตอบกลับ:</td><td><a href="mailto:${escapeHtml(replyEmail)}" style="color: #FDE68A;">${escapeHtml(replyEmail)}</a></td></tr>
+              <tr><td style="padding: 6px 0; color: #A7B8AD;">เบอร์โทรศัพท์:</td><td style="color: #F4F1EA;">${escapeHtml(phone || '-')}</td></tr>
+            </table>
+            <div style="background: #07100C; padding: 16px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); white-space: pre-wrap; line-height: 1.7; font-size: 14px; color: #F4F1EA;">
+              ${escapeHtml(message)}
+            </div>
+            <p style="font-size: 11px; color: #94A39B; margin-top: 16px;">
+              คุณสามารถกด Reply อีเมลฉบับนี้เพื่อตอบกลับไปยัง ${escapeHtml(replyEmail)} ได้ทันที หรือดูข้อความทั้งหมดที่ <a href="https://thefitrahshield.hardynaipayong.cloud/admin/contacts" style="color: #F59E0B;">แผงควบคุม Admin Contacts</a>
+            </p>
+          </div>
+        `;
+
+        const emailText = [
+          `[The Fitrah Shield - แจ้งเรื่องถึงทีมงาน]`,
+          `หมวดหมู่: ${catLabel}`,
+          `หัวข้อ: ${subject}`,
+          `รหัสอ้างอิง: ${id}`,
+          `ผู้ส่ง: ${name}`,
+          `อีเมลตอบกลับ: ${replyEmail}`,
+          `เบอร์โทรศัพท์: ${phone || '-'}`,
+          ``,
+          `รายละเอียด:`,
+          message,
+        ].join('\n');
+
+        const emailDispatch = await sendResendNotification(env, {
+          to: ['n_ahamadchula@hotmail.com', 'n.ahamadchula@gmail.com'],
+          fallbackTo: ['n.ahamadchula@gmail.com'],
+          replyTo: replyEmail,
+          subject: `[Fitrah Contact • ${catLabel}] ${subject}`,
+          html: emailHtml,
+          text: emailText,
+        });
+
+        const item = {
+          id,
+          category,
+          name,
+          replyEmail,
+          phone,
+          subject,
+          message,
+          status: 'new',
+          createdAt: now,
+        };
+
+        return jsonResponse({
+          success: true,
+          id,
+          item,
+          emailSent: emailDispatch.sent,
+          emailVia: emailDispatch.via,
+          message: 'ส่งข้อความเรียบร้อยแล้ว ทีมงานจะติดต่อกลับไปยังอีเมลที่คุณระบุโดยเร็วที่สุด',
+        });
+      }
+
+      if (method === 'PATCH') {
+        const body: any = await request.json();
+        await env.DB.prepare(
+          'UPDATE contact_messages SET status = COALESCE(?, status), admin_note = COALESCE(?, admin_note) WHERE id = ?'
+        )
+          .bind(body.status || null, body.adminNote ?? null, body.id)
+          .run();
+        return jsonResponse({ success: true });
+      }
+
+      if (method === 'DELETE') {
+        const id = url.searchParams.get('id');
+        if (id) {
+          await env.DB.prepare('DELETE FROM contact_messages WHERE id = ?').bind(id).run();
+        }
+        return jsonResponse({ success: true });
+      }
+    }
+
+    // -----------------------------------------------------------------------
+    // 7.5 /api/analytics/track & /api/analytics/summary (Cloudflare D1 Stats)
+    // -----------------------------------------------------------------------
+    if (path === '/api/analytics/track' && method === 'POST') {
+      if (!env.DB) return jsonResponse({ success: false, error: 'DB unavailable' }, 503);
+      try {
+        const body: any = await request.json();
+        const id = `evt_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+        const now = new Date().toISOString();
+        const eventType = String(body.eventType || 'pageview').slice(0, 40);
+        const sessionId = String(body.sessionId || 'anon').slice(0, 80);
+        const deviceLabel = String(body.deviceLabel || 'Unknown').slice(0, 80);
+        const evPath = String(body.path || '/').slice(0, 200);
+        const targetId = String(body.targetId || '').slice(0, 200);
+        const targetTitle = String(body.targetTitle || '').slice(0, 200);
+
+        await env.DB.prepare(
+          `INSERT INTO site_activity_events
+            (id, event_type, member_id, member_number, username, member_name, tier, session_id, device_label, path, target_id, target_title, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        )
           .bind(
             id,
-            body.category || 'discussion',
-            body.name,
-            body.replyEmail,
-            body.phone || '',
-            body.subject,
-            body.message,
-            'new',
+            eventType,
+            body.memberId || null,
+            body.memberNumber ?? null,
+            body.username || null,
+            body.memberName || null,
+            body.tier || null,
+            sessionId,
+            deviceLabel,
+            evPath,
+            targetId,
+            targetTitle,
             now
           )
           .run();
+
         return jsonResponse({ success: true, id });
+      } catch (err: any) {
+        return jsonResponse({ success: false, error: err?.message || 'Track failed' }, 400);
+      }
+    }
+
+    if (path === '/api/analytics/summary' && method === 'GET') {
+      if (!env.DB) return jsonResponse({ success: false, error: 'DB unavailable' }, 503);
+      const [evRes, memRes] = await Promise.all([
+        env.DB.prepare(
+          'SELECT * FROM site_activity_events ORDER BY created_at DESC LIMIT 8000'
+        ).all(),
+        env.DB.prepare(
+          'SELECT id, member_number, username, name, tier FROM members ORDER BY member_number ASC'
+        ).all(),
+      ]);
+      const summary = aggregateAnalyticsEvents(evRes.results || [], memRes.results || []);
+      return jsonResponse(summary);
+    }
+
+    // -----------------------------------------------------------------------
+    // 8. /api/admin/co-admin (Gemini AI Co-Admin & D1 Action Executor)
+    // -----------------------------------------------------------------------
+    if (path === '/api/admin/co-admin') {
+      const [memRes, prodRes, contactRes, overrideRes] = await Promise.all([
+        env.DB ? env.DB.prepare('SELECT * FROM members ORDER BY member_number ASC').all() : { results: [] },
+        env.DB ? env.DB.prepare('SELECT * FROM store_products').all() : { results: [] },
+        env.DB ? env.DB.prepare('SELECT * FROM contact_messages ORDER BY created_at DESC').all() : { results: [] },
+        env.DB ? env.DB.prepare('SELECT * FROM article_overrides').all() : { results: [] },
+      ]);
+
+      const members = (memRes.results || []).map(rowToMember);
+      const products = prodRes.results || [];
+      const contacts = contactRes.results || [];
+      const overrides = overrideRes.results || [];
+
+      if (method === 'GET') {
+        return jsonResponse({
+          success: true,
+          hasServerKey: Boolean(env.GEMINI_API_KEY || env.GOOGLE_API_KEY),
+          summary: {
+            membersCount: members.length,
+            pendingSlipsCount: members.filter((m: Member) => m.paymentStatus === 'pending_verification').length,
+            productsCount: products.length,
+            unreadContactsCount: contacts.filter((c: any) => c.status === 'new').length,
+            articleOverridesCount: overrides.length,
+          },
+        });
+      }
+
+      if (method === 'POST') {
+        const body: any = await request.json();
+        const action = body.action || 'chat';
+        const apiKey = String(body.apiKey || env.GEMINI_API_KEY || env.GOOGLE_API_KEY || '').trim();
+        const preferredModel = body.model || 'gemini-3.8-flash';
+
+        if (action === 'test_key') {
+          if (!apiKey) {
+            return jsonResponse({ success: false, error: 'กรุณาวาง Gemini API Key ก่อนทดสอบ' }, 400);
+          }
+          const testRes = await callGeminiEdge(
+            apiKey,
+            preferredModel,
+            'คุณคือผู้ช่วยดูแลระบบ The Fitrah Shield',
+            [
+              {
+                role: 'user',
+                parts: [
+                  {
+                    text: 'ตอบสั้นๆ 1 ประโยคว่า: เชื่อมต่อ Gemini Co-Admin สำเร็จพร้อมดูแลเว็บไซต์ The Fitrah Shield แล้วครับ',
+                  },
+                ],
+              },
+            ]
+          );
+          if (!testRes.ok) {
+            return jsonResponse({ success: false, error: testRes.error }, 400);
+          }
+          return jsonResponse({
+            success: true,
+            modelUsed: testRes.modelUsed,
+            message: testRes.reply,
+          });
+        }
+
+        if (action === 'fetch_drive_doc') {
+          const driveUrl = String(body.driveUrl || '').trim();
+          const extracted = await fetchGoogleDriveTextEdge(driveUrl);
+          return jsonResponse({
+            success: extracted.ok,
+            sourceType: extracted.sourceType,
+            content: extracted.text,
+            error: extracted.ok ? undefined : extracted.text,
+          });
+        }
+
+        if (action === 'execute_action') {
+          const payload = body.executePayload;
+          if (!payload || !payload.type || !payload.data) {
+            return jsonResponse({ success: false, error: 'ข้อมูลคำสั่งไม่ครบถ้วน' }, 400);
+          }
+          const { type, data } = payload;
+          const now = new Date().toISOString();
+
+          if (type === 'upsert_store_product') {
+            const id = data.id || `prod-${Date.now()}`;
+            const slug = data.slug || `support-${Date.now()}`;
+            const status = data.status || 'published';
+            const isActive = status !== 'draft' ? 1 : 0;
+            await env.DB.prepare(
+              `INSERT OR REPLACE INTO store_products (id, slug, title, description, type, price_thb, compare_at_price_thb, image_url, badge, stock_quantity, is_active, status, published_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+            )
+              .bind(
+                id,
+                slug,
+                data.title || 'สินค้าใหม่ Safe for Support',
+                data.description || '',
+                data.type || 'physical',
+                Number(data.price_thb ?? 0),
+                data.compare_at_price_thb !== undefined ? Number(data.compare_at_price_thb) : null,
+                data.image_url ||
+                  'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80',
+                data.badge || 'Official Sanctuary Item',
+                Number(data.stock_quantity ?? 50),
+                isActive,
+                status,
+                data.published_at || now.slice(0, 16),
+                now
+              )
+              .run();
+            return jsonResponse({
+              success: true,
+              message: `บันทึกสินค้า "${data.title}" (฿${data.price_thb ?? 0}) ลงฐานข้อมูล Cloudflare D1 เรียบร้อยแล้ว`,
+            });
+          }
+
+          if (type === 'update_article_override') {
+            const articleKey = data.key || data.articleKey;
+            if (!articleKey) return jsonResponse({ success: false, error: 'ไม่พบรหัสบทความ (key)' }, 400);
+            await env.DB.prepare(
+              `INSERT OR REPLACE INTO article_overrides (key, title, excerpt, content, status, is_unlocked, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)`
+            )
+              .bind(
+                articleKey,
+                data.title || null,
+                data.excerpt || null,
+                data.content || null,
+                data.status || 'published',
+                data.isUnlocked !== undefined ? (data.isUnlocked ? 1 : 0) : null,
+                now
+              )
+              .run();
+            return jsonResponse({
+              success: true,
+              message: `อัปเดตบทความ "${articleKey}" ลงฐานข้อมูล Cloudflare D1 เรียบร้อยแล้ว`,
+            });
+          }
+
+          if (type === 'update_member') {
+            await env.DB.prepare(
+              `UPDATE members SET tier = COALESCE(?, tier), role = COALESCE(?, role), payment_status = COALESCE(?, payment_status), notes = COALESCE(?, notes), updated_at = ? WHERE id = ?`
+            )
+              .bind(
+                data.tier || null,
+                data.role || null,
+                data.paymentStatus || null,
+                data.notes || null,
+                now,
+                data.id
+              )
+              .run();
+            return jsonResponse({
+              success: true,
+              message: `อัปเดตสิทธิ์และสถานะสมาชิก (${data.id}) ลงฐานข้อมูล Cloudflare D1 เรียบร้อยแล้ว`,
+            });
+          }
+
+          if (type === 'update_contact_status') {
+            await env.DB.prepare(
+              `UPDATE contact_messages SET status = COALESCE(?, status), admin_note = COALESCE(?, admin_note) WHERE id = ?`
+            )
+              .bind(data.status || 'replied', data.adminNote || null, data.id)
+              .run();
+            return jsonResponse({
+              success: true,
+              message: `อัปเดตสถานะข้อความติดต่อ (${data.id}) เรียบร้อยแล้ว`,
+            });
+          }
+
+          return jsonResponse({ success: false, error: `ไม่รองรับคำสั่งประเภท ${type}` }, 400);
+        }
+
+        // Chat
+        const userMessage = String(body.message || '').trim();
+        const history = Array.isArray(body.history) ? body.history : [];
+
+        if (!apiKey) {
+          const pendingSlips = members.filter((m: Member) => m.paymentStatus === 'pending_verification');
+          const unreadContacts = contacts.filter((c: any) => c.status === 'new');
+          return jsonResponse({
+            success: true,
+            mode: 'local_assistant',
+            reply: `📊 **สรุปสถานะระบบหลังบ้าน The Fitrah Shield (Cloudflare D1 Live)**\n\nขณะนี้ยังไม่ได้เชื่อมต่อ **Gemini API Key** (คลิกปุ่ม **"🔑 ตั้งค่า / ล็อกอินรับ Gemini API ฟรี"** มุมขวาบนของกล่องแชทเพื่อเชื่อมต่อได้ฟรีทันที)\n\n- **สมาชิกทั้งหมด:** ${members.length} บัญชี (รอตรวจสลิป ${pendingSlips.length} รายการ)\n- **สินค้า Safe for Support:** ${products.length} รายการ\n- **ข้อความติดต่อใหม่:** ${unreadContacts.length} รายการ\n- **บทความที่แก้ไขทับใน D1:** ${overrides.length} บทความ`,
+          });
+        }
+
+        let driveAttachmentContext = '';
+        const urlMatch = userMessage.match(/https?:\/\/(docs|drive)\.google\.com\/[^\s)]+/);
+        const targetDriveUrl = body.driveUrl || (urlMatch ? urlMatch[0] : '');
+        if (targetDriveUrl) {
+          const extracted = await fetchGoogleDriveTextEdge(targetDriveUrl);
+          driveAttachmentContext = extracted.ok
+            ? `\n\n[เนื้อหาที่ดึงสดจากลิงก์ ${extracted.sourceType} (${targetDriveUrl})]:\n${extracted.text}\n`
+            : `\n\n[หมายเหตุจากการดึงลิงก์ Google Drive (${targetDriveUrl})]: ${extracted.text}\n`;
+        }
+
+        const safeMembersSummary = members.map((m: Member) => ({
+          id: m.id,
+          memberNumber: m.memberNumber,
+          username: m.username,
+          name: m.name,
+          email: m.email,
+          tier: m.tier,
+          role: m.role,
+          paymentStatus: m.paymentStatus,
+          paymentAmount: m.paymentAmount,
+          notes: m.notes,
+        }));
+
+        const systemInstruction = `คุณคือ "Fitrah Shield Gemini Co-Admin" ผู้ดูแลระบบร่วมอัจฉริยะของเว็บไซต์ "เกราะพิทักษ์ฟิฏเราะฮฺ (THE FITRAH SHIELD)" (https://thefitrahshield.hardynaipayong.cloud)
+ข้อมูลสดในฐานข้อมูล Cloudflare D1:
+- สินค้า Safe for Support: ${JSON.stringify(products)}
+- สมาชิก: ${JSON.stringify(safeMembersSummary)}
+- ข้อความติดต่อล่าสุด: ${JSON.stringify(contacts.slice(0, 15))}
+- บทความที่แก้ไขทับ: ${JSON.stringify(overrides.map((o: any) => o.key))}
+
+เมื่อแอดมินสั่งให้ เพิ่ม/แก้ไขสินค้า, แก้ไขบทความ, อนุมัติสลิป/ปรับสิทธิ์สมาชิก/ตั้ง Co-Admin, หรือตอบข้อความติดต่อ ให้ตอบอธิบายและแนบโค้ดบล็อก \`\`\`co-admin-action ... \`\`\` ที่เป็น JSON หนึ่งใน 4 type: "upsert_store_product", "update_article_override", "update_member", "update_contact_status" พร้อมฟิลด์ "label" และ "data" เพื่อให้แอดมินกดปุ่มยืนยันบันทึกเข้าระบบได้ในคลิกเดียว`;
+
+        const contents: Array<{ role: 'user' | 'model'; parts: Array<{ text: string }> }> = [];
+        for (const h of history.slice(-8)) {
+          if (!h.content) continue;
+          contents.push({
+            role: h.role === 'assistant' ? 'model' : 'user',
+            parts: [{ text: h.content }],
+          });
+        }
+        contents.push({
+          role: 'user',
+          parts: [{ text: userMessage + driveAttachmentContext }],
+        });
+
+        const geminiRes = await callGeminiEdge(apiKey, preferredModel, systemInstruction, contents);
+        if (!geminiRes.ok) {
+          return jsonResponse({ success: false, error: `เชื่อมต่อ Gemini API ไม่สำเร็จ: ${geminiRes.error}` }, 400);
+        }
+
+        return jsonResponse({
+          success: true,
+          mode: 'gemini_live',
+          modelUsed: geminiRes.modelUsed,
+          reply: geminiRes.reply,
+        });
       }
     }
 

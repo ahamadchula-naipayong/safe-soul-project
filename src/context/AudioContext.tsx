@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useRef, useEffect } from 'react';
+import { trackActivityEvent } from '@/lib/analytics';
 
 export interface AudioTrack {
   id: string;
@@ -137,8 +138,26 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
       audio.preload = 'metadata';
       audioRef.current = audio;
 
+      const completedTracks = new Set<string>();
+
+      const recordTrackCompleted = (trk: AudioTrack | null) => {
+        if (!trk) return;
+        const key = trk.id || trk.audioUrl;
+        if (completedTracks.has(key)) return;
+        completedTracks.add(key);
+        trackActivityEvent({
+          eventType: 'audio_complete',
+          path: typeof window !== 'undefined' ? window.location.pathname : '/',
+          targetId: key,
+          targetTitle: trk.title,
+        });
+      };
+
       const handleTimeUpdate = () => {
         setCurrentTime(audio.currentTime);
+        if (audio.duration > 30 && audio.currentTime / audio.duration >= 0.85) {
+          recordTrackCompleted(currentTrackRef.current);
+        }
       };
 
       const handleLoadedMetadata = () => {
@@ -154,6 +173,7 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
       };
 
       const handleEnded = () => {
+        recordTrackCompleted(currentTrackRef.current);
         if (currentTrackRef.current?.nextTrack) {
           const next = currentTrackRef.current.nextTrack;
           const nextUrl = normalizeAudioUrl(next.audioUrl, next.chapterNumber, next.id);
@@ -224,6 +244,12 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
     audio.playbackRate = playbackRate;
     audio.volume = volume;
     audio.play().then(() => setIsPlaying(true)).catch(console.error);
+    trackActivityEvent({
+      eventType: 'audio_play',
+      path: typeof window !== 'undefined' ? window.location.pathname : '/',
+      targetId: normalizedTrack.id || normalizedUrl,
+      targetTitle: normalizedTrack.title,
+    });
   };
 
   const pauseTrack = () => {

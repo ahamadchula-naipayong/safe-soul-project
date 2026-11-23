@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { Compass, BookOpen, Crown, MessageSquare, Send, FileText } from 'lucide-react';
+import { Compass, Crown, MessageSquare, FileText } from 'lucide-react';
 
 export function Footer() {
   return (
@@ -34,10 +34,6 @@ export function Footer() {
               <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-deep/60 border border-gold/20">
                 <MessageSquare className="w-3.5 h-3.5 text-indigo-400" />
                 <span>Discord Community</span>
-              </span>
-              <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-deep/60 border border-gold/20">
-                <Send className="w-3.5 h-3.5 text-sky-400" />
-                <span>Telegram Private</span>
               </span>
             </div>
           </div>

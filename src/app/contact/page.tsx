@@ -21,14 +21,15 @@ import {
 } from 'lucide-react';
 
 // ============================================================================
-// MOCKUP CONTACT SETTINGS (สามารถแก้ไขข้อมูลช่องทางติดต่อจริงได้ที่นี่ในภายหลัง)
+// OFFICIAL CONTACT SETTINGS (ข้อมูลช่องทางติดต่อหลักของ Captain_Hadee)
 // ============================================================================
-const MOCKUP_CONTACT_INFO = {
-  officialEmail: 'contact@thefitrahshield.com',
-  supportPhone: '02-XXX-XXXX / 08X-XXX-XXXX (Mockup)',
-  lineOfficial: '@thefitrahshield (Mockup)',
+const OFFICIAL_CONTACT_INFO = {
+  officialEmail: 'n_ahamadchula@hotmail.com',
+  fullPhone: '086-900-7246',
+  maskedPhone: '086-900-72XX',
+  communityNote: 'ชุมชนสนทนาผ่านแบบฟอร์มหน้าเว็บไซต์และ Discord Sanctuary',
   workingHours: 'วันจันทร์ – วันศุกร์ เวลา 09:00 – 18:00 น. (ตอบกลับอีเมลภายใน 24–48 ชม.)',
-  locationNote: 'The Fitrah Shield Digital Sanctuary • Bangkok, Thailand (Mockup)',
+  locationNote: 'The Fitrah Shield Digital Sanctuary • Bangkok, Thailand',
 };
 
 const CATEGORY_OPTIONS: {
@@ -64,7 +65,9 @@ const CATEGORY_OPTIONS: {
 ];
 
 export default function ContactPage() {
-  const { member } = useAuth();
+  const { member, isLoggedIn } = useAuth();
+  const isLifetimeMember =
+    Boolean(isLoggedIn && member && member.tier === 'founding_tier_3' && member.paymentStatus !== 'pending_verification');
 
   const [category, setCategory] = useState<ContactCategory>('discussion');
   const [name, setName] = useState('');
@@ -120,10 +123,17 @@ export default function ContactPage() {
       if (!res.ok || !data.success) {
         setError(data.error || 'ไม่สามารถส่งข้อความได้ กรุณาลองใหม่อีกครั้ง');
       } else {
+        const savedItem = data.item || {
+          id: data.id || `msg_${Date.now()}`,
+          replyEmail: replyEmail.trim(),
+          subject:
+            subject.trim() ||
+            `[${CATEGORY_OPTIONS.find((c) => c.value === category)?.label}] จากคุณ ${name.trim()}`,
+        };
         setSubmittedData({
-          id: data.item.id,
-          replyEmail: data.item.replyEmail,
-          subject: data.item.subject,
+          id: savedItem.id,
+          replyEmail: savedItem.replyEmail,
+          subject: savedItem.subject,
         });
         setSubject('');
         setMessage('');
@@ -135,7 +145,7 @@ export default function ContactPage() {
     }
   };
 
-  const mailtoHref = `mailto:${MOCKUP_CONTACT_INFO.officialEmail}?subject=${encodeURIComponent(
+  const mailtoHref = `mailto:${OFFICIAL_CONTACT_INFO.officialEmail}?subject=${encodeURIComponent(
     `[${CATEGORY_OPTIONS.find((c) => c.value === category)?.label}] ${subject || 'ติดต่อทีมงาน The Fitrah Shield'}`
   )}&body=${encodeURIComponent(
     `ชื่อผู้ติดต่อ: ${name}\nอีเมลสำหรับตอบกลับ: ${replyEmail}\nเบอร์โทรศัพท์: ${phone || '-'}\n\nรายละเอียด:\n${message}`
@@ -173,18 +183,15 @@ export default function ContactPage() {
 
         {/* Main 2-Column Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* LEFT COLUMN: Mockup Contact Channels */}
+          {/* LEFT COLUMN: Official Contact Channels */}
           <div className="lg:col-span-5 space-y-5">
             <div className="p-6 sm:p-7 rounded-3xl bg-gradient-to-b from-[#11261C] via-[#0B1912] to-[#07100C] border border-gold-warm/35 shadow-xl space-y-6">
               <div className="space-y-1.5 border-b border-emerald-border/50 pb-4">
-                <span className="inline-block px-2.5 py-0.5 rounded-md bg-amber-500/15 border border-amber-400/30 text-amber-300 text-[10px] font-mono uppercase">
-                  Mockup Channels • ปรับแต่งภายหลังได้
-                </span>
                 <h2 className="text-xl font-thai-serif font-bold text-gold-light">
                   ข้อมูลช่องทางติดต่อหลัก
                 </h2>
                 <p className="text-xs text-parchment-muted font-light">
-                  ช่องทางอย่างเป็นทางการของโครงการ The Fitrah Shield
+                  ช่องทางอย่างเป็นทางการของ Captain_Hadee และทีมงาน The Fitrah Shield
                 </p>
               </div>
 
@@ -193,28 +200,57 @@ export default function ContactPage() {
                   <Mail className="w-5 h-5 text-gold-warm shrink-0 mt-0.5" />
                   <div>
                     <div className="text-[11px] text-parchment-muted">อีเมลทางการ (Official Email)</div>
-                    <div className="font-mono font-semibold text-gold-light break-all">
-                      {MOCKUP_CONTACT_INFO.officialEmail}
+                    <a
+                      href={`mailto:${OFFICIAL_CONTACT_INFO.officialEmail}`}
+                      className="font-mono font-semibold text-gold-light hover:underline break-all"
+                    >
+                      {OFFICIAL_CONTACT_INFO.officialEmail}
+                    </a>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3.5 p-3.5 rounded-2xl bg-black/35 border border-emerald-border/40">
+                  <Phone className="w-5 h-5 text-cyan-400 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <div className="text-[11px] text-parchment-muted flex items-center gap-1.5">
+                      <span>โทรศัพท์ประสานงาน (Captain_Hadee)</span>
                     </div>
+                    {isLifetimeMember ? (
+                      <div className="space-y-1">
+                        <a
+                          href={`tel:${OFFICIAL_CONTACT_INFO.fullPhone.replace(/-/g, '')}`}
+                          className="font-mono font-bold text-emerald-300 hover:underline text-sm"
+                        >
+                          {OFFICIAL_CONTACT_INFO.fullPhone}
+                        </a>
+                        <div className="text-[10px] text-gold-light flex items-center gap-1">
+                          <Crown className="w-3 h-3 text-gold-warm fill-current" />
+                          <span>ปลดล็อกสายตรงเต็มหมายเลข (สิทธิ์สมาชิกตลอดชีพ Founding 100)</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-1">
+                        <div className="font-mono font-semibold text-parchment-cream tracking-wider">
+                          {OFFICIAL_CONTACT_INFO.maskedPhone}
+                        </div>
+                        <div className="text-[10px] text-parchment-muted">
+                          สงวน 2 หลักสุดท้ายสำหรับ{' '}
+                          <Link href="/pricing" className="text-gold-light underline hover:text-gold-warm">
+                            สมาชิกตลอดชีพ (Founding 100)
+                          </Link>{' '}
+                          เท่านั้น
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 <div className="flex items-start gap-3.5 p-3.5 rounded-2xl bg-black/35 border border-emerald-border/40">
                   <MessageSquare className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
                   <div>
-                    <div className="text-[11px] text-parchment-muted">Line Official / ชุมชนสนทนา</div>
+                    <div className="text-[11px] text-parchment-muted">ช่องทางชุมชนสนทนา</div>
                     <div className="font-semibold text-parchment-cream">
-                      {MOCKUP_CONTACT_INFO.lineOfficial}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3.5 p-3.5 rounded-2xl bg-black/35 border border-emerald-border/40">
-                  <Phone className="w-5 h-5 text-cyan-400 shrink-0 mt-0.5" />
-                  <div>
-                    <div className="text-[11px] text-parchment-muted">โทรศัพท์ประสานงาน</div>
-                    <div className="font-mono font-semibold text-parchment-cream">
-                      {MOCKUP_CONTACT_INFO.supportPhone}
+                      {OFFICIAL_CONTACT_INFO.communityNote}
                     </div>
                   </div>
                 </div>
@@ -224,7 +260,7 @@ export default function ContactPage() {
                   <div>
                     <div className="text-[11px] text-parchment-muted">เวลาทำการ & การตอบกลับ</div>
                     <div className="text-parchment-cream/90 font-light leading-relaxed">
-                      {MOCKUP_CONTACT_INFO.workingHours}
+                      {OFFICIAL_CONTACT_INFO.workingHours}
                     </div>
                   </div>
                 </div>
@@ -234,7 +270,7 @@ export default function ContactPage() {
                   <div>
                     <div className="text-[11px] text-parchment-muted">สำนักพิมพ์ดิจิทัล</div>
                     <div className="text-parchment-cream/90 font-light">
-                      {MOCKUP_CONTACT_INFO.locationNote}
+                      {OFFICIAL_CONTACT_INFO.locationNote}
                     </div>
                   </div>
                 </div>

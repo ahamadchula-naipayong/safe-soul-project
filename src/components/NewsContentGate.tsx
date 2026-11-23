@@ -263,7 +263,7 @@ export function NewsContentGate({
                 <ul className="space-y-1.5 pl-6 list-disc text-parchment-muted/90">
                   <li>ปลดล็อกการอ่านบทวิเคราะห์เชิงลึก Deepdive ทุกรายการไม่จำกัด</li>
                   <li>เข้าถึงคลังปัญญา 35 บทความฉบับ Deep Mode และเสียงบรรยาย High-Fidelity</li>
-                  <li>รับสิทธิ์เข้าร่วมกลุ่มเสวนาพิเศษ Telegram & Discord</li>
+                  <li>รับสิทธิ์เข้าร่วมชุมชนเสวนาพิเศษ Discord Sanctuary</li>
                 </ul>
               </div>
 

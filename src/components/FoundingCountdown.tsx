@@ -123,7 +123,7 @@ export function FoundingCountdown({
         </li>
         <li className="flex items-center gap-2">
           <span className="w-1.5 h-1.5 rounded-full bg-gold-warm" />
-          <span>ลิงก์เข้ากลุ่มปิด Telegram พิเศษเฉพาะผู้ร่วมก่อตั้ง</span>
+          <span>ปลดล็อกหมายเลขโทรศัพท์สายตรง Captain_Hadee ในหน้าติดต่อเรา</span>
         </li>
         <li className="flex items-center gap-2">
           <span className="w-1.5 h-1.5 rounded-full bg-gold-warm" />

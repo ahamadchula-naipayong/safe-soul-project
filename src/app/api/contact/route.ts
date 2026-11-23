@@ -99,9 +99,48 @@ export async function POST(request: NextRequest) {
     messages.unshift(newItem);
     writeMessages(messages);
 
+    // Send live email notification via Resend if configured
+    let emailSent = false;
+    const resendKey = process.env.RESEND_API_KEY;
+    if (resendKey) {
+      const payload = {
+        to: ['n_ahamadchula@hotmail.com', 'n.ahamadchula@gmail.com'],
+        reply_to: newItem.replyEmail,
+        subject: `[Fitrah Contact • ${newItem.category}] ${newItem.subject}`,
+        html: `<div style="font-family:sans-serif;line-height:1.7"><h3>ข้อความใหม่จากหน้าติดต่อเรา (${newItem.id})</h3><p><strong>ผู้ส่ง:</strong> ${newItem.name}<br/><strong>อีเมล:</strong> ${newItem.replyEmail}<br/><strong>โทร:</strong> ${newItem.phone || '-'}</p><pre style="white-space:pre-wrap;background:#f5f5f5;padding:12px;border-radius:8px">${newItem.message}</pre></div>`,
+      };
+      try {
+        const primaryRes = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            from: process.env.EMAIL_FROM || 'The Fitrah Shield <sanctuary@hardynaipayong.cloud>',
+            ...payload,
+          }),
+        });
+        if (primaryRes.ok) {
+          emailSent = true;
+        } else {
+          const fbRes = await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              from: 'The Fitrah Shield <onboarding@resend.dev>',
+              ...payload,
+              to: ['n.ahamadchula@gmail.com'],
+            }),
+          });
+          emailSent = fbRes.ok;
+        }
+      } catch (e) {
+        console.error('Local Resend contact error:', e);
+      }
+    }
+
     return NextResponse.json({
       success: true,
       item: newItem,
+      emailSent,
       message: 'ส่งข้อความเรียบร้อยแล้ว ทีมงานจะติดต่อกลับไปยังอีเมลที่คุณระบุโดยเร็วที่สุด',
     });
   } catch (error) {

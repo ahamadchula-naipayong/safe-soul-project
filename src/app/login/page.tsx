@@ -165,13 +165,6 @@ function LoginContent() {
     }
   };
 
-  const handleQuickFill = (user: string, pass: string) => {
-    setActiveTab('login');
-    setLoginUsername(user);
-    setLoginPassword(pass);
-    setLoginError('');
-  };
-
   return (
     <div className="min-h-screen bg-[#08110D] text-parchment-cream font-thai selection:bg-gold-warm selection:text-slate-abyss pb-28 pt-10">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
@@ -327,7 +320,7 @@ function LoginContent() {
                   className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-emerald-surface hover:bg-emerald-light border border-gold-warm/40 text-gold-light text-sm font-semibold transition"
                 >
                   <Anchor className="w-4 h-4 text-gold-warm" />
-                  <span>เข้าสู่ Safe for Journey (รวมบทความ)</span>
+                  <span>โดดขึ้นเรือ!</span>
                 </Link>
 
                 <Link
@@ -335,7 +328,7 @@ function LoginContent() {
                   className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-emerald-card hover:bg-emerald-surface border border-gold-warm/40 text-gold-light text-sm font-semibold transition"
                 >
                   <FileText className="w-4 h-4 text-gold-warm" />
-                  <span>อ่านข่าวสำนัก The Key of Return</span>
+                  <span>อ่านข่าว KOR</span>
                 </Link>
               </div>
             </div>
@@ -412,7 +405,7 @@ function LoginContent() {
                     type="text"
                     value={loginUsername}
                     onChange={(e) => setLoginUsername(e.target.value)}
-                    placeholder="กรอก username เช่น admin หรือ seeker_soul"
+                    placeholder="กรอกชื่อผู้ใช้งาน หรือ อีเมลของคุณ"
                     className="w-full px-4 py-3 rounded-xl bg-emerald-card/60 border border-emerald-border focus:border-gold-warm focus:outline-none text-parchment-cream text-sm placeholder:text-parchment-muted/40 transition"
                     required
                   />
@@ -447,39 +440,6 @@ function LoginContent() {
                     </>
                   )}
                 </button>
-
-                {/* Quick Account Preset Buttons for Immediate Testing */}
-                <div className="pt-6 border-t border-white/10 space-y-2">
-                  <div className="text-[11px] text-parchment-muted text-center">
-                    คลิกเพื่อทดสอบเข้าสู่ระบบตามหมวดหมู่ระดับเรือ:
-                  </div>
-                  <div className="grid grid-cols-3 gap-2 text-xs">
-                    <button
-                      type="button"
-                      onClick={() => handleQuickFill('admin', 'password123')}
-                      className="p-2 rounded-lg bg-emerald-surface/60 hover:bg-emerald-surface border border-gold-warm/30 text-gold-light text-center transition"
-                    >
-                      <div className="font-bold">Founding 100</div>
-                      <div className="text-[10px] text-parchment-muted">admin (#1)</div>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleQuickFill('seeker_soul', 'password123')}
-                      className="p-2 rounded-lg bg-emerald-surface/60 hover:bg-emerald-surface border border-emerald-400/40 text-emerald-300 text-center transition"
-                    >
-                      <div className="font-bold">Supporter</div>
-                      <div className="text-[10px] text-parchment-muted">seeker_soul (#3)</div>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleQuickFill('free_member', 'password123')}
-                      className="p-2 rounded-lg bg-emerald-surface/60 hover:bg-emerald-surface border border-white/20 text-parchment-cream text-center transition"
-                    >
-                      <div className="font-bold">Free Tier</div>
-                      <div className="text-[10px] text-parchment-muted">free_member (#5)</div>
-                    </button>
-                  </div>
-                </div>
               </form>
             )}
 

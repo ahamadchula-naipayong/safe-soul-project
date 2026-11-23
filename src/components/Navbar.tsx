@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
+import { useTheme } from '@/context/ThemeContext';
 import {
   Compass,
   ShoppingBag,
@@ -17,12 +18,15 @@ import {
   FileText,
   Mail,
   Anchor,
+  Sun,
+  Moon,
 } from 'lucide-react';
 
 export function Navbar() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const { totalItemsCount, openCart } = useCart();
   const { member, isLoggedIn, isAdmin } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -154,7 +158,22 @@ export function Navbar() {
               </Link>
             )}
 
-            {/* 4. "ติดต่อเรา" (Icon-only Mail button) */}
+            {/* 4. Dark / Light Mode Toggle Button */}
+            <button
+              type="button"
+              onClick={toggleTheme}
+              aria-label={theme === 'dark' ? 'สลับเป็นโหมดสว่าง (อ่านสบายตา)' : 'สลับเป็นโหมดมืด'}
+              title={theme === 'dark' ? 'สลับเป็นโหมดสว่าง (Warm Parchment)' : 'สลับเป็นโหมดมืด (Dark Sanctuary)'}
+              className="inline-flex items-center justify-center p-2.5 rounded-xl bg-emerald-surface/80 hover:bg-emerald-light border border-gold/40 hover:border-gold-warm text-gold-warm hover:text-amber-300 shadow-gold-sm transition hover:scale-105 active:scale-95 cursor-pointer"
+            >
+              {theme === 'dark' ? (
+                <Sun className="w-4 h-4 sm:w-5 sm:h-5" />
+              ) : (
+                <Moon className="w-4 h-4 sm:w-5 sm:h-5" />
+              )}
+            </button>
+
+            {/* 5. "ติดต่อเรา" (Icon-only Mail button) */}
             <Link
               href="/contact"
               aria-label="ติดต่อเรา"
@@ -411,8 +430,28 @@ export function Navbar() {
                 </nav>
               </div>
 
-              {/* Drawer Footer CTA -> Contact Us */}
+              {/* Drawer Footer CTA -> Theme Switcher & Contact Us */}
               <div className="pt-5 border-t border-emerald-border/60 space-y-3">
+                <button
+                  type="button"
+                  onClick={toggleTheme}
+                  className="w-full py-2.5 px-4 rounded-xl bg-emerald-surface/80 hover:bg-emerald-surface border border-gold-warm/35 text-gold-light font-semibold text-xs flex items-center justify-between transition cursor-pointer"
+                >
+                  <span className="flex items-center gap-2">
+                    {theme === 'dark' ? (
+                      <Sun className="w-4 h-4 text-gold-warm" />
+                    ) : (
+                      <Moon className="w-4 h-4 text-gold-warm" />
+                    )}
+                    <span>
+                      {theme === 'dark'
+                        ? 'โหมดสว่าง (Warm Parchment)'
+                        : 'โหมดมืด (Dark Sanctuary)'}
+                    </span>
+                  </span>
+                  <span className="text-[10px] opacity-80">สลับธีม</span>
+                </button>
+
                 <Link
                   href="/contact"
                   onClick={() => setIsDrawerOpen(false)}
