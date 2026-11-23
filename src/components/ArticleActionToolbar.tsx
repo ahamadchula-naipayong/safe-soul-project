@@ -217,7 +217,7 @@ export function ArticleActionToolbar({
 
     const origin = window.location.origin;
     const currentUrl = window.location.href;
-    const qrUrl = `${origin}/images/qr/Cofffee.jpg`;
+    const qrUrl = `${origin}/images/qr/Cofffee.jpg?v=2`;
 
     const printWindow = window.open('', '_blank', 'width=900,height=1000');
     if (!printWindow) {
@@ -388,7 +388,7 @@ export function ArticleActionToolbar({
       text-align: left;
     }
     .support-qr {
-      width: 165px;
+      width: 185px;
       text-align: center;
       flex-shrink: 0;
       border: 1px solid #000;
@@ -396,10 +396,11 @@ export function ArticleActionToolbar({
       border-radius: 8px;
     }
     .support-qr img.qr-coffee-img {
-      width: 145px;
+      width: 165px;
       height: auto;
       display: block;
       margin: 0 auto 4px auto;
+      image-rendering: -webkit-optimize-contrast;
     }
     .support-qr-caption {
       font-size: 8.5pt;

@@ -88,19 +88,16 @@ export function ArticleCoffeeSupport({
 
         {/* Right Content: Official "Cofffee" / "Coffee" QR Code */}
         <div className="md:col-span-5 lg:col-span-4 flex flex-col items-center justify-center">
-          <div className="w-full max-w-[240px] rounded-2xl bg-white p-3.5 text-slate-900 shadow-2xl border-2 border-gold-warm text-center space-y-2">
+          <div className="w-full max-w-[268px] rounded-2xl bg-white p-3 text-slate-900 shadow-2xl border-2 border-gold-warm text-center space-y-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/images/qr/Cofffee.jpg"
-              alt="QR Code สำหรับเลี้ยงกาแฟ (Cofffee - นาย นรฤทธิ์ อหะหมัดจุฬา)"
-              className="w-full h-auto rounded-xl object-contain mx-auto"
+              src="/images/qr/Cofffee.jpg?v=2"
+              alt="QR Code สำหรับเลี้ยงกาแฟ (Coffee - นาย นรฤทธิ์ อหะหมัดจุฬา)"
+              className="w-full h-auto rounded-xl object-contain mx-auto [image-rendering:-webkit-optimize-contrast]"
             />
             <div className="pt-1 border-t border-slate-200 space-y-0.5">
               <div className="text-xs font-extrabold text-slate-900">
                 สแกนเลี้ยงกาแฟทีมงาน (Coffee ☕)
-              </div>
-              <div className="text-[11px] font-semibold text-emerald-800">
-                นาย นรฤทธิ์ อหะหมัดจุฬา
               </div>
               <div className="text-[10px] text-slate-600">
                 ร่วมบริจาค 10% เพื่อการกุศล • รับได้ทุกธนาคาร

@@ -536,9 +536,9 @@ export function CartDrawer() {
                       <div className="flex flex-col items-center gap-2.5 p-3 rounded-xl bg-white text-slate-900 text-center">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
-                          src="/images/qr/PremiumShopper.jpg"
+                          src="/images/qr/PremiumShopper.jpg?v=2"
                           alt="Premium Shopper PromptPay QR - นาย นรฤทธิ์ อหะหมัดจุฬา"
-                          className="w-48 h-auto rounded-xl border border-slate-200 object-contain"
+                          className="w-60 max-w-full h-auto rounded-xl border border-slate-200 object-contain [image-rendering:-webkit-optimize-contrast]"
                         />
                         <div className="text-[11px] space-y-0.5 leading-snug">
                           <div className="font-bold text-emerald-900">

@@ -21,7 +21,7 @@ export const PAYMENT_QR_CONFIG = {
   bankName: 'MAKE by KBank • ธนาคารกสิกรไทย (PromptPay)',
   accountNumber: 'xxx-x-x3702-x (Ref: 004643001085912)',
   accountName: 'นาย นรฤทธิ์ อหะหมัดจุฬา (Ferry Ticket 🎫)',
-  customQrImageUrl: '/images/qr/FerryTicket.jpg',
+  customQrImageUrl: '/images/qr/FerryTicket.jpg?v=2',
 };
 
 interface QrSlipPaymentBoxProps {
@@ -120,12 +120,12 @@ export function QrSlipPaymentBox({
       <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-center">
         {/* Official Ferry Ticket PromptPay QR Box */}
         <div className="sm:col-span-5 flex justify-center">
-          <div className="w-56 rounded-2xl bg-white p-2.5 text-slate-900 shadow-xl border-2 border-gold-warm/60 space-y-1.5 text-center">
+          <div className="w-64 max-w-full rounded-2xl bg-white p-2.5 text-slate-900 shadow-xl border-2 border-gold-warm/60 space-y-1.5 text-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={PAYMENT_QR_CONFIG.customQrImageUrl}
               alt="Ferry Ticket PromptPay QR Code - นาย นรฤทธิ์ อหะหมัดจุฬา"
-              className="w-full h-auto rounded-xl mx-auto object-contain"
+              className="w-full h-auto rounded-xl mx-auto object-contain [image-rendering:-webkit-optimize-contrast]"
             />
             <div className="text-[11px] font-bold text-slate-800 pt-0.5">
               Ferry Ticket 🎫 • ยอดโอน ฿{amount.toLocaleString()}
