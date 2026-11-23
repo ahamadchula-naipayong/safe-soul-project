@@ -109,26 +109,26 @@ export function Navbar() {
 
           {/* Right Action Buttons (Icon-only symbols on narrow mobile portrait, icon+text on sm+) */}
           <div className="flex items-center gap-1.5 sm:gap-2.5">
-            {/* 1. "โดดขึ้นเรือเลย!" Quick Jump to /journey (All Articles Hub) */}
+            {/* 1. "โดดขึ้นเรือ!" Quick Jump to /journey (All Articles Hub) */}
             <Link
               href="/journey"
-              aria-label="โดดขึ้นเรือเลย! เข้าสู่คลังบทความ Safe for Journey"
+              aria-label="โดดขึ้นเรือ! เข้าสู่คลังบทความ Safe for Journey"
               className="inline-flex items-center justify-center gap-1.5 p-2.5 sm:px-4 sm:py-2 rounded-xl gold-bevel-button text-slate-abyss font-extrabold text-xs shadow-gold-sm transition hover:scale-105 active:scale-95"
-              title="โดดขึ้นเรือเลย! • เข้าสู่คลังบทความ Safe for Journey ทั้งหมด"
+              title="โดดขึ้นเรือ! • เข้าสู่คลังบทความ Safe for Journey ทั้งหมด"
             >
               <Anchor className="w-4 h-4 sm:w-3.5 sm:h-3.5 text-slate-abyss" />
-              <span className="hidden sm:inline">โดดขึ้นเรือเลย!</span>
+              <span className="hidden sm:inline">โดดขึ้นเรือ!</span>
             </Link>
 
-            {/* 2. Direct Link to News Deepdive */}
+            {/* 2. Direct Link to News Deepdive ("อ่านข่าว KOR") */}
             <Link
               href="/news"
-              aria-label="สำนักข่าว The Key of Return"
+              aria-label="อ่านข่าว KOR — สำนักข่าว The Key of Return"
               className="hidden lg:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-card/90 hover:bg-emerald-surface border border-gold-warm/50 hover:border-gold-light text-gold-light font-semibold text-xs shadow-gold-sm transition hover:scale-105 active:scale-95"
-              title="สำนักข่าว The Key of Return • วิเคราะห์สถานการณ์โลกและภูมิรัฐศาสตร์"
+              title="อ่านข่าว KOR • สำนักข่าว The Key of Return วิเคราะห์สถานการณ์โลกและภูมิรัฐศาสตร์"
             >
               <FileText className="w-3.5 h-3.5 text-gold-warm" />
-              <span>สำนักข่าว The Key of Return</span>
+              <span>อ่านข่าว KOR</span>
             </Link>
 
             {/* 3. Member Identity / Login Status (Icon symbol on mobile portrait, icon+text on sm+) */}
@@ -154,14 +154,14 @@ export function Navbar() {
               </Link>
             )}
 
-            {/* 4. "ติดต่อเรา" */}
+            {/* 4. "ติดต่อเรา" (Icon-only Mail button) */}
             <Link
               href="/contact"
-              className="hidden md:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-surface/80 hover:bg-emerald-light border border-gold/40 text-gold-light font-semibold text-xs shadow-gold-sm transition hover:scale-105 active:scale-95"
+              aria-label="ติดต่อเรา"
+              className="hidden sm:inline-flex items-center justify-center p-2.5 rounded-xl bg-emerald-surface/80 hover:bg-emerald-light border border-gold/40 hover:border-gold-warm text-gold-warm hover:text-amber-300 shadow-gold-sm transition hover:scale-105 active:scale-95"
               title="ติดต่อเรา • ส่งข้อความ พูดคุย ร้องขอ หรือแจ้งปัญหา"
             >
-              <Mail className="w-3.5 h-3.5 text-gold-warm" />
-              <span>ติดต่อเรา</span>
+              <Mail className="w-5 h-5" />
             </Link>
 
             {/* Cart Button: Navigates directly to /store when empty, or opens CartDrawer when items exist */}
@@ -198,7 +198,7 @@ export function Navbar() {
             {[
               { href: '/', label: 'หน้าแรก', icon: Compass },
               { href: '/journey', label: 'คลังบทความ', icon: Anchor },
-              { href: '/news', label: 'สำนักข่าว', icon: FileText },
+              { href: '/news', label: 'อ่านข่าว KOR', icon: FileText },
               { href: '/pricing', label: 'แผนสมาชิก', icon: Crown },
               { href: '/store', label: 'ร้านค้า', icon: ShoppingBag },
             ].map((item) => {
@@ -343,8 +343,8 @@ export function Navbar() {
                     <div className="flex items-center gap-3">
                       <FileText className="w-4 h-4 text-gold-warm" />
                       <div>
-                        <div className="text-sm font-semibold">สำนักข่าว The Key of Return</div>
-                        <div className="text-xs text-parchment-muted font-light">รายงานและบทวิเคราะห์สถานการณ์โลก</div>
+                        <div className="text-sm font-semibold">อ่านข่าว KOR</div>
+                        <div className="text-xs text-parchment-muted font-light">สำนักข่าว The Key of Return • วิเคราะห์สถานการณ์โลก</div>
                       </div>
                     </div>
                     <ChevronRight className="w-4 h-4 text-parchment-muted group-hover:translate-x-1 transition" />
