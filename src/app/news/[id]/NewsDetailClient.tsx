@@ -125,7 +125,7 @@ export default function NewsDetailClient({
 
       {/* Hero Ambient Gradient Overlay */}
       <div
-        className="fixed inset-0 w-full h-full -z-20 bg-gradient-to-b from-black/85 via-black/60 to-black/90 pointer-events-none print:hidden"
+        className="article-hero-scrim fixed inset-0 w-full h-full -z-20 bg-gradient-to-b from-black/85 via-black/60 to-black/90 pointer-events-none print:hidden"
         aria-hidden="true"
       />
 

@@ -98,7 +98,7 @@ export default async function DeepOceanReaderPage({
 
       {/* Hero Ambient Gradient Overlay */}
       <div
-        className="fixed inset-0 w-full h-full -z-20 bg-gradient-to-b from-black/90 via-black/75 to-black/95 pointer-events-none print:hidden"
+        className="article-hero-scrim fixed inset-0 w-full h-full -z-20 bg-gradient-to-b from-black/90 via-black/75 to-black/95 pointer-events-none print:hidden"
         aria-hidden="true"
       />
 

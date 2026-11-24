@@ -663,27 +663,22 @@ export const onRequest = async (context: {
         }
 
         const member = rowToMember(row);
-        if (member.ebookClaimed) {
-          return jsonResponse(
-            {
-              success: false,
-              alreadyClaimed: true,
-              error: `อีเมลที่สมัครสมาชิก (${member.email}) ได้ใช้สิทธิ์รับ E-Book ฉบับเกาะทะเลน้ำตื้นไปแล้ว (จำกัด 1 ครั้งต่ออีเมลที่สมัครเท่านั้น)`,
-            },
-            400
-          );
-        }
-
+        // Unlimited E-Book re-send enabled (allows members to re-request anytime if email delivery failed)
         const { effectiveTier } = getEffectiveMemberTier(member);
         const tierForEmail = effectiveTier === 'visitor' ? 'free_tier_1' : effectiveTier;
         const emailTemplate = getEbookEmailTemplateForTier(tierForEmail, member);
 
         let emailStatus = 'queued_and_logged';
+        let emailSent = false;
+        let emailError = '';
         if (env.RESEND_API_KEY && env.MEDIA_BUCKET) {
           try {
             const pdfObj = await env.MEDIA_BUCKET.get('private_ebooks/The_Fitrah_Shield_Openwater.pdf');
             if (pdfObj) {
               const pdfBase64 = arrayBufferToBase64(await pdfObj.arrayBuffer());
+              const primaryFrom =
+                env.EMAIL_FROM ||
+                'The Fitrah Shield <sanctuary@hardynaipayong.cloud>';
               const resendRes = await fetch('https://api.resend.com/emails', {
                 method: 'POST',
                 headers: {
@@ -691,9 +686,7 @@ export const onRequest = async (context: {
                   'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                  from:
-                    env.EMAIL_FROM ||
-                    'The Fitrah Shield <sanctuary@thefitrahshield.hardynaipayong.cloud>',
+                  from: primaryFrom,
                   to: [member.email],
                   subject: emailTemplate.subject,
                   html: emailTemplate.bodyHtml,
@@ -708,16 +701,50 @@ export const onRequest = async (context: {
               });
               if (resendRes.ok) {
                 emailStatus = 'sent_via_resend';
+                emailSent = true;
+              } else {
+                // Automatic fallback via onboarding@resend.dev if custom domain not yet verified
+                const fbRes = await fetch('https://api.resend.com/emails', {
+                  method: 'POST',
+                  headers: {
+                    Authorization: `Bearer ${env.RESEND_API_KEY}`,
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    from: 'The Fitrah Shield <onboarding@resend.dev>',
+                    to: [member.email],
+                    subject: emailTemplate.subject,
+                    html: emailTemplate.bodyHtml,
+                    text: emailTemplate.bodyText,
+                    attachments: [
+                      {
+                        filename: 'The_Fitrah_Shield_Openwater.pdf',
+                        content: pdfBase64,
+                      },
+                    ],
+                  }),
+                });
+                if (fbRes.ok) {
+                  emailStatus = 'sent_via_resend_fallback';
+                  emailSent = true;
+                } else {
+                  emailError = await fbRes.text().catch(() => '');
+                  emailStatus = 'resend_domain_unverified';
+                }
               }
+            } else {
+              emailStatus = 'pdf_not_found_in_r2';
             }
-          } catch (e) {
+          } catch (e: any) {
+            emailError = e?.message || 'Resend exception';
             console.error('Edge Resend dispatch error:', e);
           }
         }
 
         const claimedAt = new Date().toISOString();
+        // Keep ebook_claimed = 0 so members can always re-send without hitting a 1-time lock, while recording last claimed_at
         await env.DB.prepare(
-          'UPDATE members SET ebook_claimed = 1, ebook_claimed_at = ?, updated_at = ? WHERE id = ?'
+          'UPDATE members SET ebook_claimed = 0, ebook_claimed_at = ?, updated_at = ? WHERE id = ?'
         )
           .bind(claimedAt, claimedAt, member.id)
           .run();
@@ -738,7 +765,7 @@ export const onRequest = async (context: {
           )
           .run();
 
-        const updatedMember = { ...member, ebookClaimed: true, ebookClaimedAt: claimedAt };
+        const updatedMember = { ...member, ebookClaimed: false, ebookClaimedAt: claimedAt };
         const { password: _, ...safe } = updatedMember;
 
         return jsonResponse(
@@ -746,8 +773,13 @@ export const onRequest = async (context: {
             success: true,
             member: safe,
             recipientEmail: member.email,
+            emailSent,
+            emailStatus,
+            emailError: emailError || undefined,
             emailTemplate,
-            message: `จัดส่ง E-Book ไปยังอีเมลที่สมัครสมาชิก (${member.email}) เรียบร้อยแล้ว!`,
+            message: emailSent
+              ? `จัดส่ง E-Book ไปยังอีเมล (${member.email}) เรียบร้อยแล้ว! (สามารถกดส่งซ้ำได้ตลอดเวลา)`
+              : `บันทึกคำขอรับ E-Book สำหรับอีเมล (${member.email}) แล้ว — หากยังไม่ได้รับอีเมล สามารถกดส่งซ้ำได้ตลอดเวลา (สถานะเซิร์ฟเวอร์: ${emailStatus})`,
           },
           200,
           {

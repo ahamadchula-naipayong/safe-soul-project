@@ -105,7 +105,7 @@ export default async function OneshotDetailPage({ params }: OneshotDetailPagePro
 
       {/* Hero Ambient Gradient Overlay (เพื่อให้ตัวอักษรคมชัด อ่านสบายตา) */}
       <div
-        className="fixed inset-0 w-full h-full -z-20 bg-gradient-to-b from-black/85 via-black/65 to-black/90 pointer-events-none print:hidden"
+        className="article-hero-scrim fixed inset-0 w-full h-full -z-20 bg-gradient-to-b from-black/85 via-black/65 to-black/90 pointer-events-none print:hidden"
         aria-hidden="true"
       />
 

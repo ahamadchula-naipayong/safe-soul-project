@@ -88,12 +88,9 @@ export function CartDrawer() {
       item.product.price_thb === 0
   );
 
-  // Recommended products not currently in the cart (and not Coming Soon stock=0 unless highlighted)
+  // Recommended products not currently in the cart (E-Book always re-claimable)
   const recommendedProducts = storeProducts.filter(
-    (p) =>
-      !items.some((c) => c.product.id === p.id) &&
-      p.stock_quantity > 0 &&
-      !(p.slug === 'fitrah-shield-shallow-ebook' && member?.ebookClaimed)
+    (p) => !items.some((c) => c.product.id === p.id) && p.stock_quantity > 0
   );
 
   const handleSlipUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -119,17 +116,11 @@ export function CartDrawer() {
     setErrorMessage('');
     setSuccessOrderMsg('');
 
-    // 1. If cart contains the Free Shallow Waters E-Book, enforce member login & registered email
+    // 1. If cart contains the Free Shallow Waters E-Book, require member login (unlimited re-send allowed)
     if (hasFreeEbook) {
       if (!isLoggedIn || !member) {
         setErrorMessage(
-          'กรุณาเข้าสู่ระบบสมาชิกก่อน เพื่อรับ E-Book ทางอีเมลที่ใช้สมัครสมาชิก (จำกัด 1 สิทธิ์/อีเมล)'
-        );
-        return;
-      }
-      if (member.ebookClaimed && items.length === 1) {
-        setErrorMessage(
-          `อีเมลที่สมัครสมาชิก (${member.email}) เคยใช้สิทธิ์รับ E-Book เล่มนี้ไปแล้ว (จำกัด 1 ครั้งต่ออีเมลที่สมัคร)`
+          'กรุณาเข้าสู่ระบบสมาชิกก่อน เพื่อรับ E-Book ทางอีเมลที่ใช้สมัครสมาชิก'
         );
         return;
       }
@@ -172,8 +163,8 @@ export function CartDrawer() {
         }
       }
 
-      // B. If cart contains the Free E-Book and member hasn't claimed yet, dispatch via /api/ebook/claim
-      if (hasFreeEbook && member && !member.ebookClaimed) {
+      // B. If cart contains the Free E-Book, dispatch via /api/ebook/claim (unlimited re-send enabled)
+      if (hasFreeEbook && member) {
         const claimRes = await fetch('/api/ebook/claim', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -421,10 +412,6 @@ export function CartDrawer() {
                           <UserCheck className="w-3.5 h-3.5" />
                           <span>เข้าสู่ระบบ / สมัครสมาชิกฟรี เพื่อรับ E-Book ทางอีเมล</span>
                         </Link>
-                      </div>
-                    ) : member?.ebookClaimed ? (
-                      <div className="p-2.5 rounded-xl bg-amber-950/70 border border-amber-400/40 text-amber-200 text-[11px] font-medium">
-                        ✓ บัญชีอีเมลของคุณ ({member.email}) ได้ใช้สิทธิ์รับ E-Book เล่มนี้ทางอีเมลไปแล้ว (จำกัด 1 ครั้ง)
                       </div>
                     ) : null}
                   </div>
@@ -679,7 +666,7 @@ export function CartDrawer() {
                   <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                   <span>
                     {totalPriceThb === 0
-                      ? 'จัดส่งเข้าอีเมลที่สมัครสมาชิกเท่านั้น (จำกัด 1 ครั้ง)'
+                      ? 'จัดส่งเข้าอีเมลที่สมัครสมาชิก (ขอรับซ้ำได้ไม่จำกัดครั้ง)'
                       : 'ตรวจสอบสลิปโอนเงินด้วยระบบ EasySlip API'}
                   </span>
                 </span>
@@ -695,11 +682,7 @@ export function CartDrawer() {
               <button
                 type="submit"
                 form="checkout-form"
-                disabled={
-                  isLoading ||
-                  (hasFreeEbook && !isLoggedIn) ||
-                  (hasFreeEbook && items.length === 1 && !!member?.ebookClaimed)
-                }
+                disabled={isLoading || (hasFreeEbook && !isLoggedIn)}
                 className="w-full py-3 px-4 rounded-xl gold-bevel-button text-slate-abyss font-bold text-xs sm:text-sm hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed shadow-gold-sm flex items-center justify-center gap-2 transition cursor-pointer"
               >
                 {isLoading ? (

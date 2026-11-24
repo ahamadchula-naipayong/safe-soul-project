@@ -88,47 +88,36 @@ export function FreeEbookModal({ isOpen, onClose }: FreeEbookModalProps) {
               <li className="flex items-start gap-2">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
                 <span>
-                  จำกัดสิทธิ์รับฟรี <strong className="text-emerald-300">1 ครั้ง ต่อ 1 บัญชีอีเมลสมาชิก</strong>
+                  ขอรับส่งเข้าอีเมลซ้ำได้ <strong className="text-emerald-300">ไม่จำกัดจำนวนครั้ง</strong> หากไม่ได้รับอีเมลหรือต้องการรับใหม่
                 </span>
               </li>
             </ul>
           </div>
 
-          {/* Action CTA */}
-          {member?.ebookClaimed ? (
-            <div className="p-4 rounded-2xl bg-emerald-950/70 border border-emerald-400/40 text-center space-y-2">
-              <div className="text-sm font-bold text-emerald-300">
-                ✓ คุณใช้สิทธิ์รับ E-Book เล่มนี้ทางอีเมล ({member.email}) เรียบร้อยแล้ว
-              </div>
-              <p className="text-xs text-parchment-muted">
-                จำกัดสิทธิ์รับฟรี 1 ครั้งต่ออีเมลที่สมัครสมาชิก (ส่วน E-Book ฉบับทะเลน้ำลึก สถานะ: Coming Soon)
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              <button
-                type="button"
-                onClick={handleAddEbookToCart}
-                className="w-full py-3.5 px-6 rounded-xl gold-bevel-button text-slate-abyss font-bold text-sm hover:brightness-110 shadow-gold-sm flex items-center justify-center gap-2 transition cursor-pointer"
-              >
-                <ShoppingBag className="w-4 h-4" />
-                <span>หยิบใส่ตะกร้า (จาก ฿199 เหลือ ฟรี ฿0 • ส่งทางอีเมล)</span>
-              </button>
+          {/* Action CTA (Always available - Unlimited re-send) */}
+          <div className="space-y-3">
+            <button
+              type="button"
+              onClick={handleAddEbookToCart}
+              className="w-full py-3.5 px-6 rounded-xl gold-bevel-button text-slate-abyss font-bold text-sm hover:brightness-110 shadow-gold-sm flex items-center justify-center gap-2 transition cursor-pointer"
+            >
+              <ShoppingBag className="w-4 h-4" />
+              <span>หยิบใส่ตะกร้า (จาก ฿199 เหลือ ฟรี ฿0 • ส่งทางอีเมล)</span>
+            </button>
 
-              {!isLoggedIn && (
-                <div className="text-center">
-                  <Link
-                    href="/login"
-                    onClick={onClose}
-                    className="inline-flex items-center gap-1.5 text-xs text-gold-light hover:text-gold-warm underline"
-                  >
-                    <UserCheck className="w-3.5 h-3.5" />
-                    <span>ยังไม่ได้เป็นสมาชิก? คลิกสมัครสมาชิกฟรีก่อนรับ E-Book</span>
-                  </Link>
-                </div>
-              )}
-            </div>
-          )}
+            {!isLoggedIn && (
+              <div className="text-center">
+                <Link
+                  href="/login"
+                  onClick={onClose}
+                  className="inline-flex items-center gap-1.5 text-xs text-gold-light hover:text-gold-warm underline"
+                >
+                  <UserCheck className="w-3.5 h-3.5" />
+                  <span>ยังไม่ได้เป็นสมาชิก? คลิกสมัครสมาชิกฟรีก่อนรับ E-Book</span>
+                </Link>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

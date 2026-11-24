@@ -13,8 +13,7 @@
     "billingCycle": "lifetime",
     "notes": "ผู้ก่อตั้งและผู้ดูแลระบบหลัก",
     "createdAt": "2026-01-01T00:00:00.000Z",
-    "ebookClaimed": true,
-    "ebookClaimedAt": "2026-11-09T15:40:04.415Z",
+    "ebookClaimed": false,
     "updatedAt": "2026-11-09T15:40:04.415Z"
   },
   {
@@ -30,7 +29,8 @@
     "paymentAmount": 3990,
     "billingCycle": "lifetime",
     "notes": "ชำระครบถ้วน Founding 100",
-    "createdAt": "2026-01-15T10:30:00.000Z"
+    "createdAt": "2026-01-15T10:30:00.000Z",
+    "ebookClaimed": false
   },
   {
     "id": "mem_003",
@@ -45,7 +45,8 @@
     "paymentAmount": 199,
     "billingCycle": "monthly",
     "notes": "สมาชิกรายเดือน เรือประมงน้ำลึก",
-    "createdAt": "2026-02-01T14:20:00.000Z"
+    "createdAt": "2026-02-01T14:20:00.000Z",
+    "ebookClaimed": false
   },
   {
     "id": "mem_004",
@@ -60,7 +61,8 @@
     "paymentAmount": 3990,
     "billingCycle": "lifetime",
     "notes": "ผู้ร่วมก่อตั้งตลอดชีพ",
-    "createdAt": "2026-10-30T07:40:07.394Z"
+    "createdAt": "2026-10-30T07:40:07.394Z",
+    "ebookClaimed": false
   },
   {
     "id": "mem_005",
@@ -75,6 +77,7 @@
     "paymentAmount": 0,
     "billingCycle": "free",
     "notes": "สมัครสมาชิกเรือประมงน้ำตื้น",
-    "createdAt": "2026-10-31T00:00:00.000Z"
+    "createdAt": "2026-10-31T00:00:00.000Z",
+    "ebookClaimed": false
   }
 ]

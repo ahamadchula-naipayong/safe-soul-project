@@ -86,7 +86,7 @@ export function HomePageClient({
             </motion.div>
           </motion.div>
 
-          {/* Headline: "เกราะพิทักษ์ฟิฏเราะฮฺ" ABOVE "THE FITRAH SHIELD" */}
+          {/* Headline: "THE FITRAH SHIELD" ABOVE "เกราะพิทักษ์ฟิฏเราะฮฺ" (Balanced equal scale) */}
           <motion.div
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
@@ -94,11 +94,11 @@ export function HomePageClient({
             className="space-y-3"
           >
             <h1 className="tracking-tight text-balance">
-              <span className="block font-thai-serif font-black text-gold-light text-3xl sm:text-5xl lg:text-6xl leading-[1.2] drop-shadow-md">
-                เกราะพิทักษ์ฟิฏเราะฮฺ
-              </span>
-              <span className="block mt-2.5 font-cinzel font-black tracking-[0.08em] text-parchment-cream text-3xl sm:text-5xl lg:text-6xl drop-shadow-md">
+              <span className="block font-cinzel font-black tracking-[0.06em] text-parchment-cream text-3xl sm:text-5xl lg:text-[3.25rem] leading-[1.15] drop-shadow-md">
                 THE FITRAH SHIELD
+              </span>
+              <span className="block mt-2.5 font-thai-serif font-black text-gold-light text-3xl sm:text-5xl lg:text-[3.5rem] leading-[1.2] drop-shadow-md">
+                เกราะพิทักษ์ฟิฏเราะฮฺ
               </span>
             </h1>
             <div className="h-0.5 w-24 mx-auto bg-gold-warm/60 mt-4" />

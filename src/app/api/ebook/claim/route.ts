@@ -53,25 +53,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if this member or registered email has already claimed the E-Book (1 time per registered email ONLY)
-    const allMembers = getAllMembers();
-    const emailAlreadyClaimed = allMembers.some(
-      (m) =>
-        m.ebookClaimed === true &&
-        (m.id === member.id || m.email.toLowerCase() === member.email.toLowerCase())
-    );
-
-    if (member.ebookClaimed || emailAlreadyClaimed) {
-      return NextResponse.json(
-        {
-          success: false,
-          alreadyClaimed: true,
-          error: `อีเมลที่สมัครสมาชิก (${member.email}) ได้ใช้สิทธิ์รับ E-Book ฉบับเกาะทะเลน้ำตื้นไปแล้ว (จำกัดสิทธิ์รับฟรี 1 ครั้งต่ออีเมลที่สมัครเท่านั้น)`,
-        },
-        { status: 400 }
-      );
-    }
-
+    // Unlimited E-Book re-send enabled (allows retry anytime if email delivery failed)
     const { effectiveTier } = getEffectiveMemberTier(member);
     const tierForEmail =
       effectiveTier === 'visitor' ? 'free_tier_1' : effectiveTier;
@@ -114,13 +96,13 @@ export async function POST(request: NextRequest) {
 
     const claimedAt = new Date().toISOString();
     const updateRes = updateMember(member.id, {
-      ebookClaimed: true,
+      ebookClaimed: false,
       ebookClaimedAt: claimedAt,
     });
 
     const updatedMember = updateRes.member || {
       ...member,
-      ebookClaimed: true,
+      ebookClaimed: false,
       ebookClaimedAt: claimedAt,
     };
 
