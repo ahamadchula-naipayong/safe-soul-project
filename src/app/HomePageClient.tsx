@@ -42,7 +42,8 @@ export function HomePageClient({
       {/* ---------------------------------------------------------------------- */}
       {/* 1. LUXURY HERO SECTION                                                 */}
       {/* ---------------------------------------------------------------------- */}
-      <section className="relative pt-12 sm:pt-16 pb-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+      <div className="px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 max-w-7xl mx-auto space-y-8 sm:space-y-10 pb-16">
+      <section className="sanctuary-section relative pt-10 sm:pt-14 pb-12 sm:pb-16 px-5 sm:px-8 lg:px-10 rounded-3xl">
         <div className="text-center max-w-4xl mx-auto space-y-7">
           {/* Official Emblem Centerpiece with Smooth Fade-in Entrance */}
           <motion.div
@@ -151,7 +152,7 @@ export function HomePageClient({
       {/* ---------------------------------------------------------------------- */}
       {/* 2. มุ่งสู่ทะเลอันไร้ที่สิ้นสุดกัน: ทะเลน้ำตื้น (7 เกาะ) & ทะเลน้ำลึก (10 หมู่เกาะ) */}
       {/* ---------------------------------------------------------------------- */}
-      <section id="ocean" className="relative py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-emerald-border/40">
+      <section id="ocean" className="sanctuary-section relative py-14 sm:py-16 px-5 sm:px-8 lg:px-10 rounded-3xl">
         <div className="text-center max-w-3xl mx-auto mb-12 space-y-4">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-card/90 border border-gold-warm/40 text-gold-light text-xs font-semibold shadow-gold-sm">
             <Compass className="w-4 h-4 text-gold-warm animate-spin-slow" />
@@ -234,7 +235,7 @@ export function HomePageClient({
       {/* 3. LATEST 10 DISPATCHES (สำนักข่าว The Key of Return)                  */}
       {/* ---------------------------------------------------------------------- */}
       {latestNews.length > 0 && (
-        <section id="latest-news" className="relative py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-emerald-border/40">
+        <section id="latest-news" className="sanctuary-section relative py-14 sm:py-16 px-5 sm:px-8 lg:px-10 rounded-3xl">
           <div className="text-center max-w-3xl mx-auto mb-12 space-y-4">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-card/90 border border-gold-warm/40 text-gold-light text-xs font-semibold shadow-gold-sm">
               <FileText className="w-4 h-4 text-gold-warm" />
@@ -258,9 +259,10 @@ export function HomePageClient({
       {/* ---------------------------------------------------------------------- */}
       {/* 4. UNIFIED MARITIME ACCESS SANCTUARY TABLE & ACTIVE DASHBOARD          */}
       {/* ---------------------------------------------------------------------- */}
-      <section id="membership" className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-emerald-border/40">
+      <section id="membership" className="sanctuary-section relative py-14 sm:py-16 px-5 sm:px-8 lg:px-10 rounded-3xl">
         <AccessTierTable onOpenFreeModal={() => setIsEbookOpen(true)} />
       </section>
+      </div>
 
       {/* Free E-book Modal */}
       <FreeEbookModal

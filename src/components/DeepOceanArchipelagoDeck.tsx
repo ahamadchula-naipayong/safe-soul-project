@@ -117,7 +117,7 @@ export function DeepOceanArchipelagoDeck({
       {/* ------------------------------------------------------------------ */}
       {/* DESKTOP INTERFACE: PANORAMIC ACCORDION DECK                        */}
       {/* ------------------------------------------------------------------ */}
-      <div className="hidden lg:flex items-stretch gap-2.5 w-full min-h-[620px] rounded-3xl p-3 bg-[#030906]/95 border border-emerald-border/70 shadow-2xl relative overflow-hidden">
+      <div className="deck-frame hidden lg:flex items-stretch gap-2.5 w-full min-h-[620px] rounded-3xl p-3 bg-[#030906]/95 border border-gold-warm/25 shadow-2xl relative overflow-hidden">
         {archipelagos.map((arch, idx) => {
           const isActive = activeIndex === idx;
           const archUpcoming = arch.status === 'upcoming';
@@ -126,10 +126,10 @@ export function DeepOceanArchipelagoDeck({
             <div
               key={arch.id}
               onClick={() => setActiveIndex(idx)}
-              className={`relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-700 ease-out border ${
+              className={`deck-card relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-700 ease-out border ${
                 isActive
-                  ? 'flex-[8] border-gold-warm/70 shadow-[0_0_50px_rgba(244,196,48,0.2)]'
-                  : 'flex-[1] border-emerald-border/40 hover:border-gold-warm/40 bg-[#07130E] opacity-80 hover:opacity-100'
+                  ? 'deck-card-active flex-[8] border-gold-warm/70 shadow-[0_0_50px_rgba(244,196,48,0.2)]'
+                  : 'deck-card-spine flex-[1] border-emerald-border/40 hover:border-gold-warm/40 bg-[#07130E] opacity-90 hover:opacity-100'
               }`}
             >
               {/* Background Cover Image */}
@@ -144,8 +144,8 @@ export function DeepOceanArchipelagoDeck({
               <div
                 className={`absolute inset-0 transition-opacity duration-700 ${
                   isActive
-                    ? 'bg-gradient-to-t from-black via-[#040C08]/85 to-black/60'
-                    : 'bg-gradient-to-t from-black/95 via-black/85 to-black/70'
+                    ? 'deck-scrim-active bg-gradient-to-t from-black via-[#040C08]/85 to-black/60'
+                    : 'deck-scrim-spine bg-gradient-to-t from-black/95 via-black/85 to-black/70'
                 }`}
               />
 

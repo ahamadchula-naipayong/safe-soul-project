@@ -102,7 +102,7 @@ export function IslandDeckSlider({ chapters }: IslandDeckSliderProps) {
       {/* ------------------------------------------------------------------ */}
       <div
         ref={containerRef}
-        className="hidden lg:flex items-stretch gap-3 w-full h-[580px] overflow-hidden rounded-3xl p-3 bg-[#040C08]/90 border border-emerald-border/60 shadow-2xl relative"
+        className="deck-frame hidden lg:flex items-stretch gap-3 w-full min-h-[580px] overflow-hidden rounded-3xl p-3 bg-[#040C08]/90 border border-gold-warm/25 shadow-2xl relative"
       >
         {chapters.map((ch, idx) => {
           const isActive = activeIndex === idx;
@@ -111,10 +111,10 @@ export function IslandDeckSlider({ chapters }: IslandDeckSliderProps) {
             <div
               key={ch.id}
               onClick={() => setActiveIndex(idx)}
-              className={`relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-700 ease-out border ${
+              className={`deck-card relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-700 ease-out border ${
                 isActive
-                  ? 'flex-[6] border-gold-warm/60 shadow-[0_0_40px_rgba(244,196,48,0.25)]'
-                  : 'flex-[1] border-emerald-border/50 hover:border-gold-warm/30 bg-[#091610] opacity-85 hover:opacity-100'
+                  ? 'deck-card-active flex-[6] border-gold-warm/60 shadow-[0_0_40px_rgba(244,196,48,0.2)]'
+                  : 'deck-card-spine flex-[1] border-emerald-border/50 hover:border-gold-warm/40 bg-[#091610] opacity-90 hover:opacity-100'
               }`}
             >
               {/* Background Cover Image with Zoom */}
@@ -129,8 +129,8 @@ export function IslandDeckSlider({ chapters }: IslandDeckSliderProps) {
               <div
                 className={`absolute inset-0 transition-opacity duration-700 ${
                   isActive
-                    ? 'bg-gradient-to-t from-black via-black/75 to-black/40'
-                    : 'bg-gradient-to-t from-black/95 via-black/80 to-black/60'
+                    ? 'deck-scrim-active bg-gradient-to-t from-black via-black/75 to-black/40'
+                    : 'deck-scrim-spine bg-gradient-to-t from-black/95 via-black/80 to-black/60'
                 }`}
               />
 

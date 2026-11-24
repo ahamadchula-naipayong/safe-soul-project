@@ -172,9 +172,9 @@ export default function NewsIndexPage() {
       {/* 2. SEARCH & CONTROLS TOOLBAR                                       */}
       {/* ------------------------------------------------------------------ */}
       <section className="sticky top-20 z-20 backdrop-blur-xl bg-[#08110D]/90 border-b border-emerald-border/50 py-4 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3.5">
           {/* Search Input */}
-          <div className="relative flex-1 max-w-xl">
+          <div className="relative flex-1 min-w-[240px] max-w-xl">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-parchment-muted" />
             <input
               type="text"
@@ -292,7 +292,7 @@ export default function NewsIndexPage() {
                 setLimit(Number(e.target.value));
                 setPage(1);
               }}
-              className="hidden sm:inline-block px-2.5 py-2 rounded-xl bg-emerald-surface/80 border border-emerald-border text-parchment-cream outline-none cursor-pointer text-xs"
+              className="hidden sm:inline-block whitespace-nowrap min-w-[116px] shrink-0 px-3 py-2 rounded-xl bg-emerald-surface/80 border border-emerald-border text-parchment-cream outline-none cursor-pointer text-xs"
             >
               <option value="12">12 ข่าว/หน้า</option>
               <option value="24">24 ข่าว/หน้า</option>
@@ -316,7 +316,7 @@ export default function NewsIndexPage() {
       {/* ------------------------------------------------------------------ */}
       {/* 3. NEWS LIST / CARDS GRID                                          */}
       {/* ------------------------------------------------------------------ */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
         {/* Access Guidance Banner */}
         {!isLoggedIn ? (
           <div className="p-4 sm:p-5 rounded-2xl bg-[#0F2218]/90 border border-gold-warm/40 text-xs sm:text-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 shadow-sm">
@@ -816,7 +816,7 @@ export default function NewsIndexPage() {
             </div>
           </nav>
         )}
-      </main>
+      </div>
     </div>
   );
 }

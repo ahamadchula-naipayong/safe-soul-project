@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  --background: #08110D;
+  --background: #070E0B;
   --foreground: #F4F1EA;
   --emerald-deep: #0F291E;
   --gold-warm: #F59E0B;
@@ -15,10 +15,10 @@ body {
   background: var(--background);
   font-family: var(--font-noto-serif-thai), 'Noto Serif Thai', Georgia, serif;
   overflow-x: hidden;
-  background-image: 
+  background-image:
     radial-gradient(circle at 50% 0%, rgba(245, 158, 11, 0.08) 0%, transparent 40%),
-    radial-gradient(circle at 20% 50%, rgba(15, 41, 30, 0.4) 0%, transparent 50%),
-    radial-gradient(circle at 80% 80%, rgba(15, 41, 30, 0.4) 0%, transparent 50%);
+    radial-gradient(circle at 20% 50%, rgba(15, 41, 30, 0.42) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(15, 41, 30, 0.42) 0%, transparent 50%);
   background-attachment: fixed;
 }
 
@@ -56,16 +56,16 @@ body {
 }
 
 .luxury-glass {
-  background: linear-gradient(180deg, rgba(18, 37, 29, 0.75) 0%, rgba(10, 18, 14, 0.92) 100%);
+  background: linear-gradient(180deg, rgba(18, 37, 29, 0.78) 0%, rgba(10, 18, 14, 0.94) 100%);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(245, 158, 11, 0.25);
-  box-shadow: 0 20px 50px -15px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(245, 158, 11, 0.2);
+  border: 1px solid rgba(245, 158, 11, 0.24);
+  box-shadow: 0 20px 50px -15px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 246, 220, 0.09);
 }
 
 .luxury-glass:hover {
   border-color: rgba(245, 158, 11, 0.45);
-  box-shadow: 0 25px 60px -15px rgba(245, 158, 11, 0.15), inset 0 1px 0 rgba(245, 158, 11, 0.3);
+  box-shadow: 0 25px 60px -15px rgba(245, 158, 11, 0.14), inset 0 1px 0 rgba(255, 246, 220, 0.14);
 }
 
 .gold-bevel-button {
@@ -75,8 +75,8 @@ body {
 }
 
 .gold-bevel-button:hover {
-  filter: brightness(1.1);
-  box-shadow: 0 6px 28px rgba(245, 158, 11, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.8);
+  filter: brightness(1.08);
+  box-shadow: 0 6px 28px rgba(245, 158, 11, 0.48), inset 0 1px 1px rgba(255, 255, 255, 0.8);
   transform: translateY(-1px);
 }
 
@@ -85,7 +85,7 @@ body {
   filter: brightness(0.95);
 }
 
-/* Warm Artisanal Utilities (Koh Nai Soi Inspired) */
+/* Warm Artisanal Utilities */
 .artisanal-card {
   background-color: #FAF7F2;
   border: 1px solid rgba(171, 104, 42, 0.2);
@@ -143,7 +143,7 @@ mark.caramel {
   }
 }
 
-/* Dynamic Book & Article Reader Font Scaling (ก- / ก+) */
+/* Dynamic Book & Article Reader Font Scaling (T- / T+) */
 .markdown-sanctuary p,
 .markdown-sanctuary ul,
 .markdown-sanctuary ol,
@@ -214,201 +214,315 @@ mark.caramel {
 }
 
 /* ============================================================================
- * WARM PARCHMENT LIGHT MODE (โหมดสว่างอ่านสบายตาสำหรับบทความและข่าวสาร)
- * Palette: Warm Ivory (#F5F0E4) • Cream Card (#FFFDF8) • Forest Ink (#13261D)
- *          Muted Sage (#43574C) • Antique Gold (#9A5B06) • Botanical Emerald (#0D6646)
+ * DARK MODE ARCHITECTURAL FRAMING (เส้นสายขอบบางหรูแยกสัดส่วนแต่ละ Section ชัดเจน)
+ * ============================================================================ */
+html:not([data-theme="light"]) .sanctuary-section {
+  background: linear-gradient(180deg, rgba(13, 29, 22, 0.72) 0%, rgba(8, 17, 13, 0.88) 100%);
+  border: 1px solid rgba(217, 169, 79, 0.18);
+  box-shadow:
+    0 20px 55px -24px rgba(0, 0, 0, 0.75),
+    inset 0 1px 0 rgba(255, 246, 220, 0.08),
+    inset 0 -1px 0 rgba(42, 89, 68, 0.28);
+}
+
+html:not([data-theme="light"]) .sanctuary-section::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 12%;
+  right: 12%;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(245, 158, 11, 0.55) 50%,
+    transparent 100%
+  );
+  pointer-events: none;
+}
+
+html:not([data-theme="light"]) .deck-frame {
+  border-color: rgba(217, 169, 79, 0.24) !important;
+  box-shadow:
+    0 24px 60px -20px rgba(0, 0, 0, 0.85),
+    inset 0 1px 0 rgba(255, 246, 220, 0.09);
+}
+
+html:not([data-theme="light"]) main section {
+  position: relative;
+}
+
+html:not([data-theme="light"]) main section + section {
+  border-top-color: rgba(217, 169, 79, 0.18);
+}
+
+/* ============================================================================
+ * REDESIGNED LIGHT MODE — "SUNLIT ALABASTER & COASTAL IVORY" (ตรงข้ามกับ Dark Mode)
+ * Canvas: #F7F4EC  •  Porcelain Card: #FFFFFF  •  Warm Stone Inset: #EFEADF
+ * Forest Ink: #0F231A  •  Sage Slate: #3F554A  •  Antique Bronze: #985604
+ * Botanical Emerald: #0B5E40  •  Marine Teal: #0B5C6E
  * ============================================================================ */
 html[data-theme="light"] {
-  --background: #F5F0E4;
-  --foreground: #13261D;
-  --emerald-deep: #EAE2D0;
-  --gold-warm: #A85F05;
+  --background: #F7F4EC;
+  --foreground: #0F231A;
+  --emerald-deep: #EAE3D2;
+  --gold-warm: #A35B04;
   color-scheme: light;
 }
 
 html[data-theme="light"] body {
-  background-color: #F5F0E4 !important;
-  color: #13261D !important;
+  background-color: #F7F4EC !important;
+  color: #0F231A !important;
   background-image:
-    radial-gradient(circle at 50% 0%, rgba(180, 105, 8, 0.08) 0%, transparent 45%),
-    radial-gradient(circle at 18% 55%, rgba(13, 102, 70, 0.06) 0%, transparent 50%),
-    radial-gradient(circle at 82% 85%, rgba(180, 105, 8, 0.06) 0%, transparent 50%) !important;
+    radial-gradient(circle at 50% 0%, rgba(180, 105, 8, 0.06) 0%, transparent 48%),
+    radial-gradient(circle at 12% 45%, rgba(11, 94, 64, 0.045) 0%, transparent 45%),
+    radial-gradient(circle at 88% 82%, rgba(163, 91, 4, 0.05) 0%, transparent 48%) !important;
 }
 
 html[data-theme="light"] ::selection {
   background-color: #B46908;
-  color: #FFFDF8;
+  color: #FFFFFF;
 }
 
 html[data-theme="light"] ::-webkit-scrollbar-track {
-  background: #EBE3D2;
+  background: #ECE6D7;
 }
 
 html[data-theme="light"] ::-webkit-scrollbar-thumb {
-  background: #C4B79E;
-  border: 1px solid rgba(154, 91, 6, 0.3);
+  background: #C4B89F;
+  border: 1px solid rgba(152, 86, 4, 0.25);
 }
 
 html[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
-  background: #9A5B06;
+  background: #985604;
 }
 
-/* Page canvases & major sections */
+/* 1. Framed Sections in Light Mode */
+html[data-theme="light"] .sanctuary-section {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(251, 248, 241, 0.96) 100%) !important;
+  border: 1px solid #DFD6C3 !important;
+  box-shadow:
+    0 14px 36px -18px rgba(15, 35, 26, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 1) !important;
+}
+
+html[data-theme="light"] .sanctuary-section::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 14%;
+  right: 14%;
+  height: 1.5px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(168, 95, 5, 0.45) 50%,
+    transparent 100%
+  );
+  pointer-events: none;
+}
+
+/* 2. Universal Sweep of ALL Dark Hex & Dark Utility Backgrounds -> Light Surfaces
+ *    (Preserves modal backdrop .fixed.inset-0 and photo scrim overlays) */
+html[data-theme="light"] [class*="bg-[#0"]:not(.deck-scrim-active):not(.deck-scrim-spine),
+html[data-theme="light"] [class*="bg-[#1"]:not(.deck-scrim-active):not(.deck-scrim-spine),
 html[data-theme="light"] .bg-slate-dark,
 html[data-theme="light"] .bg-slate-abyss,
-html[data-theme="light"] .bg-\[\#08110D\],
-html[data-theme="light"] .bg-\[\#08110D\]\/90,
-html[data-theme="light"] .bg-\[\#0A130F\],
-html[data-theme="light"] .bg-\[\#050A08\],
-html[data-theme="light"] .bg-\[\#060D0A\] {
-  background-color: #F5F0E4 !important;
+html[data-theme="light"] .bg-slate-card,
+html[data-theme="light"] .bg-slate-800,
+html[data-theme="light"] .bg-slate-800\/95,
+html[data-theme="light"] .bg-slate-700 {
+  background-color: #F7F4EC !important;
 }
 
-/* Header & Mobile Strip */
+html[data-theme="light"] [class*="from-[#0"]:not(.deck-scrim-active):not(.deck-scrim-spine):not(.deck-fallback-bg):not(.bg-gradient-to-t),
+html[data-theme="light"] [class*="from-[#1"]:not(.deck-scrim-active):not(.deck-scrim-spine):not(.deck-fallback-bg):not(.bg-gradient-to-t),
+html[data-theme="light"] [class*="from-emerald-deep"]:not(.bg-gradient-to-t),
+html[data-theme="light"] [class*="from-emerald-surface"]:not(.bg-gradient-to-t) {
+  background-image: linear-gradient(180deg, #FFFFFF 0%, #F7F3E9 100%) !important;
+}
+
+/* Navbar & Mobile Strip */
 html[data-theme="light"] header.sticky {
-  background-color: rgba(251, 248, 240, 0.95) !important;
-  border-bottom-color: rgba(168, 95, 5, 0.25) !important;
-  box-shadow: 0 4px 24px rgba(19, 38, 29, 0.07) !important;
+  background-color: rgba(255, 253, 248, 0.94) !important;
+  border-bottom-color: #DDD3BE !important;
+  box-shadow: 0 4px 20px rgba(15, 35, 26, 0.06) !important;
 }
 
-html[data-theme="light"] .bg-\[\#060E0A\]\/95 {
-  background-color: rgba(242, 235, 220, 0.96) !important;
+html[data-theme="light"] header.sticky .lg\:hidden.border-t {
+  background-color: rgba(244, 239, 227, 0.97) !important;
 }
 
 /* Footer */
-html[data-theme="light"] footer.bg-\[\#070D0B\],
-html[data-theme="light"] .bg-\[\#070D0B\] {
-  background-color: #EAE2D1 !important;
-  border-top-color: #D1C5AE !important;
+html[data-theme="light"] footer {
+  background-color: #EDE7D8 !important;
+  border-top-color: #D4C8B2 !important;
 }
 
-/* Elevated Cards, Luxury Glass & Dark Gradients -> Crisp Warm Cream */
-html[data-theme="light"] .luxury-glass {
-  background: linear-gradient(180deg, rgba(255, 253, 248, 0.95) 0%, rgba(248, 243, 232, 0.98) 100%) !important;
-  border: 1px solid #D8CCB6 !important;
-  box-shadow: 0 12px 32px -12px rgba(19, 38, 29, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+/* Luxury Glass & Elevated Cards -> Pure Porcelain White */
+html[data-theme="light"] .luxury-glass,
+html[data-theme="light"] [class*="bg-emerald-card"],
+html[data-theme="light"] [class*="bg-emerald-deep"],
+html[data-theme="light"] [class*="bg-emerald-dark"] {
+  background: #FFFFFF !important;
+  border-color: #DDD4C0 !important;
+  box-shadow: 0 10px 28px -14px rgba(15, 35, 26, 0.1) !important;
 }
 
 html[data-theme="light"] .luxury-glass:hover {
-  border-color: rgba(168, 95, 5, 0.45) !important;
-  box-shadow: 0 18px 40px -12px rgba(168, 95, 5, 0.14), inset 0 1px 0 rgba(255, 255, 255, 1) !important;
+  border-color: rgba(163, 91, 4, 0.45) !important;
+  box-shadow: 0 16px 36px -14px rgba(163, 91, 4, 0.15) !important;
 }
 
-html[data-theme="light"] [class*="from-[#132A1F]"],
-html[data-theme="light"] [class*="from-[#11261C]"],
-html[data-theme="light"] [class*="from-[#0E2218]"],
-html[data-theme="light"] [class*="from-[#0E2219]"],
-html[data-theme="light"] [class*="from-[#0F241A]"],
-html[data-theme="light"] [class*="from-[#183929]"],
-html[data-theme="light"] [class*="from-[#11291E]"],
-html[data-theme="light"] [class*="from-[#0B1B13]"],
-html[data-theme="light"] [class*="from-emerald-deep"],
-html[data-theme="light"] [class*="from-emerald-surface"] {
-  background-image: linear-gradient(180deg, #FFFDF8 0%, #F7F1E3 100%) !important;
-}
-
-html[data-theme="light"] .bg-emerald-card,
-html[data-theme="light"] .bg-emerald-card\/90,
-html[data-theme="light"] .bg-emerald-card\/80,
-html[data-theme="light"] .bg-emerald-card\/60,
-html[data-theme="light"] .bg-emerald-deep,
-html[data-theme="light"] .bg-emerald-deep\/60,
-html[data-theme="light"] .bg-emerald-dark,
-html[data-theme="light"] .bg-emerald-dark\/90,
-html[data-theme="light"] .bg-slate-card,
-html[data-theme="light"] .bg-\[\#0F2218\]\/90 {
-  background-color: #FFFDF8 !important;
-}
-
-/* Inset surfaces, chips, stat boxes, secondary buttons */
-html[data-theme="light"] .bg-emerald-surface,
-html[data-theme="light"] .bg-emerald-surface\/80,
-html[data-theme="light"] .bg-emerald-surface\/60,
-html[data-theme="light"] .bg-emerald-surface\/40,
-html[data-theme="light"] .bg-black\/30,
-html[data-theme="light"] .bg-black\/35,
-html[data-theme="light"] .bg-black\/40,
-html[data-theme="light"] .bg-black\/45,
-html[data-theme="light"] .bg-black\/50,
-html[data-theme="light"] .bg-black\/55,
-html[data-theme="light"] .bg-black\/60,
+/* Secondary Surfaces / Chips / Pill Trays / Controls -> Warm Stone */
+html[data-theme="light"] [class*="bg-emerald-surface"],
+html[data-theme="light"] [class*="bg-black/"]:not(.fixed):not(.deck-scrim-active):not(.deck-scrim-spine),
+html[data-theme="light"] .bg-black:not(.fixed),
 html[data-theme="light"] .bg-white\/5,
+html[data-theme="light"] .bg-white\/10,
 html[data-theme="light"] .bg-white\/\[0\.03\] {
-  background-color: #EFE8D7 !important;
+  background-color: #EFEADF !important;
 }
 
-html[data-theme="light"] .hover\:bg-emerald-surface:hover,
-html[data-theme="light"] .hover\:bg-emerald-light:hover,
-html[data-theme="light"] .hover\:bg-emerald-surface\/40:hover,
-html[data-theme="light"] .hover\:bg-emerald-surface\/60:hover,
-html[data-theme="light"] .hover\:bg-emerald-surface\/80:hover {
-  background-color: #E5DBC4 !important;
+/* Keep Modal / Drawer Backdrops dimmed softly */
+html[data-theme="light"] .fixed.inset-0[class*="bg-black"] {
+  background-color: rgba(15, 28, 22, 0.48) !important;
 }
 
-/* Status / alert surfaces */
-html[data-theme="light"] .bg-amber-950\/50,
-html[data-theme="light"] .bg-amber-950\/60,
-html[data-theme="light"] .bg-amber-500\/15 {
-  background-color: #FDF3DC !important;
+html[data-theme="light"] [class*="hover:bg-emerald-surface"]:hover,
+html[data-theme="light"] [class*="hover:bg-emerald-light"]:hover,
+html[data-theme="light"] .hover\:bg-white\/5:hover,
+html[data-theme="light"] .hover\:bg-white\/10:hover {
+  background-color: #E5DEC9 !important;
 }
 
-html[data-theme="light"] .bg-red-950\/60,
-html[data-theme="light"] .bg-red-950\/40 {
+/* Tinted Status Badges (Emerald / Amber / Cyan / Red) -> Soft Daylight Tints */
+html[data-theme="light"] [class*="bg-emerald-950"],
+html[data-theme="light"] [class*="bg-emerald-900"],
+html[data-theme="light"] [class*="bg-emerald-800"] {
+  background-color: #E3F3EC !important;
+  border-color: rgba(11, 94, 64, 0.25) !important;
+}
+
+html[data-theme="light"] [class*="bg-amber-950"],
+html[data-theme="light"] .bg-amber-500\/15,
+html[data-theme="light"] .bg-amber-500\/20,
+html[data-theme="light"] .bg-gold-warm\/10,
+html[data-theme="light"] .bg-gold-warm\/15,
+html[data-theme="light"] .bg-gold-warm\/20 {
+  background-color: #FDF2DA !important;
+  border-color: rgba(163, 91, 4, 0.3) !important;
+}
+
+html[data-theme="light"] [class*="bg-cyan-950"],
+html[data-theme="light"] [class*="bg-cyan-900"] {
+  background-color: #E2F2F5 !important;
+  border-color: rgba(11, 92, 110, 0.25) !important;
+}
+
+html[data-theme="light"] [class*="bg-red-950"],
+html[data-theme="light"] [class*="bg-red-900"] {
   background-color: #FCEBEB !important;
+  border-color: rgba(166, 28, 28, 0.25) !important;
 }
 
-html[data-theme="light"] .bg-cyan-950\/90,
-html[data-theme="light"] .bg-cyan-950\/60 {
-  background-color: #E5F4F7 !important;
+/* ============================================================================
+ * 3. PANORAMIC ACCORDION DECKS IN LIGHT MODE (News / Shallow / Deep Ocean)
+ *    Bright Editorial Ivory Gallery — Zero Dark-on-Black Text!
+ * ============================================================================ */
+html[data-theme="light"] .deck-frame {
+  background: linear-gradient(180deg, #EFEADF 0%, #E7E0D0 100%) !important;
+  border: 1px solid #D5C9B2 !important;
+  box-shadow:
+    0 18px 42px -18px rgba(15, 35, 26, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.75) !important;
 }
 
-/* Typography Contrast (Forest Ink + Antique Gold + Botanical Emerald) */
-html[data-theme="light"] .text-parchment-cream,
-html[data-theme="light"] .text-parchment-light,
-html[data-theme="light"] .text-parchment-cream\/90,
-html[data-theme="light"] .text-parchment-cream\/85 {
-  color: #13261D !important;
+/* Collapsed Book Spines: Crisp Frosted Ivory with Forest Ink */
+html[data-theme="light"] .deck-card-spine {
+  background-color: #FAF7F0 !important;
+  border-color: #D5C9B4 !important;
+  opacity: 1 !important;
 }
 
-html[data-theme="light"] .text-parchment-muted,
-html[data-theme="light"] .text-parchment-muted\/90,
-html[data-theme="light"] .text-parchment-muted\/85,
-html[data-theme="light"] .text-parchment-muted\/80,
-html[data-theme="light"] .text-parchment-muted\/60,
-html[data-theme="light"] .text-parchment-dark {
-  color: #43574C !important;
+html[data-theme="light"] .deck-card-spine:hover {
+  border-color: #B46908 !important;
 }
 
-html[data-theme="light"] .text-gold-light,
-html[data-theme="light"] .text-gold-light\/90,
+html[data-theme="light"] .deck-scrim-spine {
+  background: linear-gradient(
+    to top,
+    rgba(255, 253, 248, 0.94) 0%,
+    rgba(250, 246, 238, 0.88) 50%,
+    rgba(255, 253, 248, 0.84) 100%
+  ) !important;
+}
+
+/* Active Expanded Photo Card: Daylight Editorial Ivory Gradient over Photo */
+html[data-theme="light"] .deck-card-active {
+  background-color: #FFFFFF !important;
+  border-color: rgba(163, 91, 4, 0.55) !important;
+  box-shadow: 0 16px 38px -12px rgba(15, 35, 26, 0.16) !important;
+}
+
+html[data-theme="light"] .deck-fallback-bg {
+  background: linear-gradient(135deg, #F6F0E2 0%, #E8DFCE 100%) !important;
+}
+
+html[data-theme="light"] .deck-scrim-active {
+  background: linear-gradient(
+    to top,
+    rgba(255, 254, 250, 0.98) 0%,
+    rgba(255, 253, 248, 0.94) 48%,
+    rgba(252, 249, 242, 0.82) 76%,
+    rgba(250, 246, 238, 0.62) 100%
+  ) !important;
+}
+
+/* News cards & mobile deck photo fade overlays in Light Mode (keep photos vivid!) */
+html[data-theme="light"] .bg-gradient-to-t:not(.deck-scrim-active):not(.deck-scrim-spine) {
+  background-image: linear-gradient(
+    to top,
+    rgba(255, 254, 250, 0.85) 0%,
+    rgba(255, 254, 250, 0.25) 28%,
+    transparent 55%
+  ) !important;
+}
+
+/* 4. Typography Contrast (WCAG AAA Forest Ink + Antique Gold + Botanical Emerald) */
+html[data-theme="light"] [class*="text-parchment-cream"],
+html[data-theme="light"] [class*="text-parchment-light"] {
+  color: #0F231A !important;
+}
+
+html[data-theme="light"] [class*="text-parchment-muted"],
+html[data-theme="light"] [class*="text-parchment-dark"] {
+  color: #3F554A !important;
+}
+
+html[data-theme="light"] [class*="text-gold-light"],
 html[data-theme="light"] .text-amber-200,
 html[data-theme="light"] .text-amber-300,
 html[data-theme="light"] .text-amber-100\/85 {
-  color: #8C4E03 !important;
+  color: #8A4A02 !important;
 }
 
-html[data-theme="light"] .text-gold-warm,
-html[data-theme="light"] .text-gold-warm\/90,
-html[data-theme="light"] .text-gold-warm\/80,
+html[data-theme="light"] [class*="text-gold-warm"],
 html[data-theme="light"] .text-gold,
 html[data-theme="light"] .text-amber-400 {
-  color: #A85F05 !important;
+  color: #A35B04 !important;
 }
 
 html[data-theme="light"] .text-emerald-200,
 html[data-theme="light"] .text-emerald-300,
 html[data-theme="light"] .text-emerald-400 {
-  color: #0D6646 !important;
+  color: #0B5E40 !important;
 }
 
 html[data-theme="light"] .text-cyan-200,
 html[data-theme="light"] .text-cyan-300,
 html[data-theme="light"] .text-cyan-400 {
-  color: #0E6375 !important;
-}
-
-html[data-theme="light"] .text-violet-300 {
-  color: #5B38A6 !important;
+  color: #0B5C6E !important;
 }
 
 html[data-theme="light"] .text-red-200,
@@ -416,50 +530,46 @@ html[data-theme="light"] .text-red-300 {
   color: #A61C1C !important;
 }
 
+html[data-theme="light"] .text-white\/20,
+html[data-theme="light"] .text-white\/25,
+html[data-theme="light"] .text-white\/30 {
+  color: rgba(15, 35, 26, 0.25) !important;
+}
+
 html[data-theme="light"] .text-gold-luxury {
-  background: linear-gradient(135deg, #6B3A00 0%, #A85F05 45%, #8C4E03 80%, #522B00 100%) !important;
+  background: linear-gradient(135deg, #6B3900 0%, #A85F05 45%, #8A4A02 80%, #522B00 100%) !important;
   -webkit-background-clip: text !important;
   -webkit-text-fill-color: transparent !important;
 }
 
-/* Preserve dark ink on gold CTA buttons */
+/* Preserve Crisp Dark Ink on Solid Gold / Cyan CTA Buttons */
 html[data-theme="light"] .gold-bevel-button,
 html[data-theme="light"] .bg-gold-warm,
-html[data-theme="light"] .bg-gold-gradient {
+html[data-theme="light"] .bg-gold-gradient,
+html[data-theme="light"] .bg-cyan-500 {
   color: #0B1310 !important;
 }
 
 html[data-theme="light"] .gold-bevel-button svg,
 html[data-theme="light"] .bg-gold-warm svg,
-html[data-theme="light"] .bg-gold-gradient svg {
+html[data-theme="light"] .bg-gold-gradient svg,
+html[data-theme="light"] .bg-cyan-500 svg {
   color: #0B1310 !important;
 }
 
-/* Borders */
-html[data-theme="light"] .border-emerald-border,
-html[data-theme="light"] .border-emerald-border\/80,
-html[data-theme="light"] .border-emerald-border\/60,
-html[data-theme="light"] .border-emerald-border\/50,
-html[data-theme="light"] .border-emerald-border\/40,
-html[data-theme="light"] .border-white\/5,
-html[data-theme="light"] .border-white\/10,
-html[data-theme="light"] .border-white\/15,
-html[data-theme="light"] .border-white\/20,
+/* 5. Clean Hairline Borders in Light Mode */
+html[data-theme="light"] [class*="border-emerald-border"],
+html[data-theme="light"] [class*="border-white/"],
 html[data-theme="light"] .divide-emerald-border\/30 > :not([hidden]) ~ :not([hidden]) {
-  border-color: #D6CAB5 !important;
+  border-color: #DCD2BE !important;
 }
 
-html[data-theme="light"] .border-gold-warm\/30,
-html[data-theme="light"] .border-gold-warm\/35,
-html[data-theme="light"] .border-gold-warm\/40,
-html[data-theme="light"] .border-gold-warm\/50,
-html[data-theme="light"] .border-gold-warm\/60,
-html[data-theme="light"] .border-gold\/30,
-html[data-theme="light"] .border-gold\/40 {
-  border-color: rgba(168, 95, 5, 0.35) !important;
+html[data-theme="light"] [class*="border-gold-warm"],
+html[data-theme="light"] [class*="border-gold/"] {
+  border-color: rgba(163, 91, 4, 0.35) !important;
 }
 
-/* Form Inputs & Selects in Light Mode */
+/* 6. Inputs, Selects & Textareas */
 html[data-theme="light"] input[type="text"],
 html[data-theme="light"] input[type="email"],
 html[data-theme="light"] input[type="password"],
@@ -467,9 +577,9 @@ html[data-theme="light"] input[type="tel"],
 html[data-theme="light"] input[type="search"],
 html[data-theme="light"] textarea,
 html[data-theme="light"] select {
-  background-color: #FFFDF8 !important;
-  color: #13261D !important;
-  border-color: #CBBFA8 !important;
+  background-color: #FFFFFF !important;
+  color: #0F231A !important;
+  border-color: #CFC3AC !important;
 }
 
 html[data-theme="light"] input::placeholder,
@@ -477,17 +587,17 @@ html[data-theme="light"] textarea::placeholder {
   color: #6B7B72 !important;
 }
 
-/* Markdown highlight tags in Light Mode */
+/* 7. Markdown Highlights & Article Reading Area */
 html[data-theme="light"] mark.gold {
   background-color: rgba(245, 158, 11, 0.22);
-  color: #6B3A00;
+  color: #6B3900;
   border-color: rgba(180, 105, 8, 0.4);
 }
 
 html[data-theme="light"] mark.emerald {
   background-color: rgba(16, 185, 129, 0.18);
   color: #084C34;
-  border-color: rgba(13, 102, 70, 0.35);
+  border-color: rgba(11, 94, 64, 0.35);
 }
 
 html[data-theme="light"] mark.caramel {
@@ -496,7 +606,6 @@ html[data-theme="light"] mark.caramel {
   border-color: rgba(171, 104, 42, 0.35);
 }
 
-/* Prose / Article Reading Area in Light Mode */
 html[data-theme="light"] .markdown-sanctuary,
 html[data-theme="light"] .markdown-sanctuary p,
 html[data-theme="light"] .markdown-sanctuary li,
@@ -504,11 +613,11 @@ html[data-theme="light"] .markdown-sanctuary h1,
 html[data-theme="light"] .markdown-sanctuary h2,
 html[data-theme="light"] .markdown-sanctuary h3,
 html[data-theme="light"] .markdown-sanctuary strong {
-  color: #15291F !important;
+  color: #13261D !important;
 }
 
 html[data-theme="light"] .markdown-sanctuary blockquote {
-  background-color: #EFE8D7 !important;
-  border-color: #A85F05 !important;
-  color: #273D31 !important;
+  background-color: #EFEADF !important;
+  border-color: #A35B04 !important;
+  color: #243A2F !important;
 }

@@ -102,7 +102,7 @@ export function NewsDeckSlider({ articles }: NewsDeckSliderProps) {
       {/* ------------------------------------------------------------------ */}
       <div
         ref={containerRef}
-        className="hidden lg:flex items-stretch gap-2.5 w-full h-[580px] overflow-hidden rounded-3xl p-3 bg-[#040C08]/90 border border-emerald-border/60 shadow-2xl relative"
+        className="deck-frame hidden lg:flex items-stretch gap-2.5 w-full min-h-[600px] overflow-hidden rounded-3xl p-3 bg-[#040C08]/90 border border-gold-warm/25 shadow-2xl relative"
       >
         {articles.map((item, idx) => {
           const isActive = activeIndex === idx;
@@ -111,10 +111,10 @@ export function NewsDeckSlider({ articles }: NewsDeckSliderProps) {
             <div
               key={item.id}
               onClick={() => setActiveIndex(idx)}
-              className={`relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-700 ease-out border ${
+              className={`deck-card relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-700 ease-out border ${
                 isActive
-                  ? 'flex-[7] border-gold-warm/60 shadow-[0_0_40px_rgba(244,196,48,0.25)]'
-                  : 'flex-[1] border-emerald-border/50 hover:border-gold-warm/30 bg-[#091610] opacity-85 hover:opacity-100'
+                  ? 'deck-card-active flex-[7] border-gold-warm/60 shadow-[0_0_40px_rgba(244,196,48,0.2)]'
+                  : 'deck-card-spine flex-[1] border-emerald-border/50 hover:border-gold-warm/40 bg-[#091610] opacity-90 hover:opacity-100'
               }`}
             >
               {/* Background Cover Image with Zoom */}
@@ -126,15 +126,15 @@ export function NewsDeckSlider({ articles }: NewsDeckSliderProps) {
                   }}
                 />
               ) : (
-                <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-[#0F241A] to-[#060D0A]" />
+                <div className="deck-fallback-bg absolute inset-0 w-full h-full bg-gradient-to-br from-[#0F241A] to-[#060D0A]" />
               )}
 
               {/* Gradient Overlay */}
               <div
                 className={`absolute inset-0 transition-opacity duration-700 ${
                   isActive
-                    ? 'bg-gradient-to-t from-black via-black/80 to-black/50'
-                    : 'bg-gradient-to-t from-black/95 via-black/85 to-black/70'
+                    ? 'deck-scrim-active bg-gradient-to-t from-black via-black/80 to-black/50'
+                    : 'deck-scrim-spine bg-gradient-to-t from-black/95 via-black/85 to-black/70'
                 }`}
               />
 
@@ -164,7 +164,7 @@ export function NewsDeckSlider({ articles }: NewsDeckSliderProps) {
               {/* EXPANDED VIEW (When active: Opens wide to the right)       */}
               {/* ---------------------------------------------------------- */}
               {isActive && (
-                <div className="relative h-full p-8 sm:p-10 flex flex-col justify-between z-10 animate-fade-in">
+                <div className="relative h-full p-7 sm:p-9 flex flex-col justify-between gap-4 z-10 animate-fade-in">
                   {/* Top Badges */}
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="flex items-center gap-2">
@@ -195,7 +195,7 @@ export function NewsDeckSlider({ articles }: NewsDeckSliderProps) {
                         <Compass className="w-4 h-4 text-gold-warm" />
                         <span>THE KEY OF RETURN • LATEST DISPATCH</span>
                       </div>
-                      <h2 className="text-2xl sm:text-3xl lg:text-4xl font-thai-serif font-black text-parchment-cream leading-snug drop-shadow-md">
+                      <h2 className="text-2xl sm:text-3xl font-thai-serif font-black text-parchment-cream leading-snug drop-shadow-sm line-clamp-3">
                         {item.title}
                       </h2>
                     </div>
@@ -214,7 +214,7 @@ export function NewsDeckSlider({ articles }: NewsDeckSliderProps) {
                       className="text-xs text-gold-light hover:text-gold-warm font-thai flex items-center gap-1 transition"
                     >
                       <FileText className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>สำนักข่าว The Key of Return (ทั้งหมด 4,236 ข่าว)</span>
+                      <span>อ่านข่าว KOR ทั้งหมด (5,000+ รายงาน)</span>
                     </Link>
 
                     <Link
