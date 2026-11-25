@@ -205,9 +205,32 @@ export function saveDiscordState(state) {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
-  const payload = {
-    ...state,
-    updatedAt: new Date().toISOString(),
-  };
-  fs.writeFileSync(STATE_FILE_PATH, JSON.stringify(payload, null, 2), 'utf8');
+  const payload = JSON.stringify(
+    {
+      ...state,
+      updatedAt: new Date().toISOString(),
+    },
+    null,
+    2
+  );
+
+  const tmpPath = `${STATE_FILE_PATH}.${process.pid}.${Date.now()}.tmp`;
+  fs.writeFileSync(tmpPath, payload, 'utf8');
+
+  const sleepBuf = new Int32Array(new SharedArrayBuffer(4));
+  let lastErr = null;
+  for (let attempt = 0; attempt < 8; attempt++) {
+    try {
+      fs.renameSync(tmpPath, STATE_FILE_PATH);
+      return;
+    } catch (err) {
+      lastErr = err;
+      Atomics.wait(sleepBuf, 0, 0, 150 * (attempt + 1));
+    }
+  }
+
+  try {
+    if (fs.existsSync(tmpPath)) fs.unlinkSync(tmpPath);
+  } catch {}
+  throw lastErr;
 }

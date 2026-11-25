@@ -170,6 +170,165 @@ async function sendResendNotification(
   }
 }
 
+const CAPTAIN_RECEIVER_KEYWORDS = ['นรฤทธิ์', 'norrarit', 'อะหมัด', 'ahamad'];
+const CAPTAIN_RECEIVER_SUFFIXES = ['3702', '5912', '5922', '5937'];
+
+interface EasySlipCheckResult {
+  verified: boolean;
+  hardReject?: boolean;
+  mode: 'easyslip_auto' | 'manual_fallback' | 'rejected';
+  transRef?: string;
+  slipAmount?: number;
+  receiverAccount?: string;
+  slipDate?: string;
+  slipData?: any;
+  error?: string;
+}
+
+async function verifyEasySlipEdge(
+  env: Env,
+  imageBase64: string,
+  expectedAmount: number,
+  currentMemberId?: string
+): Promise<EasySlipCheckResult> {
+  if (!imageBase64) {
+    return { verified: false, hardReject: true, mode: 'rejected', error: 'กรุณาแนบไฟล์รูปสลิปโอนเงิน' };
+  }
+  const token = env.EASYSLIP_API_KEY;
+  if (!token) {
+    return { verified: false, mode: 'manual_fallback' };
+  }
+
+  try {
+    const rawBase64 = imageBase64.replace(/^data:image\/[a-zA-Z0-9+.-]+;base64,/, '');
+    const verifyRes = await fetch('https://developer.easyslip.com/api/v1/verify', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ image: rawBase64 }),
+    });
+
+    // If EasySlip API itself has a 5xx outage, gracefully fall back to manual admin review
+    if (verifyRes.status >= 500) {
+      return { verified: false, mode: 'manual_fallback' };
+    }
+
+    const verifyData: any = await verifyRes.json().catch(() => ({}));
+    if (!verifyRes.ok || verifyData.status !== 200 || !verifyData.data) {
+      const msg = String(verifyData?.message || '').toLowerCase();
+      if (msg.includes('quota') || msg.includes('limit') || msg.includes('unauthorized')) {
+        return { verified: false, mode: 'manual_fallback' };
+      }
+      return {
+        verified: false,
+        hardReject: true,
+        mode: 'rejected',
+        error: 'ไม่สามารถอ่านข้อมูล QR Code จากสลิปนี้ได้ กรุณาอัปโหลดรูปสลิปต้นฉบับจากแอปธนาคารที่มี QR ชัดเจน',
+      };
+    }
+
+    const d = verifyData.data;
+    const slipAmount = Number(d?.amount?.amount || 0);
+    const transRef = String(d?.transRef || '').trim();
+    const slipDate = String(d?.date || '').trim();
+
+    if (expectedAmount > 0 && slipAmount < expectedAmount) {
+      return {
+        verified: false,
+        hardReject: true,
+        mode: 'rejected',
+        error: `ยอดเงินในสลิป (฿${slipAmount.toLocaleString()}) น้อยกว่ายอดที่ต้องชำระ (฿${expectedAmount.toLocaleString()}) กรุณาตรวจสอบยอดโอนอีกครั้ง`,
+      };
+    }
+
+    // Verify receiver belongs to Captain_Hadee / The Fitrah Shield (MAKE by KBank / PromptPay)
+    const receiverNameTh = String(d?.receiver?.account?.name?.th || '').toLowerCase();
+    const receiverNameEn = String(d?.receiver?.account?.name?.en || '').toLowerCase();
+    const receiverBankAcc = String(d?.receiver?.account?.bank?.account || '').replace(/[^0-9]/g, '');
+    const receiverProxyAcc = String(d?.receiver?.account?.proxy?.account || '').replace(/[^0-9]/g, '');
+    const receiverAccountLabel =
+      String(d?.receiver?.account?.proxy?.account || d?.receiver?.account?.bank?.account || '').trim();
+
+    const hasReceiverInfo = Boolean(receiverNameTh || receiverNameEn || receiverBankAcc || receiverProxyAcc);
+    if (hasReceiverInfo) {
+      const nameMatches = CAPTAIN_RECEIVER_KEYWORDS.some(
+        (kw) => receiverNameTh.includes(kw) || receiverNameEn.includes(kw)
+      );
+      const suffixMatches = CAPTAIN_RECEIVER_SUFFIXES.some(
+        (suf) => receiverBankAcc.endsWith(suf) || receiverProxyAcc.endsWith(suf)
+      );
+      if (!nameMatches && !suffixMatches) {
+        return {
+          verified: false,
+          hardReject: true,
+          mode: 'rejected',
+          error:
+            'ชื่อบัญชีหรือปลายทางผู้รับเงินในสลิปไม่ตรงกับบัญชีทางการของ The Fitrah Shield (นาย นรฤทธิ์ อหะหมัดจุฬา) กรุณาสแกน QR ของทางเว็บไซต์เท่านั้น',
+        };
+      }
+    }
+
+    // Prevent duplicate slip reuse across accounts
+    if (transRef && env.DB) {
+      try {
+        await env.DB.prepare(
+          'CREATE TABLE IF NOT EXISTS verified_slips (trans_ref TEXT PRIMARY KEY, member_id TEXT, amount REAL, receiver_account TEXT, verified_at TEXT NOT NULL)'
+        ).run();
+        const dup = await env.DB.prepare('SELECT trans_ref, member_id FROM verified_slips WHERE trans_ref = ?')
+          .bind(transRef)
+          .first();
+        if (dup && (!currentMemberId || dup.member_id !== currentMemberId)) {
+          return {
+            verified: false,
+            hardReject: true,
+            mode: 'rejected',
+            error: `สลิปนี้ (Ref: ${transRef}) ถูกใช้งานยืนยันสิทธิ์ไปแล้ว ไม่สามารถใช้ซ้ำได้`,
+          };
+        }
+      } catch (e) {
+        console.error('Duplicate slip check warning:', e);
+      }
+    }
+
+    return {
+      verified: true,
+      mode: 'easyslip_auto',
+      transRef,
+      slipAmount,
+      receiverAccount: receiverAccountLabel,
+      slipDate,
+      slipData: d,
+    };
+  } catch (err) {
+    console.error('verifyEasySlipEdge network error:', err);
+    return { verified: false, mode: 'manual_fallback' };
+  }
+}
+
+async function recordVerifiedSlipEdge(
+  env: Env,
+  transRef: string | undefined,
+  memberId: string,
+  amount: number,
+  receiverAccount: string | undefined
+) {
+  if (!transRef || !env.DB) return;
+  try {
+    await env.DB.prepare(
+      'CREATE TABLE IF NOT EXISTS verified_slips (trans_ref TEXT PRIMARY KEY, member_id TEXT, amount REAL, receiver_account TEXT, verified_at TEXT NOT NULL)'
+    ).run();
+    await env.DB.prepare(
+      'INSERT OR REPLACE INTO verified_slips (trans_ref, member_id, amount, receiver_account, verified_at) VALUES (?, ?, ?, ?, ?)'
+    )
+      .bind(transRef, memberId, amount, receiverAccount || '', new Date().toISOString())
+      .run();
+  } catch (e) {
+    console.error('recordVerifiedSlipEdge warning:', e);
+  }
+}
+
 function jsonResponse(data: unknown, status = 200, headers: Record<string, string> = {}) {
   return new Response(JSON.stringify(data), {
     status,
@@ -666,17 +825,50 @@ export const onRequest = async (context: {
         return jsonResponse({ success: false, error: 'ชื่อผู้ใช้หรืออีเมลนี้มีอยู่ในระบบแล้ว' }, 400);
       }
 
+      const billingCycle =
+        body.billingCycle || (tier === 'founding_tier_3' ? 'lifetime' : tier === 'supporter_tier_2' ? 'monthly' : 'free');
+      const paymentAmount =
+        body.paymentAmount ??
+        (tier === 'founding_tier_3'
+          ? 3990
+          : tier === 'supporter_tier_2'
+          ? billingCycle === 'yearly'
+            ? 1990
+            : 199
+          : 0);
+
+      let paymentStatus: PaymentStatus = tier === 'free_tier_1' ? 'free' : 'pending_verification';
+      let verificationNotes = '';
+      let verifiedTransRef: string | undefined;
+      let verifiedReceiverAcc: string | undefined;
+
+      // Automatically verify payment slip via EasySlip API for paid tiers!
+      if (tier !== 'free_tier_1') {
+        if (!body.paymentSlipDataUrl) {
+          return jsonResponse(
+            { success: false, error: 'กรุณาแนบไฟล์รูปสลิปโอนเงินสำหรับระดับสมาชิกที่เลือก' },
+            400
+          );
+        }
+        const slipCheck = await verifyEasySlipEdge(env, body.paymentSlipDataUrl, Number(paymentAmount));
+        if (slipCheck.hardReject) {
+          return jsonResponse({ success: false, error: slipCheck.error }, 400);
+        }
+        if (slipCheck.verified) {
+          paymentStatus = 'verified';
+          verifiedTransRef = slipCheck.transRef;
+          verifiedReceiverAcc = slipCheck.receiverAccount;
+          verificationNotes = `ตรวจสอบสลิปอัตโนมัติผ่าน EasySlip สำเร็จ • Ref: ${slipCheck.transRef || '-'} • ยอด ฿${slipCheck.slipAmount ?? paymentAmount}`;
+        }
+      }
+
       const maxRow = await env.DB.prepare('SELECT MAX(member_number) as max_num FROM members').first();
       const nextNum = (Number(maxRow?.max_num) || 0) + 1;
       const id = `mem_${String(nextNum).padStart(3, '0')}`;
       const now = new Date().toISOString();
-      const paymentStatus: PaymentStatus =
-        tier === 'free_tier_1' ? 'free' : body.paymentStatus || 'pending_verification';
-      const paymentAmount =
-        body.paymentAmount ?? (tier === 'founding_tier_3' ? 3990 : tier === 'supporter_tier_2' ? 199 : 0);
 
       await env.DB.prepare(
-        `INSERT INTO members (id, member_number, username, email, phone, password, name, tier, role, payment_status, payment_slip_url, payment_amount, billing_cycle, ebook_claimed, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'member', ?, ?, ?, ?, 0, ?)`
+        `INSERT INTO members (id, member_number, username, email, phone, password, name, tier, role, payment_status, payment_slip_url, payment_amount, billing_cycle, ebook_claimed, notes, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'member', ?, ?, ?, ?, 0, ?, ?)`
       )
         .bind(
           id,
@@ -690,15 +882,28 @@ export const onRequest = async (context: {
           paymentStatus,
           body.paymentSlipDataUrl || null,
           paymentAmount,
-          body.billingCycle || (tier === 'founding_tier_3' ? 'lifetime' : tier === 'supporter_tier_2' ? 'monthly' : 'free'),
+          billingCycle,
+          verificationNotes || null,
           now
         )
         .run();
 
+      if (paymentStatus === 'verified' && verifiedTransRef) {
+        await recordVerifiedSlipEdge(env, verifiedTransRef, id, Number(paymentAmount), verifiedReceiverAcc);
+      }
+
       const created = await env.DB.prepare('SELECT * FROM members WHERE id = ?').bind(id).first();
       const { password: _, ...safe } = rowToMember(created);
       return jsonResponse(
-        { success: true, member: safe },
+        {
+          success: true,
+          verified: paymentStatus === 'verified',
+          member: safe,
+          message:
+            paymentStatus === 'verified'
+              ? `ตรวจสอบสลิปผ่าน EasySlip สำเร็จ! เปิดใช้งานสิทธิ์ Member #${nextNum} อัตโนมัติทันที`
+              : `ลงทะเบียน Member #${nextNum} สำเร็จ`,
+        },
         200,
         {
           'Set-Cookie': `safesoul_member=${encodeURIComponent(JSON.stringify(safe))}; Path=/; Max-Age=${60 * 60 * 24 * 30}; SameSite=Lax`,
@@ -706,7 +911,7 @@ export const onRequest = async (context: {
       );
     }
 
-    if (path === '/api/auth/upgrade' && method === 'POST') {
+    if ((path === '/api/auth/upgrade' && method === 'POST') || (path === '/api/auth/me' && method === 'PATCH')) {
       const body: any = await request.json();
       const cookies = parseCookies(request.headers.get('Cookie'));
       const sessionMember = cookies.safesoul_member ? JSON.parse(cookies.safesoul_member) : null;
@@ -714,20 +919,59 @@ export const onRequest = async (context: {
       if (!memberId) {
         return jsonResponse({ success: false, error: 'กรุณาเข้าสู่ระบบก่อนอัปเกรด' }, 401);
       }
+
+      const targetTier: TierType = body.tier || 'supporter_tier_2';
+      const targetBillingCycle =
+        body.billingCycle || (targetTier === 'founding_tier_3' ? 'lifetime' : 'monthly');
+      const targetAmount = Number(
+        body.paymentAmount ??
+          (targetTier === 'founding_tier_3' ? 3990 : targetBillingCycle === 'yearly' ? 1990 : 199)
+      );
+
+      let paymentStatus: PaymentStatus = targetTier === 'free_tier_1' ? 'free' : 'pending_verification';
+      let verificationNotes: string | null = null;
+      let verifiedTransRef: string | undefined;
+      let verifiedReceiverAcc: string | undefined;
+
+      if (targetTier !== 'free_tier_1') {
+        if (!body.paymentSlipDataUrl) {
+          return jsonResponse(
+            { success: false, error: 'กรุณาแนบไฟล์รูปสลิปโอนเงินเพื่อยืนยันการอัปเกรดระดับสมาชิก' },
+            400
+          );
+        }
+        const slipCheck = await verifyEasySlipEdge(env, body.paymentSlipDataUrl, targetAmount, memberId);
+        if (slipCheck.hardReject) {
+          return jsonResponse({ success: false, error: slipCheck.error }, 400);
+        }
+        if (slipCheck.verified) {
+          paymentStatus = 'verified';
+          verifiedTransRef = slipCheck.transRef;
+          verifiedReceiverAcc = slipCheck.receiverAccount;
+          verificationNotes = `อัปเกรดและตรวจสอบสลิปอัตโนมัติผ่าน EasySlip สำเร็จ • Ref: ${slipCheck.transRef || '-'} • ยอด ฿${slipCheck.slipAmount ?? targetAmount}`;
+        }
+      }
+
       const now = new Date().toISOString();
       await env.DB.prepare(
-        `UPDATE members SET tier = ?, payment_status = ?, payment_slip_url = COALESCE(?, payment_slip_url), payment_amount = ?, billing_cycle = ?, updated_at = ? WHERE id = ?`
+        `UPDATE members SET tier = ?, phone = COALESCE(NULLIF(?, ''), phone), payment_status = ?, payment_slip_url = COALESCE(?, payment_slip_url), payment_amount = ?, billing_cycle = ?, notes = COALESCE(?, notes), updated_at = ? WHERE id = ?`
       )
         .bind(
-          body.tier,
-          body.paymentStatus || 'pending_verification',
+          targetTier,
+          body.phone || '',
+          paymentStatus,
           body.paymentSlipDataUrl || null,
-          Number(body.paymentAmount || 199),
-          body.billingCycle || 'monthly',
+          targetAmount,
+          targetBillingCycle,
+          verificationNotes,
           now,
           memberId
         )
         .run();
+
+      if (paymentStatus === 'verified' && verifiedTransRef) {
+        await recordVerifiedSlipEdge(env, verifiedTransRef, memberId, targetAmount, verifiedReceiverAcc);
+      }
 
       const updated = await env.DB.prepare('SELECT * FROM members WHERE id = ?').bind(memberId).first();
       const updatedMember = rowToMember(updated);
@@ -736,7 +980,72 @@ export const onRequest = async (context: {
       }
       const { password: _, ...safe } = updatedMember;
       return jsonResponse(
-        { success: true, member: safe },
+        {
+          success: true,
+          verified: paymentStatus === 'verified',
+          member: safe,
+          message:
+            paymentStatus === 'verified'
+              ? 'ตรวจสอบสลิปผ่าน EasySlip สำเร็จ! อัปเกรดและเปิดใช้งานสิทธิ์ของคุณทันทีแล้ว'
+              : 'บันทึกสลิปเรียบร้อยแล้ว อยู่ระหว่างรอแอดมินตรวจสอบ',
+        },
+        200,
+        {
+          'Set-Cookie': `safesoul_member=${encodeURIComponent(JSON.stringify(safe))}; Path=/; Max-Age=${60 * 60 * 24 * 30}; SameSite=Lax`,
+        }
+      );
+    }
+
+    if (path === '/api/auth/verify-my-slip' && method === 'POST') {
+      const cookies = parseCookies(request.headers.get('Cookie'));
+      const sessionMember = cookies.safesoul_member ? JSON.parse(cookies.safesoul_member) : null;
+      const body: any = await request.json().catch(() => ({}));
+      const memberId = body.memberId || sessionMember?.id;
+      if (!memberId) {
+        return jsonResponse({ success: false, error: 'กรุณาเข้าสู่ระบบก่อนตรวจสอบสลิป' }, 401);
+      }
+      const row = await env.DB.prepare('SELECT * FROM members WHERE id = ?').bind(memberId).first();
+      if (!row) {
+        return jsonResponse({ success: false, error: 'ไม่พบข้อมูลสมาชิก' }, 404);
+      }
+      if (row.payment_status === 'verified') {
+        const { password: _, ...safe } = rowToMember(row);
+        return jsonResponse({ success: true, verified: true, member: safe, message: 'บัญชีนี้ยืนยันสิทธิ์เรียบร้อยแล้ว' });
+      }
+      const slipImg = body.paymentSlipDataUrl || row.payment_slip_url;
+      if (!slipImg) {
+        return jsonResponse({ success: false, error: 'ไม่พบไฟล์สลิปในระบบ กรุณาแนบสลิปใหม่อีกครั้ง' }, 400);
+      }
+      const expected = Number(row.payment_amount || (row.tier === 'founding_tier_3' ? 3990 : 199));
+      const slipCheck = await verifyEasySlipEdge(env, slipImg, expected, memberId);
+      if (slipCheck.hardReject || !slipCheck.verified) {
+        return jsonResponse(
+          { success: false, error: slipCheck.error || 'ไม่สามารถยืนยันสลิปอัตโนมัติได้ในขณะนี้ กรุณารอแอดมินตรวจสอบ' },
+          400
+        );
+      }
+      const now = new Date().toISOString();
+      const note = `ตรวจสอบสลิปอัตโนมัติผ่าน EasySlip สำเร็จ • Ref: ${slipCheck.transRef || '-'} • ยอด ฿${slipCheck.slipAmount ?? expected}`;
+      await env.DB.prepare(
+        'UPDATE members SET payment_status = ?, notes = ?, updated_at = ? WHERE id = ?'
+      )
+        .bind('verified', note, now, memberId)
+        .run();
+      await recordVerifiedSlipEdge(env, slipCheck.transRef, memberId, expected, slipCheck.receiverAccount);
+
+      const updated = await env.DB.prepare('SELECT * FROM members WHERE id = ?').bind(memberId).first();
+      const updatedMember = rowToMember(updated);
+      if (updatedMember.discordUserId) {
+        await syncDiscordMemberRolesEdge(env, updatedMember);
+      }
+      const { password: _, ...safe } = updatedMember;
+      return jsonResponse(
+        {
+          success: true,
+          verified: true,
+          member: safe,
+          message: 'ตรวจสอบสลิปผ่าน EasySlip สำเร็จ! ปลดล็อกสิทธิ์บัญชีของคุณทันทีแล้ว',
+        },
         200,
         {
           'Set-Cookie': `safesoul_member=${encodeURIComponent(JSON.stringify(safe))}; Path=/; Max-Age=${60 * 60 * 24 * 30}; SameSite=Lax`,
@@ -745,15 +1054,18 @@ export const onRequest = async (context: {
     }
 
     // -----------------------------------------------------------------------
-    // 3. /api/verify-slip (EasySlip API)
+    // 3. /api/verify-slip (EasySlip API — with receiver & duplicate check)
     // -----------------------------------------------------------------------
     if (path === '/api/verify-slip' && method === 'POST') {
       const body: any = await request.json();
       const imageBase64: string = body.imageBase64 || '';
       const expectedAmount = Number(body.expectedAmount || 0);
-      const token = env.EASYSLIP_API_KEY;
+      const slipCheck = await verifyEasySlipEdge(env, imageBase64, expectedAmount);
 
-      if (!token) {
+      if (slipCheck.hardReject) {
+        return jsonResponse({ success: false, verified: false, error: slipCheck.error }, 400);
+      }
+      if (!slipCheck.verified) {
         return jsonResponse({
           success: true,
           verified: false,
@@ -762,33 +1074,13 @@ export const onRequest = async (context: {
         });
       }
 
-      const rawBase64 = imageBase64.replace(/^data:image\/[a-zA-Z0-9+.-]+;base64,/, '');
-      const verifyRes = await fetch('https://developer.easyslip.com/api/v1/verify', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ image: rawBase64 }),
-      });
-
-      const verifyData: any = await verifyRes.json();
-      if (!verifyRes.ok || verifyData.status !== 200) {
-        return jsonResponse(
-          { success: false, verified: false, error: 'ไม่สามารถอ่านข้อมูล QR จากสลิปนี้ได้' },
-          400
-        );
-      }
-
-      const slipAmount = Number(verifyData?.data?.amount?.amount || 0);
-      if (expectedAmount > 0 && slipAmount < expectedAmount) {
-        return jsonResponse(
-          {
-            success: false,
-            verified: false,
-            error: `ยอดเงินในสลิป (฿${slipAmount}) น้อยกว่ายอดที่ต้องชำระ (฿${expectedAmount})`,
-          },
-          400
+      if (slipCheck.transRef && body.recordSlip !== false) {
+        await recordVerifiedSlipEdge(
+          env,
+          slipCheck.transRef,
+          body.memberId || 'store_order',
+          slipCheck.slipAmount ?? expectedAmount,
+          slipCheck.receiverAccount
         );
       }
 
@@ -796,7 +1088,9 @@ export const onRequest = async (context: {
         success: true,
         verified: true,
         mode: 'easyslip_auto',
-        slipData: verifyData.data,
+        transRef: slipCheck.transRef,
+        slipAmount: slipCheck.slipAmount,
+        slipData: slipCheck.slipData,
       });
     }
 

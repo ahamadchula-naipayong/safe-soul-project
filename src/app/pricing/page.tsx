@@ -149,7 +149,7 @@ export default function PricingPage() {
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-emerald-border/50 pb-4">
             <div className="flex items-center gap-2 text-gold-warm text-xs font-bold uppercase tracking-wider">
               <QrCode className="w-4 h-4" />
-              <span>ชำระเงินผ่าน QR Code & แนบสลิปตรวจสอบ (รอเชื่อมต่อ Stripe)</span>
+              <span>ชำระเงินผ่าน QR Code & ตรวจสอบสลิปอัตโนมัติ (EasySlip)</span>
             </div>
           </div>
 
@@ -212,10 +212,20 @@ export default function PricingPage() {
               <CheckCircle2 className="w-12 h-12 text-emerald-300 mx-auto" />
               <div className="space-y-1">
                 <h4 className="text-xl font-thai-serif font-bold text-parchment-cream">
-                  ส่งหลักฐานสลิปโอนเงินสำเร็จแล้ว!
+                  {member?.paymentStatus === 'verified'
+                    ? 'ตรวจสอบสลิปผ่าน EasySlip สำเร็จ! เปิดใช้งานสิทธิ์ทันทีแล้ว'
+                    : 'ส่งหลักฐานสลิปโอนเงินสำเร็จแล้ว!'}
                 </h4>
                 <p className="text-xs sm:text-sm text-parchment-muted">
-                  ระบบได้บันทึกคำขออัปเกรดของ <strong>Member #{member?.memberNumber}</strong> เข้าสู่ตารางตรวจสอบของแอดมินเรียบร้อยแล้ว
+                  {member?.paymentStatus === 'verified' ? (
+                    <>
+                      ระบบตรวจสอบสลิปอัตโนมัติและอนุมัติสิทธิ์ให้ <strong>Member #{member?.memberNumber}</strong> เรียบร้อยแล้ว สามารถเข้าอ่านและฟังเนื้อหาได้ทันที
+                    </>
+                  ) : (
+                    <>
+                      ระบบได้บันทึกคำขออัปเกรดของ <strong>Member #{member?.memberNumber}</strong> เข้าสู่ตารางตรวจสอบของแอดมินเรียบร้อยแล้ว
+                    </>
+                  )}
                 </p>
               </div>
               <div className="flex justify-center gap-3 pt-2">

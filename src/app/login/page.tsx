@@ -92,6 +92,32 @@ function LoginContent() {
   const [regSlipDataUrl, setRegSlipDataUrl] = useState('');
   const [regError, setRegError] = useState('');
   const [regSubmitting, setRegSubmitting] = useState(false);
+  const [reverifyLoading, setReverifyLoading] = useState(false);
+  const [reverifyFeedback, setReverifyFeedback] = useState('');
+
+  const handleReverifyMySlip = async () => {
+    if (!member) return;
+    setReverifyLoading(true);
+    setReverifyFeedback('');
+    try {
+      const res = await fetch('/api/auth/verify-my-slip', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ memberId: member.id }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setReverifyFeedback(data.message || 'ตรวจสอบสลิปสำเร็จ! ปลดล็อกสิทธิ์เรียบร้อยแล้ว');
+        await refreshSession();
+      } else {
+        setReverifyFeedback(data.error || 'ไม่สามารถยืนยันสลิปอัตโนมัติได้ กรุณารอแอดมินตรวจสอบ');
+      }
+    } catch {
+      setReverifyFeedback('เกิดข้อผิดพลาดในการเชื่อมต่อระบบตรวจสอบสลิป');
+    } finally {
+      setReverifyLoading(false);
+    }
+  };
 
   // Support deep-link query params (?tab=register&tier=founding_tier_3)
   useEffect(() => {
@@ -303,16 +329,29 @@ function LoginContent() {
 
               {/* Pending Slip Verification Notice */}
               {member.paymentStatus === 'pending_verification' && (
-                <div className="p-4 rounded-2xl bg-amber-950/50 border border-amber-400/50 text-amber-200 text-xs sm:text-sm flex items-start gap-3">
-                  <Clock className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
-                  <div className="space-y-1">
-                    <div className="font-bold text-amber-300">
-                      หลักฐานสลิปการโอนเงินอยู่ระหว่างรอแอดมินตรวจสอบ
+                <div className="p-4 rounded-2xl bg-amber-950/50 border border-amber-400/50 text-amber-200 text-xs sm:text-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <Clock className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+                    <div className="space-y-1">
+                      <div className="font-bold text-amber-300">
+                        หลักฐานสลิปการโอนเงินอยู่ระหว่างรอตรวจสอบ
+                      </div>
+                      <p className="text-xs text-amber-100/85 font-light">
+                        ทีมงานได้รับไฟล์สลิปของคุณแล้ว คุณสามารถกดปุ่มด้านขวาเพื่อให้ระบบ EasySlip ตรวจสอบสลิปและปลดล็อกสิทธิ์อัตโนมัติได้ทันที
+                      </p>
+                      {reverifyFeedback && (
+                        <p className="text-xs font-semibold text-gold-light pt-1">{reverifyFeedback}</p>
+                      )}
                     </div>
-                    <p className="text-xs text-amber-100/85 font-light">
-                      ทีมงานได้รับไฟล์สลิปของคุณแล้ว ทันทีที่แอดมินตรวจสอบและยืนยันในระบบ สิทธิ์ระดับเรือที่คุณเลือกจะเปิดใช้งานเต็มรูปแบบโดยอัตโนมัติ
-                    </p>
                   </div>
+                  <button
+                    type="button"
+                    onClick={handleReverifyMySlip}
+                    disabled={reverifyLoading}
+                    className="shrink-0 px-4 py-2 rounded-xl gold-bevel-button text-slate-abyss font-bold text-xs shadow-gold-sm transition hover:brightness-105 disabled:opacity-50 cursor-pointer"
+                  >
+                    {reverifyLoading ? 'กำลังตรวจสลิป...' : 'ตรวจสอบสลิปอัตโนมัติ (EasySlip)'}
+                  </button>
                 </div>
               )}
 

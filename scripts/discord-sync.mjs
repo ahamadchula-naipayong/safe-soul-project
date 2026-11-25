@@ -936,54 +936,60 @@ async function main() {
   // Step C: Create new threads with safe rate-limit pacing
   let createdCount = 0;
   let skippedCount = 0;
-  for (let i = 0; i < batchCreate.length; i++) {
-    const job = batchCreate[i];
-    try {
-      const thread = await createForumThreadSafe(job);
-      let archivedOk = false;
-      if (job.shouldArchive) {
-        try {
-          await discordApi(`/channels/${thread.id}`, {
-            method: 'PATCH',
-            body: { archived: true },
-          });
-          archivedOk = true;
-          await sleep(350);
-        } catch (archErr) {
-          console.warn(`   ⚠️ สร้างแล้วแต่ Archive ${job.syncKey} ไม่สำเร็จ: ${archErr.message}`);
+  try {
+    for (let i = 0; i < batchCreate.length; i++) {
+      const job = batchCreate[i];
+      try {
+        const thread = await createForumThreadSafe(job);
+        let archivedOk = false;
+        if (job.shouldArchive) {
+          try {
+            await discordApi(`/channels/${thread.id}`, {
+              method: 'PATCH',
+              body: { archived: true },
+            });
+            archivedOk = true;
+            await sleep(350);
+          } catch (archErr) {
+            console.warn(`   ⚠️ สร้างแล้วแต่ Archive ${job.syncKey} ไม่สำเร็จ: ${archErr.message}`);
+          }
         }
+        state.syncedItems[job.syncKey] = {
+          threadId: thread.id,
+          channelId: job.channelId,
+          title: job.payload.name,
+          archived: archivedOk,
+          syncedAt: new Date().toISOString(),
+        };
+        createdCount++;
+        if (createdCount % 10 === 0 || createdCount === batchCreate.length) {
+          saveDiscordState(state);
+        }
+        if (createdCount <= 5 || createdCount % 25 === 0 || createdCount === batchCreate.length) {
+          console.log(
+            `   ✅ [${createdCount}/${batchCreate.length}] ${job.syncKey}${
+              archivedOk ? ' [Archived]' : ' [Active]'
+            } → "${job.payload.name}"`
+          );
+        }
+        await sleep(1100);
+        if ((i + 1) % 50 === 0 && i + 1 < batchCreate.length) {
+          console.log(`   ⏸️ พักช่วงลดภาระ Rate Limit 5 วินาที (ดำเนินการแล้ว ${i + 1}/${batchCreate.length})...`);
+          await sleep(5000);
+        }
+      } catch (err) {
+        if (err.status === 400) {
+          skippedCount++;
+          console.warn(`   ⚠️ ข้าม ${job.syncKey} ("${job.payload.name}") เนื่องจาก Discord 400: ${err.message}`);
+          await sleep(1000);
+          continue;
+        }
+        console.error(`   ❌ Failed ${job.syncKey} ("${job.payload.name}"):`, err.message);
+        throw err;
       }
-      state.syncedItems[job.syncKey] = {
-        threadId: thread.id,
-        channelId: job.channelId,
-        title: job.payload.name,
-        archived: archivedOk,
-        syncedAt: new Date().toISOString(),
-      };
-      saveDiscordState(state);
-      createdCount++;
-      if (createdCount <= 5 || createdCount % 25 === 0 || createdCount === batchCreate.length) {
-        console.log(
-          `   ✅ [${createdCount}/${batchCreate.length}] ${job.syncKey}${
-            archivedOk ? ' [Archived]' : ' [Active]'
-          } → "${job.payload.name}"`
-        );
-      }
-      await sleep(1100);
-      if ((i + 1) % 50 === 0 && i + 1 < batchCreate.length) {
-        console.log(`   ⏸️ พักช่วงลดภาระ Rate Limit 5 วินาที (ดำเนินการแล้ว ${i + 1}/${batchCreate.length})...`);
-        await sleep(5000);
-      }
-    } catch (err) {
-      if (err.status === 400) {
-        skippedCount++;
-        console.warn(`   ⚠️ ข้าม ${job.syncKey} ("${job.payload.name}") เนื่องจาก Discord 400: ${err.message}`);
-        await sleep(1000);
-        continue;
-      }
-      console.error(`   ❌ Failed ${job.syncKey} ("${job.payload.name}"):`, err.message);
-      throw err;
     }
+  } finally {
+    saveDiscordState(state);
   }
 
   let updatedCount = 0;
