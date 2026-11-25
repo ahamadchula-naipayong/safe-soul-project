@@ -66,10 +66,10 @@ export function upsertEnvLocal(updates) {
   fs.writeFileSync(envPath, lines.join('\n'), 'utf8');
 }
 
-export function getDiscordConfig() {
+export function getDiscordConfig(overrideGuildId) {
   loadEnvLocal();
   const token = process.env.DISCORD_BOT_TOKEN;
-  const guildId = process.env.DISCORD_GUILD_ID;
+  const guildId = overrideGuildId || process.env.DISCORD_GUILD_ID;
   const clientId = process.env.DISCORD_CLIENT_ID || '';
   const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || DEFAULT_SITE_URL).replace(/\/+$/, '');
 
@@ -90,7 +90,11 @@ export function sleep(ms) {
  * Execute a Discord REST API v10 request with automatic 429 rate-limit retries.
  */
 export async function discordApi(endpoint, options = {}) {
-  const { token } = getDiscordConfig();
+  loadEnvLocal();
+  const token = process.env.DISCORD_BOT_TOKEN;
+  if (!token) {
+    throw new Error('Missing DISCORD_BOT_TOKEN in .env.local or environment.');
+  }
   const { method = 'GET', body, headers = {}, retries = 5 } = options;
 
   const url = `${DISCORD_API_BASE}${endpoint}`;
@@ -162,8 +166,8 @@ export async function discordApi(endpoint, options = {}) {
   throw new Error(`Exceeded retry attempts for ${method} ${endpoint}`);
 }
 
-export function loadDiscordState() {
-  if (!fs.existsSync(STATE_FILE_PATH)) {
+export function loadDiscordState(statePath = STATE_FILE_PATH) {
+  if (!fs.existsSync(statePath)) {
     return {
       guildId: null,
       roles: {},
@@ -176,7 +180,7 @@ export function loadDiscordState() {
   }
 
   try {
-    const parsed = JSON.parse(fs.readFileSync(STATE_FILE_PATH, 'utf8'));
+    const parsed = JSON.parse(fs.readFileSync(statePath, 'utf8'));
     return {
       guildId: parsed.guildId || null,
       roles: parsed.roles || {},
@@ -185,6 +189,7 @@ export function loadDiscordState() {
       forumTags: parsed.forumTags || {},
       infoMessages: parsed.infoMessages || {},
       syncedItems: parsed.syncedItems || {},
+      inviteUrl: parsed.inviteUrl || null,
       updatedAt: parsed.updatedAt || null,
     };
   } catch {
@@ -200,8 +205,8 @@ export function loadDiscordState() {
   }
 }
 
-export function saveDiscordState(state) {
-  const dir = path.dirname(STATE_FILE_PATH);
+export function saveDiscordState(state, statePath = STATE_FILE_PATH) {
+  const dir = path.dirname(statePath);
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
@@ -214,14 +219,14 @@ export function saveDiscordState(state) {
     2
   );
 
-  const tmpPath = `${STATE_FILE_PATH}.${process.pid}.${Date.now()}.tmp`;
+  const tmpPath = `${statePath}.${process.pid}.${Date.now()}.tmp`;
   fs.writeFileSync(tmpPath, payload, 'utf8');
 
   const sleepBuf = new Int32Array(new SharedArrayBuffer(4));
   let lastErr = null;
   for (let attempt = 0; attempt < 8; attempt++) {
     try {
-      fs.renameSync(tmpPath, STATE_FILE_PATH);
+      fs.renameSync(tmpPath, statePath);
       return;
     } catch (err) {
       lastErr = err;

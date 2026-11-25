@@ -34,7 +34,8 @@ async function main() {
   }
 
   if (!args.has('--skip-discord')) {
-    runStep('ขั้นตอนที่ 4/4: ซิงค์บทความและข่าวใหม่ขึ้น Discord Forum Channels', 'node scripts/discord-sync.mjs');
+    runStep('ขั้นตอนที่ 4/5: ซิงค์บทความและข่าวใหม่ขึ้น The Fitrah Shield Discord', 'node scripts/discord-sync.mjs');
+    runStep('ขั้นตอนที่ 5/5: ซิงค์บทความน้ำตื้นและข่าว 30 วันขึ้น Birds of Paradise Discord', 'node scripts/discord-sync.mjs --profile=birds');
   }
 
   console.log('\n🎉 กระบวนการ Co-Admin Sync & Deploy เสร็จสมบูรณ์ครบทุกขั้นตอน!');

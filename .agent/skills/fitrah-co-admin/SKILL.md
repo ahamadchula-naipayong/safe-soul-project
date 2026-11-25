@@ -41,3 +41,6 @@ description: Co-Admin Skill and Pipeline for managing The Fitrah Shield (Safe So
 - **ระบบเชื่อมบัญชีสมาชิกเว็บ ↔ Discord อัตโนมัติ (Cloudflare Pages Functions + D1):**
   - สมาชิกกดปุ่ม **"เชื่อมต่อ Discord & รับยศอัตโนมัติ"** ได้ในหน้า `/login` (`GET /api/discord/connect` → `GET /api/discord/callback`)
   - เมื่อแอดมินอนุมัติสลิปหรือเปลี่ยนแพ็กเกจผ่าน `/admin` (`PATCH /api/admin/members` หรือ Gemini Co-Admin `update_member`) ระบบจะซิงค์ยศ `Free`, `Member`, และ `Founding 100` บน Discord ให้โดยอัตโนมัติ
+- **ซิงค์เซิร์ฟเวอร์ Birds of Paradise (`--profile=birds` — เปิดให้อ่านทุกคน):**
+  - จัดระเบียบหมวดหมู่ & ห้อง: `npm run discord:birds:setup` (`scripts/discord-birds-setup.mjs`, เก็บสถานะใน `data/discord_birds_state.json`)
+  - ซิงค์เนื้อหา: `npm run discord:birds:sync` (`node scripts/discord-sync.mjs --profile=birds`) — ลง 7 เกาะทะเลน้ำตื้น + คำเชิญชวนทะเลน้ำลึกปักหมุดใน `#ksf_basic-thoughts🫶` และลงข่าวเปิด/West Asia + Deepdive ย้อนหลัง 30 วันล่าสุดใน `#ข่าวสาร-west-asia` และ `#news-deepdive` พร้อมลบข่าวเกิน 30 วันอัตโนมัติ (ตั้งเวลารันอัตโนมัติคู่กันเวลา 05:05 น. ใน `.github/workflows/discord-schedule-sync.yml`)

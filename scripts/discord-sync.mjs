@@ -98,12 +98,14 @@ const THAI_SHORT_MONTHS = [
 
 function parseArgs() {
   const argv = process.argv.slice(2);
+  let profile = 'fitrah';
   let dryRun = false;
   let includeUnreleased = false;
   let updateExisting = false;
   let noPrune = false;
   let openDays = 30;
   let openActiveDays = 5;
+  let deepdiveDays = null;
   let deepdiveActiveLimit = 600;
   let batchSize = 0;
 
@@ -112,12 +114,18 @@ function parseArgs() {
     else if (arg === '--include-unreleased') includeUnreleased = true;
     else if (arg === '--update-existing') updateExisting = true;
     else if (arg === '--no-prune') noPrune = true;
-    else if (arg.startsWith('--open-days=')) {
+    else if (arg.startsWith('--profile=')) {
+      const val = arg.split('=')[1].trim().toLowerCase();
+      if (val === 'fitrah' || val === 'birds') profile = val;
+    } else if (arg.startsWith('--open-days=')) {
       const val = parseInt(arg.split('=')[1], 10);
       if (!Number.isNaN(val) && val >= 0) openDays = val;
     } else if (arg.startsWith('--open-active-days=')) {
       const val = parseInt(arg.split('=')[1], 10);
       if (!Number.isNaN(val) && val >= 0) openActiveDays = val;
+    } else if (arg.startsWith('--deepdive-days=')) {
+      const val = parseInt(arg.split('=')[1], 10);
+      if (!Number.isNaN(val)) deepdiveDays = val;
     } else if (arg.startsWith('--deepdive-active-limit=')) {
       const val = parseInt(arg.split('=')[1], 10);
       if (!Number.isNaN(val) && val >= 0) deepdiveActiveLimit = val;
@@ -126,29 +134,75 @@ function parseArgs() {
       if (!Number.isNaN(val) && val >= 0) batchSize = val;
     }
   }
+
+  if (deepdiveDays === null) {
+    deepdiveDays = profile === 'birds' ? 30 : -1;
+  }
+
   return {
+    profile,
     dryRun,
     includeUnreleased,
     updateExisting,
     noPrune,
     openDays,
     openActiveDays,
+    deepdiveDays,
     deepdiveActiveLimit,
     batchSize,
   };
 }
 
-const FORUM_CHANNEL_NAMES = {
-  shallowForum: 'ทะเลน้ำตื้น-7-เกาะ',
-  deepSampleForum: 'ชิมลางทะเลน้ำลึก',
-  newsOpenForum: 'ข่าวสาร-west-asia',
-  deepOceanForum: 'ทะเลน้ำลึก-10-หมู่เกาะ',
-  newsDeepdiveForum: 'news-deepdive',
-};
+function getProfileConfig(profile) {
+  if (profile === 'birds') {
+    return {
+      profile: 'birds',
+      label: 'Birds of Paradise',
+      guildIdOverride: process.env.DISCORD_BIRDS_GUILD_ID || '1473338926164086915',
+      statePath: path.join(process.cwd(), 'data', 'discord_birds_state.json'),
+      forumNames: {
+        shallowForum: ['ksf_basic-thoughts🫶', 'ksf_basic-thoughts'],
+        newsOpenForum: ['ข่าวสาร-west-asia'],
+        newsDeepdiveForum: ['news-deepdive'],
+      },
+      requiredForums: ['shallowForum', 'newsOpenForum', 'newsDeepdiveForum'],
+      includeDeepOcean: false,
+      includeDeepOceanCta: true,
+      isOpenAccess: true,
+      pruneDeepdiveByDays: true,
+    };
+  }
 
-async function ensureForumMetadataFromDiscord(guildId, state) {
-  const hasAllChannels = Object.keys(FORUM_CHANNEL_NAMES).every((k) => state.channels?.[k]);
-  if (hasAllChannels && state.forumTags && Object.keys(state.forumTags).length >= 5) {
+  return {
+    profile: 'fitrah',
+    label: 'The Fitrah Shield',
+    guildIdOverride: undefined,
+    statePath: undefined,
+    forumNames: {
+      shallowForum: ['ทะเลน้ำตื้น-7-เกาะ'],
+      deepSampleForum: ['ชิมลางทะเลน้ำลึก'],
+      newsOpenForum: ['ข่าวสาร-west-asia'],
+      deepOceanForum: ['ทะเลน้ำลึก-10-หมู่เกาะ'],
+      newsDeepdiveForum: ['news-deepdive'],
+    },
+    requiredForums: [
+      'shallowForum',
+      'deepSampleForum',
+      'newsOpenForum',
+      'deepOceanForum',
+      'newsDeepdiveForum',
+    ],
+    includeDeepOcean: true,
+    includeDeepOceanCta: false,
+    isOpenAccess: false,
+    pruneDeepdiveByDays: false,
+  };
+}
+
+async function ensureForumMetadataFromDiscord(guildId, state, profileCfg) {
+  const needed = profileCfg.requiredForums;
+  const hasAllChannels = needed.every((k) => state.channels?.[k]);
+  if (hasAllChannels && state.forumTags && needed.every((k) => state.forumTags[k])) {
     return state;
   }
 
@@ -158,8 +212,8 @@ async function ensureForumMetadataFromDiscord(guildId, state) {
   state.channels = state.channels || {};
   state.forumTags = state.forumTags || {};
 
-  for (const [key, chName] of Object.entries(FORUM_CHANNEL_NAMES)) {
-    const ch = guildChannels.find((c) => c.type === 15 && c.name === chName);
+  for (const [key, candidateNames] of Object.entries(profileCfg.forumNames)) {
+    const ch = guildChannels.find((c) => c.type === 15 && candidateNames.includes(c.name));
     if (ch) {
       state.channels[key] = ch.id;
       state.forumTags[key] = Object.fromEntries(
@@ -425,14 +479,17 @@ function loadNewsFromExcel() {
 function buildPendingThreads(
   state,
   siteUrl,
-  { includeUnreleased, openDays, openActiveDays, deepdiveActiveLimit }
+  { includeUnreleased, openDays, openActiveDays, deepdiveDays, deepdiveActiveLimit },
+  profileCfg
 ) {
   const jobs = [];
   const tags = state.forumTags || {};
+  const fitrahInvite =
+    process.env.NEXT_PUBLIC_DISCORD_INVITE_URL || 'https://discord.gg/YMHttezcdr';
 
-  // 1. Shallow Waters (7 Islands) -> #ทะเลน้ำตื้น-7-เกาะ
+  // 1. Shallow Waters (7 Islands) -> #ทะเลน้ำตื้น-7-เกาะ (fitrah) or #ksf_basic-thoughts🫶 (birds)
   const oneshotPath = path.join(process.cwd(), 'public', 'api-data', 'oneshot.json');
-  if (fs.existsSync(oneshotPath)) {
+  if (fs.existsSync(oneshotPath) && state.channels.shallowForum) {
     const oneshot = JSON.parse(fs.readFileSync(oneshotPath, 'utf8'));
     const forumId = state.channels.shallowForum;
     const chTags = tags.shallowForum || {};
@@ -445,6 +502,9 @@ function buildPendingThreads(
         bullets ? `\n**4 มิติแห่งปัญญา (S.A.F.E.):**\n${bullets}` : '',
         introExcerpt ? `\n${introExcerpt}` : '',
         `\n📖 **[อ่านฉบับเต็ม (Easy & Deep Mode) และฟังเสียงพอดแคสต์บนเว็บไซต์](${url})**`,
+        profileCfg.includeDeepOceanCta
+          ? `🌌 **อยากเจาะลึกต่อ?** ก้าวสู่ [ทะเลน้ำลึก 10 หมู่เกาะ (50 บท) ที่ The Fitrah Shield](${siteUrl}/ocean)`
+          : '',
       ].filter(Boolean);
 
       const appliedTags = [chTags['S.A.F.E. Series'], chTags['Free']];
@@ -454,7 +514,7 @@ function buildPendingThreads(
 
       jobs.push({
         syncKey: `oneshot:${ch.chapterNumber}`,
-        categoryLabel: 'ทะเลน้ำตื้น 7 เกาะ',
+        categoryLabel: profileCfg.isOpenAccess ? 'ksf_basic-thoughts (7 เกาะ)' : 'ทะเลน้ำตื้น 7 เกาะ',
         channelId: forumId,
         payload: {
           name: truncateText(`เกาะที่ ${ch.chapterNumber}: ${ch.titleEn} — ${ch.titleTh}`, 100),
@@ -469,7 +529,11 @@ function buildPendingThreads(
                 color: 0x0e5a3e,
                 description: truncateBlock(descParts.join('\n'), 3900),
                 fields: [
-                  { name: 'ระดับสิทธิ์', value: 'Free + Member (ทะเลเปิด)', inline: true },
+                  {
+                    name: 'ระดับสิทธิ์',
+                    value: profileCfg.isOpenAccess ? 'เปิดอ่านฟรีทุกคน (@everyone)' : 'Free + Member (ทะเลเปิด)',
+                    inline: true,
+                  },
                   { name: 'เวลาอ่านโดยประมาณ', value: `~${ch.readingTimeMinutes || 15} นาที`, inline: true },
                   {
                     name: 'เสียงพอดแคสต์',
@@ -485,11 +549,55 @@ function buildPendingThreads(
         },
       });
     }
+
+    // 1B. Pinned Deep Ocean CTA Card for Birds of Paradise (#ksf_basic-thoughts🫶)
+    if (profileCfg.includeDeepOceanCta) {
+      const ctaTags = [chTags['ทะเลน้ำลึก (CTA)'], chTags['S.A.F.E. Series']].filter(Boolean);
+      jobs.push({
+        syncKey: 'birds:deep-ocean-cta',
+        categoryLabel: 'คำเชิญชวนทะเลน้ำลึก (Pinned)',
+        channelId: forumId,
+        pinThread: true,
+        payload: {
+          name: truncateText(
+            '🌌 ก้าวต่อจากทะเลน้ำตื้น สู่ "ทะเลน้ำลึก 10 หมู่เกาะ (50 บท)" ที่ The Fitrah Shield',
+            100
+          ),
+          auto_archive_duration: 10080,
+          applied_tags: ctaTags.slice(0, 5),
+          message: {
+            content:
+              '📌 **สำหรับผู้ที่อ่านทะเลน้ำตื้น 7 เกาะจบแล้ว และอยากเดินทางต่อสู่คลังปัญญาทะเลน้ำลึกบนเว็บไซต์ครับ**',
+            embeds: [
+              {
+                title: '🌌 มุ่งสู่ทะเลน้ำลึก 10 หมู่เกาะ (50 บทความ + 50 พอดแคสต์)',
+                url: `${siteUrl}/ocean`,
+                color: 0xd9a94f,
+                description:
+                  'หากบทเรียน **7 เกาะทะเลน้ำตื้น** ในห้องนี้ช่วยวางรากฐานความคิดและภูมิคุ้มกันเบื้องต้นให้คุณแล้ว... ขอเชิญออกเดินทางต่อใน **"ทะเลน้ำลึก 10 หมู่เกาะ"** บนเว็บไซต์หลัก **The Fitrah Shield**\n\n' +
+                  '• **10 หมู่เกาะ 50 บทวิเคราะห์:** Dunya, Haram, Nafsu, Rizq, Hijab, Hype, Fake Idol, Shirk, Shia Being และ Barzakh\n' +
+                  '• **Dual-Mode Engine:** สลับอ่านได้ทั้งโหมดเข้าใจง่าย (Easy Mode) และเชิงตรรกะ-ปรัชญา-เทววิทยา (Deep Mode)\n' +
+                  '• **ชิมลางฟรีบทที่ 1:** สมัครสมาชิกฟรีบนเว็บเพื่อทดลองอ่านบทที่ 1 ของหมู่เกาะ 1–7 ได้ทันที\n\n' +
+                  `🌊 **[เข้าสู่แผนที่ทะเลน้ำลึกบนเว็บไซต์](${siteUrl}/ocean)**\n` +
+                  `⚓ **[ดูแผนสมาชิก & ชิมลางฟรี](${siteUrl}/pricing)**\n` +
+                  `🛡️ **[เข้าร่วมชุมชน The Fitrah Shield Discord](${fitrahInvite})**`,
+                fields: [
+                  { name: 'จุดเริ่มต้น', value: 'ทะเลน้ำตื้น 7 เกาะ (ในห้องนี้)', inline: true },
+                  { name: 'ขั้นต่อไป', value: 'ทะเลน้ำลึก 10 หมู่เกาะ (50 บท)', inline: true },
+                  { name: 'เว็บไซต์หลัก', value: 'thefitrahshield.hardynaipayong.cloud', inline: true },
+                ],
+                footer: { text: 'The Fitrah Shield • Safe Soul Project' },
+              },
+            ],
+          },
+        },
+      });
+    }
   }
 
-  // 2. Deep Ocean (10 Archipelagos) -> #ชิมลางทะเลน้ำลึก (Free Ch1 of 1-7) & #ทะเลน้ำลึก-10-หมู่เกาะ (Member)
+  // 2. Deep Ocean (10 Archipelagos) -> Only on Fitrah Shield profile
   const oceanPath = path.join(process.cwd(), 'public', 'api-data', 'ocean.json');
-  if (fs.existsSync(oceanPath)) {
+  if (profileCfg.includeDeepOcean && fs.existsSync(oceanPath)) {
     const ocean = JSON.parse(fs.readFileSync(oceanPath, 'utf8'));
     const sampleForumId = state.channels.deepSampleForum;
     const sampleTags = tags.deepSampleForum || {};
@@ -596,7 +704,7 @@ function buildPendingThreads(
 
   // 3. News from Assets/News Deepdive.xlsx
   // - Open / West Asia: rolling window (default 30 days); newest openActiveDays stay Active, rest Auto-Archived
-  // - Deepdive: ALL articles synced; newest deepdiveActiveLimit (600) stay Active, older Auto-Archived
+  // - Deepdive: Fitrah keeps ALL (newest 600 Active, rest Auto-Archive); Birds keeps rolling 30 days open to all
   const allNews = loadNewsFromExcel();
   const deepdiveNews = allNews.filter((n) => n.subcategory.toLowerCase().includes('deepdive'));
   const openNews = allNews.filter((n) => !n.subcategory.toLowerCase().includes('deepdive'));
@@ -607,7 +715,10 @@ function buildPendingThreads(
     openDays > 0
       ? openNews.filter((n) => (nowMs - n.dateTimestamp) / dayMs <= openDays)
       : openNews;
-  const deepdiveSlice = deepdiveNews;
+  const deepdiveSlice =
+    deepdiveDays > 0
+      ? deepdiveNews.filter((n) => (nowMs - n.dateTimestamp) / dayMs <= deepdiveDays)
+      : deepdiveNews;
 
   const openJobs = [];
   const openForumTags = tags.newsOpenForum || {};
@@ -648,7 +759,11 @@ function buildPendingThreads(
                 { name: 'รหัสข่าว', value: item.korNo, inline: true },
                 { name: 'หมวดหมู่', value: item.subcategory, inline: true },
                 { name: 'วันที่', value: item.dateFormatted, inline: true },
-                { name: 'สิทธิ์การอ่าน', value: 'Free + Member', inline: true },
+                {
+                  name: 'สิทธิ์การอ่าน',
+                  value: profileCfg.isOpenAccess ? 'เปิดอ่านทุกคน (@everyone)' : 'Free + Member',
+                  inline: true,
+                },
                 ...(item.source ? [{ name: 'แหล่งที่มา', value: truncateText(item.source, 200), inline: true }] : []),
               ],
               ...(img ? { image: { url: img } } : {}),
@@ -658,11 +773,6 @@ function buildPendingThreads(
         },
       },
     });
-  }
-
-  // Post oldest -> newest so newest Open News appears on top of Forum while older items archive immediately
-  for (const j of [...openJobs].reverse()) {
-    jobs.push(j);
   }
 
   const deepdiveJobs = [];
@@ -675,11 +785,16 @@ function buildPendingThreads(
       item.topicLead && item.topicLead !== item.title
         ? `🎯 **Core Strategic Focus:** ${item.topicLead}\n\n`
         : '';
-    const shouldArchive = deepdiveActiveLimit >= 0 && rank >= deepdiveActiveLimit;
+    const shouldArchive =
+      !profileCfg.isOpenAccess && deepdiveActiveLimit >= 0 && rank >= deepdiveActiveLimit;
 
     deepdiveJobs.push({
       syncKey: `news:${item.slug}`,
-      categoryLabel: shouldArchive ? 'ข่าว Deepdive (Auto-Archive)' : 'ข่าว Deepdive (Member)',
+      categoryLabel: shouldArchive
+        ? 'ข่าว Deepdive (Auto-Archive)'
+        : profileCfg.isOpenAccess
+        ? 'ข่าว Deepdive (เปิดอ่านทุกคน)'
+        : 'ข่าว Deepdive (Member)',
       channelId: state.channels.newsDeepdiveForum,
       shouldArchive,
       payload: {
@@ -687,7 +802,9 @@ function buildPendingThreads(
         auto_archive_duration: 10080,
         applied_tags: appliedTags.slice(0, 5),
         message: {
-          content: `🔎 **ข่าววิเคราะห์เชิงลึก ${item.korNo}** • เฉพาะสมาชิก Member & Founding 100 ร่วมวิพากษ์เชิงลึกใต้กระทู้นี้ครับ`,
+          content: profileCfg.isOpenAccess
+            ? `🔎 **ข่าววิเคราะห์เชิงลึก ${item.korNo}** • อ่านสรุปและร่วมเสวนาใต้กระทู้นี้ได้เลยครับ (คลังย้อนหลังครบทุกฉบับที่ ${siteUrl}/news)`
+            : `🔎 **ข่าววิเคราะห์เชิงลึก ${item.korNo}** • เฉพาะสมาชิก Member & Founding 100 ร่วมวิพากษ์เชิงลึกใต้กระทู้นี้ครับ`,
           embeds: [
             {
               title: truncateText(item.title, 256),
@@ -701,7 +818,11 @@ function buildPendingThreads(
                 { name: 'รหัสข่าว', value: item.korNo, inline: true },
                 { name: 'หมวดหมู่', value: item.subcategory, inline: true },
                 { name: 'วันที่', value: item.dateFormatted, inline: true },
-                { name: 'สิทธิ์การอ่าน', value: 'Member & Founding 100', inline: true },
+                {
+                  name: 'สิทธิ์การอ่าน',
+                  value: profileCfg.isOpenAccess ? 'เปิดอ่านทุกคน (30 วันล่าสุด)' : 'Member & Founding 100',
+                  inline: true,
+                },
                 ...(item.source ? [{ name: 'แหล่งที่มา', value: truncateText(item.source, 200), inline: true }] : []),
               ],
               ...(img ? { image: { url: img } } : {}),
@@ -713,15 +834,29 @@ function buildPendingThreads(
     });
   });
 
-  // Post oldest -> newest so archived #601..#922 finish first and newest Deepdive lands on top
-  for (const j of [...deepdiveJobs].reverse()) {
-    jobs.push(j);
+  if (profileCfg.isOpenAccess) {
+    // On Birds: queue Deepdive (30d ~35) right after Shallow + CTA so first batch completes ksf_basic-thoughts & news-deepdive immediately
+    for (const j of [...deepdiveJobs].reverse()) {
+      jobs.push(j);
+    }
+    for (const j of [...openJobs].reverse()) {
+      jobs.push(j);
+    }
+  } else {
+    for (const j of [...openJobs].reverse()) {
+      jobs.push(j);
+    }
+    for (const j of [...deepdiveJobs].reverse()) {
+      jobs.push(j);
+    }
   }
 
   return {
     jobs,
     validOpenKeys: new Set(openJobs.map((j) => j.syncKey)),
     validOpenNames: new Set(openJobs.map((j) => j.payload.name)),
+    validDeepdiveKeys: new Set(deepdiveJobs.map((j) => j.syncKey)),
+    validDeepdiveNames: new Set(deepdiveJobs.map((j) => j.payload.name)),
     newsTotals: {
       totalRows: allNews.length,
       openTotal: openNews.length,
@@ -758,45 +893,60 @@ async function createForumThreadSafe(job) {
 
 async function main() {
   const opts = parseArgs();
-  const { guildId, siteUrl } = getDiscordConfig();
-  const state = await ensureForumMetadataFromDiscord(guildId, loadDiscordState());
+  const profileCfg = getProfileConfig(opts.profile);
+  const { guildId, siteUrl } = getDiscordConfig(profileCfg.guildIdOverride);
+  const state = await ensureForumMetadataFromDiscord(
+    guildId,
+    loadDiscordState(profileCfg.statePath),
+    profileCfg
+  );
 
-  if (!state.channels?.shallowForum || !state.channels?.deepOceanForum) {
+  const missingForum = profileCfg.requiredForums.find((k) => !state.channels?.[k]);
+  if (missingForum) {
     throw new Error(
-      'ไม่พบห้อง Forum บน Discord กรุณารัน "npm run discord:setup" ก่อน'
+      `ไม่พบห้อง Forum (${missingForum}) บน ${profileCfg.label} กรุณารัน ${
+        profileCfg.profile === 'birds' ? '"npm run discord:birds:setup"' : '"npm run discord:setup"'
+      } ก่อน`
     );
   }
 
+  const deepdiveModeLabel =
+    opts.deepdiveDays > 0
+      ? `Deepdive ย้อนหลัง ${opts.deepdiveDays} วัน`
+      : `Deepdive Active ${opts.deepdiveActiveLimit} บท + Auto-Archive ส่วนเกิน`;
+
   console.log(
-    `🛡️ เริ่มต้น Discord Hybrid Content Sync${opts.dryRun ? ' [DRY-RUN MODE]' : ''}${
+    `🛡️ [${profileCfg.label}] Discord Hybrid Content Sync${opts.dryRun ? ' [DRY-RUN MODE]' : ''}${
       opts.updateExisting ? ' [UPDATE-EXISTING]' : ''
-    } (ข่าวเปิดย้อนหลัง ${opts.openDays} วัน / Active ${opts.openActiveDays} วัน | Deepdive Active ${
-      opts.deepdiveActiveLimit
-    } บท + Auto-Archive ส่วนเกิน)...`
+    } (ข่าวเปิดย้อนหลัง ${opts.openDays} วัน / Active ${opts.openActiveDays} วัน | ${deepdiveModeLabel})...`
   );
-  const { jobs, validOpenKeys, validOpenNames, newsTotals } = buildPendingThreads(
-    state,
-    siteUrl,
-    opts
-  );
+  const {
+    jobs,
+    validOpenKeys,
+    validOpenNames,
+    validDeepdiveKeys,
+    validDeepdiveNames,
+    newsTotals,
+  } = buildPendingThreads(state, siteUrl, opts, profileCfg);
   const alreadySynced = state.syncedItems || {};
 
   // Live Discord deduplication so CI/stateless runs never create duplicates
-  const forumIds = Object.keys(FORUM_CHANNEL_NAMES).map((k) => state.channels[k]);
+  const forumIds = profileCfg.requiredForums.map((k) => state.channels[k]);
   const { byChannel: liveThreadsByChannel, listsByChannel } = await fetchExistingThreadsIndex(
     guildId,
     forumIds
   );
 
-  // Detect expired Open News threads (> openDays) to prune
+  // Detect expired news threads (> openDays / > deepdiveDays) to prune
   const pendingPrune = [];
   const seenPruneThreadIds = new Set();
-  if (!opts.noPrune && state.channels.newsOpenForum) {
+  const collectPruneForForum = (channelId, validKeys, validNames) => {
+    if (!channelId) return;
     for (const [syncKey, info] of Object.entries(alreadySynced)) {
       if (
-        info?.channelId === state.channels.newsOpenForum &&
+        info?.channelId === channelId &&
         syncKey.startsWith('news:') &&
-        !validOpenKeys.has(syncKey) &&
+        !validKeys.has(syncKey) &&
         info.threadId &&
         !seenPruneThreadIds.has(info.threadId)
       ) {
@@ -804,15 +954,22 @@ async function main() {
         pendingPrune.push({ syncKey, threadId: info.threadId, name: info.title || syncKey });
       }
     }
-    for (const t of listsByChannel.get(state.channels.newsOpenForum) || []) {
+    for (const t of listsByChannel.get(channelId) || []) {
       if (
         /^\[(KOR|NEWS)[^\]]+\]/i.test(t.name) &&
-        !validOpenNames.has(t.name) &&
+        !validNames.has(t.name) &&
         !seenPruneThreadIds.has(t.id)
       ) {
         seenPruneThreadIds.add(t.id);
         pendingPrune.push({ syncKey: null, threadId: t.id, name: t.name });
       }
+    }
+  };
+
+  if (!opts.noPrune) {
+    collectPruneForForum(state.channels.newsOpenForum, validOpenKeys, validOpenNames);
+    if (profileCfg.pruneDeepdiveByDays && opts.deepdiveDays > 0) {
+      collectPruneForForum(state.channels.newsDeepdiveForum, validDeepdiveKeys, validDeepdiveNames);
     }
   }
 
@@ -857,14 +1014,14 @@ async function main() {
   console.log(
     `📊 สถิติคลังข่าวใน Excel: ทั้งหมด ${newsTotals.totalRows} รายการ ` +
       `(เปิด/West Asia ${newsTotals.openTotal} → เก็บ ${opts.openDays} วัน ${newsTotals.openSelected} [Active ${newsTotals.openActiveCount} / Archive ${newsTotals.openArchivedCount}], ` +
-      `Deepdive ${newsTotals.deepdiveTotal} → ลงทั้งหมด ${newsTotals.deepdiveSelected} [Active ${newsTotals.deepdiveActiveCount} / Archive ${newsTotals.deepdiveArchivedCount}])`
+      `Deepdive ${newsTotals.deepdiveTotal} → ซิงค์ ${newsTotals.deepdiveSelected} [Active ${newsTotals.deepdiveActiveCount} / Archive ${newsTotals.deepdiveArchivedCount}])`
   );
   console.log(
     `📋 สรุปรอบนี้: เป้าหมาย ${jobs.length} | มีแล้ว ${
       jobs.length - pendingCreate.length
     } | รอสร้างใหม่ ${pendingCreate.length}${
       opts.batchSize > 0 ? ` (รันชุดนี้ ${batchCreate.length})` : ''
-    } | รอ Archive เพิ่ม ${pendingArchive.length} | รอลบข่าวเกิน ${opts.openDays} วัน ${
+    } | รอ Archive เพิ่ม ${pendingArchive.length} | รอลบข่าวเก่าเกินกำหนด ${
       pendingPrune.length
     }`
   );
@@ -880,20 +1037,20 @@ async function main() {
       console.log('🧪 ตัวอย่าง 5 รายการสุดท้าย:', batchCreate.slice(-5).map((j) => `${j.syncKey} -> ${j.payload.name}`));
     }
     if (pendingPrune.length > 0) {
-      console.log('🧹 ข่าวเปิดที่เก่าเกินกำหนดที่จะถูกลบ:', pendingPrune.slice(0, 5));
+      console.log('🧹 ข่าวที่เก่าเกินกำหนดที่จะถูกลบ:', pendingPrune.slice(0, 5));
     }
     return;
   }
 
-  saveDiscordState(state);
+  saveDiscordState(state, profileCfg.statePath);
 
-  // Step A: Prune expired Open News (> openDays)
+  // Step A: Prune expired News (> openDays / > deepdiveDays)
   let prunedCount = 0;
   for (const item of pendingPrune) {
     try {
       await discordApi(`/channels/${item.threadId}`, { method: 'DELETE' });
       prunedCount++;
-      console.log(`   🧹 [Prune ${prunedCount}/${pendingPrune.length}] ลบข่าวเกิน ${opts.openDays} วัน: "${item.name}"`);
+      console.log(`   🧹 [Prune ${prunedCount}/${pendingPrune.length}] ลบข่าวเกินกำหนด: "${item.name}"`);
     } catch (err) {
       if (err.status !== 404) {
         console.warn(`   ⚠️ ลบข่าว "${item.name}" ไม่สำเร็จ: ${err.message}`);
@@ -901,7 +1058,7 @@ async function main() {
     }
     if (item.syncKey && state.syncedItems[item.syncKey]) {
       delete state.syncedItems[item.syncKey];
-      saveDiscordState(state);
+      saveDiscordState(state, profileCfg.statePath);
     }
     await sleep(1000);
   }
@@ -916,7 +1073,7 @@ async function main() {
       });
       if (state.syncedItems[item.syncKey]) {
         state.syncedItems[item.syncKey].archived = true;
-        saveDiscordState(state);
+        saveDiscordState(state, profileCfg.statePath);
       }
       archivedExistingCount++;
       await sleep(450);
@@ -941,6 +1098,17 @@ async function main() {
       const job = batchCreate[i];
       try {
         const thread = await createForumThreadSafe(job);
+        if (job.pinThread) {
+          try {
+            await discordApi(`/channels/${thread.id}`, {
+              method: 'PATCH',
+              body: { flags: 2 },
+            });
+            await sleep(300);
+          } catch (pinErr) {
+            console.warn(`   ⚠️ ปักหมุด ${job.syncKey} ไม่สำเร็จ: ${pinErr.message}`);
+          }
+        }
         let archivedOk = false;
         if (job.shouldArchive) {
           try {
@@ -963,12 +1131,12 @@ async function main() {
         };
         createdCount++;
         if (createdCount % 10 === 0 || createdCount === batchCreate.length) {
-          saveDiscordState(state);
+          saveDiscordState(state, profileCfg.statePath);
         }
-        if (createdCount <= 5 || createdCount % 25 === 0 || createdCount === batchCreate.length) {
+        if (createdCount <= 10 || createdCount % 25 === 0 || createdCount === batchCreate.length) {
           console.log(
             `   ✅ [${createdCount}/${batchCreate.length}] ${job.syncKey}${
-              archivedOk ? ' [Archived]' : ' [Active]'
+              job.pinThread ? ' [Pinned]' : archivedOk ? ' [Archived]' : ' [Active]'
             } → "${job.payload.name}"`
           );
         }
@@ -989,7 +1157,7 @@ async function main() {
       }
     }
   } finally {
-    saveDiscordState(state);
+    saveDiscordState(state, profileCfg.statePath);
   }
 
   let updatedCount = 0;

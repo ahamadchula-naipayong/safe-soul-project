@@ -44,7 +44,7 @@ jobs:
         if: steps.check_secrets.outputs.ready == 'true'
         run: npm ci
 
-      - name: Run Discord Hybrid Content Sync
+      - name: Run Discord Hybrid Content Sync (The Fitrah Shield)
         if: steps.check_secrets.outputs.ready == 'true'
         env:
           DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
@@ -52,7 +52,20 @@ jobs:
           NEXT_PUBLIC_SITE_URL: https://thefitrahshield.hardynaipayong.cloud
         run: |
           if [ "${{ inputs.update_existing }}" = "true" ]; then
-            node scripts/discord-sync.mjs --update-existing
+            node scripts/discord-sync.mjs --profile=fitrah --update-existing
           else
-            node scripts/discord-sync.mjs
+            node scripts/discord-sync.mjs --profile=fitrah
+          fi
+
+      - name: Run Discord Hybrid Content Sync (Birds of Paradise)
+        if: steps.check_secrets.outputs.ready == 'true'
+        env:
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_BIRDS_GUILD_ID: ${{ secrets.DISCORD_BIRDS_GUILD_ID || '1473338926164086915' }}
+          NEXT_PUBLIC_SITE_URL: https://thefitrahshield.hardynaipayong.cloud
+        run: |
+          if [ "${{ inputs.update_existing }}" = "true" ]; then
+            node scripts/discord-sync.mjs --profile=birds --update-existing
+          else
+            node scripts/discord-sync.mjs --profile=birds
           fi
