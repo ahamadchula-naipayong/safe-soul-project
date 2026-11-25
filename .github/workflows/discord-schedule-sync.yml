@@ -1,8 +1,9 @@
-name: Discord Scheduled Content Sync (W1-W23)
+name: Discord Scheduled Content Sync (W1-W23 & Rolling News)
 
 on:
   schedule:
     # Runs daily at 05:05 ICT (22:05 UTC), 5 minutes after scheduled 05:00 ICT chapter releases
+    # Syncs new Deep Ocean chapters, rolling 30-day Open/West Asia news (prunes >30d), and all Deepdive (auto-archives >600)
     - cron: '5 22 * * *'
   workflow_dispatch:
     inputs:

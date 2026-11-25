@@ -36,7 +36,7 @@ description: Co-Admin Skill and Pipeline for managing The Fitrah Shield (Safe So
   - รัน `npm run discord:setup` (หรือ `node scripts/discord-setup.mjs`)
 - **ซิงค์เนื้อหาแบบลูกผสม (การ์ดสรุป + ลิงก์กลับเว็บ) จากทะเลน้ำตื้น, ทะเลน้ำลึก (ตามตารางเผยแพร่ W1–W23), และข่าวจาก Excel:**
   - ทดสอบก่อนโพสต์จริง: `node scripts/discord-sync.mjs --dry-run`
-  - ซิงค์โพสต์จริงขึ้น Discord: `npm run discord:sync` (ค่าเริ่มต้นดึงข่าวล่าสุดหมวดละ 10 รายการ ปรับได้ด้วย `--news-limit=N` และถูกรวมใน `npm run co-admin:sync` แล้ว)
+  - ซิงค์โพสต์จริงขึ้น Discord: `npm run discord:sync` (ค่าเริ่มต้น: ข่าวเปิดย้อนหลัง `--open-days=30` พร้อมลบข่าวเกิน 30 วันอัตโนมัติ และ `--open-active-days=5`; ข่าว Deepdive ลงทั้งหมดและ `--deepdive-active-limit=600` ส่วนเกินเข้า Auto-Archive อัตโนมัติ; รองรับ `--batch-size=N` และ `--update-existing` และรันอัตโนมัติทุกวันเวลา 05:05 น. ผ่าน `.github/workflows/discord-schedule-sync.yml`)
   - ไฟล์เก็บสถานะ IDs, ลิงก์เชิญ และประวัติการซิงค์: `data/discord_state.json` (ห้ามเก็บ Secret/Token ในไฟล์นี้)
 - **ระบบเชื่อมบัญชีสมาชิกเว็บ ↔ Discord อัตโนมัติ (Cloudflare Pages Functions + D1):**
   - สมาชิกกดปุ่ม **"เชื่อมต่อ Discord & รับยศอัตโนมัติ"** ได้ในหน้า `/login` (`GET /api/discord/connect` → `GET /api/discord/callback`)

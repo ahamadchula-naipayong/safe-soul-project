@@ -101,18 +101,41 @@ function parseArgs() {
   let dryRun = false;
   let includeUnreleased = false;
   let updateExisting = false;
-  let newsLimit = 10;
+  let noPrune = false;
+  let openDays = 30;
+  let openActiveDays = 5;
+  let deepdiveActiveLimit = 600;
+  let batchSize = 0;
 
   for (const arg of argv) {
     if (arg === '--dry-run') dryRun = true;
     else if (arg === '--include-unreleased') includeUnreleased = true;
     else if (arg === '--update-existing') updateExisting = true;
-    else if (arg.startsWith('--news-limit=')) {
+    else if (arg === '--no-prune') noPrune = true;
+    else if (arg.startsWith('--open-days=')) {
       const val = parseInt(arg.split('=')[1], 10);
-      if (!Number.isNaN(val) && val >= 0) newsLimit = val;
+      if (!Number.isNaN(val) && val >= 0) openDays = val;
+    } else if (arg.startsWith('--open-active-days=')) {
+      const val = parseInt(arg.split('=')[1], 10);
+      if (!Number.isNaN(val) && val >= 0) openActiveDays = val;
+    } else if (arg.startsWith('--deepdive-active-limit=')) {
+      const val = parseInt(arg.split('=')[1], 10);
+      if (!Number.isNaN(val) && val >= 0) deepdiveActiveLimit = val;
+    } else if (arg.startsWith('--batch-size=')) {
+      const val = parseInt(arg.split('=')[1], 10);
+      if (!Number.isNaN(val) && val >= 0) batchSize = val;
     }
   }
-  return { dryRun, includeUnreleased, updateExisting, newsLimit };
+  return {
+    dryRun,
+    includeUnreleased,
+    updateExisting,
+    noPrune,
+    openDays,
+    openActiveDays,
+    deepdiveActiveLimit,
+    batchSize,
+  };
 }
 
 const FORUM_CHANNEL_NAMES = {
@@ -149,13 +172,25 @@ async function ensureForumMetadataFromDiscord(guildId, state) {
 
 async function fetchExistingThreadsIndex(guildId, forumIds) {
   const byChannel = new Map();
+  const listsByChannel = new Map();
+  const seenIds = new Set();
+
   const recordThread = (t) => {
-    if (!t?.parent_id || !t?.name) return;
-    if (!byChannel.has(t.parent_id)) byChannel.set(t.parent_id, new Map());
-    byChannel.get(t.parent_id).set(t.name, {
+    if (!t?.parent_id || !t?.name || !t?.id) return;
+    const entry = {
       id: t.id,
+      name: t.name,
       archived: Boolean(t.thread_metadata?.archived),
-    });
+    };
+    if (!byChannel.has(t.parent_id)) byChannel.set(t.parent_id, new Map());
+    if (!byChannel.get(t.parent_id).has(t.name)) {
+      byChannel.get(t.parent_id).set(t.name, entry);
+    }
+    if (!seenIds.has(t.id)) {
+      seenIds.add(t.id);
+      if (!listsByChannel.has(t.parent_id)) listsByChannel.set(t.parent_id, []);
+      listsByChannel.get(t.parent_id).push(entry);
+    }
   };
 
   try {
@@ -170,7 +205,7 @@ async function fetchExistingThreadsIndex(guildId, forumIds) {
   for (const chId of forumIds.filter(Boolean)) {
     try {
       let before = null;
-      for (let page = 0; page < 5; page++) {
+      for (let page = 0; page < 25; page++) {
         const qs = before
           ? `?limit=100&before=${encodeURIComponent(before)}`
           : '?limit=100';
@@ -188,7 +223,7 @@ async function fetchExistingThreadsIndex(guildId, forumIds) {
     }
   }
 
-  return byChannel;
+  return { byChannel, listsByChannel };
 }
 
 function truncateText(str, maxLen) {
@@ -372,11 +407,26 @@ function loadNewsFromExcel() {
     });
   });
 
-  items.sort((a, b) => b.dateTimestamp - a.dateTimestamp);
-  return items;
+  items.sort((a, b) => {
+    const diff = b.dateTimestamp - a.dateTimestamp;
+    return diff !== 0 ? diff : b.korNo.localeCompare(a.korNo);
+  });
+
+  const seenSlugs = new Set();
+  const deduped = [];
+  for (const it of items) {
+    if (seenSlugs.has(it.slug)) continue;
+    seenSlugs.add(it.slug);
+    deduped.push(it);
+  }
+  return deduped;
 }
 
-function buildPendingThreads(state, siteUrl, { includeUnreleased, newsLimit }) {
+function buildPendingThreads(
+  state,
+  siteUrl,
+  { includeUnreleased, openDays, openActiveDays, deepdiveActiveLimit }
+) {
   const jobs = [];
   const tags = state.forumTags || {};
 
@@ -545,13 +595,21 @@ function buildPendingThreads(state, siteUrl, { includeUnreleased, newsLimit }) {
   }
 
   // 3. News from Assets/News Deepdive.xlsx
+  // - Open / West Asia: rolling window (default 30 days); newest openActiveDays stay Active, rest Auto-Archived
+  // - Deepdive: ALL articles synced; newest deepdiveActiveLimit (600) stay Active, older Auto-Archived
   const allNews = loadNewsFromExcel();
   const deepdiveNews = allNews.filter((n) => n.subcategory.toLowerCase().includes('deepdive'));
   const openNews = allNews.filter((n) => !n.subcategory.toLowerCase().includes('deepdive'));
 
-  const openNewsSlice = openNews.slice(0, newsLimit);
-  const deepdiveSlice = deepdiveNews.slice(0, newsLimit);
+  const nowMs = Date.now();
+  const dayMs = 86400000;
+  const openNewsSlice =
+    openDays > 0
+      ? openNews.filter((n) => (nowMs - n.dateTimestamp) / dayMs <= openDays)
+      : openNews;
+  const deepdiveSlice = deepdiveNews;
 
+  const openJobs = [];
   const openForumTags = tags.newsOpenForum || {};
   for (const item of openNewsSlice) {
     const url = `${siteUrl}/news/${item.slug}`;
@@ -563,11 +621,14 @@ function buildPendingThreads(state, siteUrl, { includeUnreleased, newsLimit }) {
       item.topicLead && item.topicLead !== item.title
         ? `🎯 **ประเด็นสำคัญ:** ${item.topicLead}\n\n`
         : '';
+    const ageDays = (nowMs - item.dateTimestamp) / dayMs;
+    const shouldArchive = ageDays > openActiveDays;
 
-    jobs.push({
+    openJobs.push({
       syncKey: `news:${item.slug}`,
-      categoryLabel: 'ข่าวเปิด / West Asia',
+      categoryLabel: shouldArchive ? 'ข่าวเปิด / West Asia (Archive)' : 'ข่าวเปิด / West Asia',
       channelId: state.channels.newsOpenForum,
+      shouldArchive,
       payload: {
         name: truncateText(`[${item.korNo}] ${item.title}`, 100),
         auto_archive_duration: 10080,
@@ -599,8 +660,14 @@ function buildPendingThreads(state, siteUrl, { includeUnreleased, newsLimit }) {
     });
   }
 
+  // Post oldest -> newest so newest Open News appears on top of Forum while older items archive immediately
+  for (const j of [...openJobs].reverse()) {
+    jobs.push(j);
+  }
+
+  const deepdiveJobs = [];
   const ddForumTags = tags.newsDeepdiveForum || {};
-  for (const item of deepdiveSlice) {
+  deepdiveSlice.forEach((item, rank) => {
     const url = `${siteUrl}/news/${item.slug}`;
     const img = resolveValidUrl(item.image, siteUrl);
     const appliedTags = [ddForumTags['Deepdive'], ddForumTags['วิเคราะห์เชิงลึก']].filter(Boolean);
@@ -608,11 +675,13 @@ function buildPendingThreads(state, siteUrl, { includeUnreleased, newsLimit }) {
       item.topicLead && item.topicLead !== item.title
         ? `🎯 **Core Strategic Focus:** ${item.topicLead}\n\n`
         : '';
+    const shouldArchive = deepdiveActiveLimit >= 0 && rank >= deepdiveActiveLimit;
 
-    jobs.push({
+    deepdiveJobs.push({
       syncKey: `news:${item.slug}`,
-      categoryLabel: 'ข่าว Deepdive (Member)',
+      categoryLabel: shouldArchive ? 'ข่าว Deepdive (Auto-Archive)' : 'ข่าว Deepdive (Member)',
       channelId: state.channels.newsDeepdiveForum,
+      shouldArchive,
       payload: {
         name: truncateText(`[${item.korNo}] ${item.title}`, 100),
         auto_archive_duration: 10080,
@@ -642,18 +711,49 @@ function buildPendingThreads(state, siteUrl, { includeUnreleased, newsLimit }) {
         },
       },
     });
+  });
+
+  // Post oldest -> newest so archived #601..#922 finish first and newest Deepdive lands on top
+  for (const j of [...deepdiveJobs].reverse()) {
+    jobs.push(j);
   }
 
   return {
     jobs,
+    validOpenKeys: new Set(openJobs.map((j) => j.syncKey)),
+    validOpenNames: new Set(openJobs.map((j) => j.payload.name)),
     newsTotals: {
       totalRows: allNews.length,
       openTotal: openNews.length,
       openSelected: openNewsSlice.length,
+      openActiveCount: openJobs.filter((j) => !j.shouldArchive).length,
+      openArchivedCount: openJobs.filter((j) => j.shouldArchive).length,
       deepdiveTotal: deepdiveNews.length,
       deepdiveSelected: deepdiveSlice.length,
+      deepdiveActiveCount: deepdiveJobs.filter((j) => !j.shouldArchive).length,
+      deepdiveArchivedCount: deepdiveJobs.filter((j) => j.shouldArchive).length,
     },
   };
+}
+
+async function createForumThreadSafe(job) {
+  try {
+    return await discordApi(`/channels/${job.channelId}/threads`, {
+      method: 'POST',
+      body: job.payload,
+    });
+  } catch (err) {
+    // Fallback without embed image if an external image URL fails Discord validation
+    if (err.status === 400 && job.payload?.message?.embeds?.[0]?.image) {
+      const cloned = JSON.parse(JSON.stringify(job.payload));
+      delete cloned.message.embeds[0].image;
+      return await discordApi(`/channels/${job.channelId}/threads`, {
+        method: 'POST',
+        body: cloned,
+      });
+    }
+    throw err;
+  }
 }
 
 async function main() {
@@ -670,17 +770,55 @@ async function main() {
   console.log(
     `🛡️ เริ่มต้น Discord Hybrid Content Sync${opts.dryRun ? ' [DRY-RUN MODE]' : ''}${
       opts.updateExisting ? ' [UPDATE-EXISTING]' : ''
-    }...`
+    } (ข่าวเปิดย้อนหลัง ${opts.openDays} วัน / Active ${opts.openActiveDays} วัน | Deepdive Active ${
+      opts.deepdiveActiveLimit
+    } บท + Auto-Archive ส่วนเกิน)...`
   );
-  const { jobs, newsTotals } = buildPendingThreads(state, siteUrl, opts);
+  const { jobs, validOpenKeys, validOpenNames, newsTotals } = buildPendingThreads(
+    state,
+    siteUrl,
+    opts
+  );
   const alreadySynced = state.syncedItems || {};
 
   // Live Discord deduplication so CI/stateless runs never create duplicates
   const forumIds = Object.keys(FORUM_CHANNEL_NAMES).map((k) => state.channels[k]);
-  const liveThreadsByChannel = await fetchExistingThreadsIndex(guildId, forumIds);
+  const { byChannel: liveThreadsByChannel, listsByChannel } = await fetchExistingThreadsIndex(
+    guildId,
+    forumIds
+  );
+
+  // Detect expired Open News threads (> openDays) to prune
+  const pendingPrune = [];
+  const seenPruneThreadIds = new Set();
+  if (!opts.noPrune && state.channels.newsOpenForum) {
+    for (const [syncKey, info] of Object.entries(alreadySynced)) {
+      if (
+        info?.channelId === state.channels.newsOpenForum &&
+        syncKey.startsWith('news:') &&
+        !validOpenKeys.has(syncKey) &&
+        info.threadId &&
+        !seenPruneThreadIds.has(info.threadId)
+      ) {
+        seenPruneThreadIds.add(info.threadId);
+        pendingPrune.push({ syncKey, threadId: info.threadId, name: info.title || syncKey });
+      }
+    }
+    for (const t of listsByChannel.get(state.channels.newsOpenForum) || []) {
+      if (
+        /^\[(KOR|NEWS)[^\]]+\]/i.test(t.name) &&
+        !validOpenNames.has(t.name) &&
+        !seenPruneThreadIds.has(t.id)
+      ) {
+        seenPruneThreadIds.add(t.id);
+        pendingPrune.push({ syncKey: null, threadId: t.id, name: t.name });
+      }
+    }
+  }
 
   const pendingCreate = [];
   const pendingUpdate = [];
+  const pendingArchive = [];
 
   for (const job of jobs) {
     const saved = alreadySynced[job.syncKey];
@@ -693,14 +831,19 @@ async function main() {
           threadId: knownThreadId,
           channelId: job.channelId,
           title: job.payload.name,
+          archived: Boolean(liveMatch?.archived),
           syncedAt: new Date().toISOString(),
         };
+      }
+      if (job.shouldArchive && liveMatch && !liveMatch.archived) {
+        pendingArchive.push({ syncKey: job.syncKey, threadId: knownThreadId });
       }
       if (opts.updateExisting) {
         pendingUpdate.push({
           job,
           threadId: knownThreadId,
           archived: Boolean(liveMatch?.archived),
+          shouldArchiveAfter: Boolean(job.shouldArchive),
         });
       }
     } else {
@@ -708,62 +851,143 @@ async function main() {
     }
   }
 
+  const batchCreate =
+    opts.batchSize > 0 ? pendingCreate.slice(0, opts.batchSize) : pendingCreate;
+
   console.log(
     `📊 สถิติคลังข่าวใน Excel: ทั้งหมด ${newsTotals.totalRows} รายการ ` +
-      `(เปิด/West Asia ${newsTotals.openTotal} → เลือกล่าสุด ${newsTotals.openSelected}, ` +
-      `Deepdive ${newsTotals.deepdiveTotal} → เลือกล่าสุด ${newsTotals.deepdiveSelected})`
+      `(เปิด/West Asia ${newsTotals.openTotal} → เก็บ ${opts.openDays} วัน ${newsTotals.openSelected} [Active ${newsTotals.openActiveCount} / Archive ${newsTotals.openArchivedCount}], ` +
+      `Deepdive ${newsTotals.deepdiveTotal} → ลงทั้งหมด ${newsTotals.deepdiveSelected} [Active ${newsTotals.deepdiveActiveCount} / Archive ${newsTotals.deepdiveArchivedCount}])`
   );
   console.log(
-    `📋 รายการทั้งหมดในรอบนี้: ${jobs.length} รายการ | มีอยู่แล้ว: ${
+    `📋 สรุปรอบนี้: เป้าหมาย ${jobs.length} | มีแล้ว ${
       jobs.length - pendingCreate.length
-    } | รอโพสต์ใหม่: ${pendingCreate.length}${
-      opts.updateExisting ? ` | รออัปเดตเดิม: ${pendingUpdate.length}` : ''
+    } | รอสร้างใหม่ ${pendingCreate.length}${
+      opts.batchSize > 0 ? ` (รันชุดนี้ ${batchCreate.length})` : ''
+    } | รอ Archive เพิ่ม ${pendingArchive.length} | รอลบข่าวเกิน ${opts.openDays} วัน ${
+      pendingPrune.length
     }`
   );
 
   if (opts.dryRun) {
-    console.log('\n🧪 [DRY-RUN] ตัวอย่างรายการที่จะโพสต์:');
     const byCat = {};
-    for (const j of pendingCreate) {
+    for (const j of batchCreate) {
       byCat[j.categoryLabel] = (byCat[j.categoryLabel] || 0) + 1;
-      console.log(`   • [${j.categoryLabel}] ${j.syncKey} → "${j.payload.name}"`);
     }
-    console.log('\nสรุปจำนวนตามหมวดหมู่ (รอโพสต์):', byCat);
+    console.log('\n🧪 [DRY-RUN] จำนวนที่รอสร้างแยกตามหมวดหมู่:', byCat);
+    if (batchCreate.length > 0) {
+      console.log('🧪 ตัวอย่าง 5 รายการแรก:', batchCreate.slice(0, 5).map((j) => `${j.syncKey} -> ${j.payload.name}`));
+      console.log('🧪 ตัวอย่าง 5 รายการสุดท้าย:', batchCreate.slice(-5).map((j) => `${j.syncKey} -> ${j.payload.name}`));
+    }
+    if (pendingPrune.length > 0) {
+      console.log('🧹 ข่าวเปิดที่เก่าเกินกำหนดที่จะถูกลบ:', pendingPrune.slice(0, 5));
+    }
     return;
   }
 
   saveDiscordState(state);
 
-  if (pendingCreate.length === 0 && pendingUpdate.length === 0) {
-    console.log('✅ เนื้อหาทั้งหมดถูกซิงค์ขึ้น Discord ครบถ้วนแล้ว (0 รายการใหม่)');
+  // Step A: Prune expired Open News (> openDays)
+  let prunedCount = 0;
+  for (const item of pendingPrune) {
+    try {
+      await discordApi(`/channels/${item.threadId}`, { method: 'DELETE' });
+      prunedCount++;
+      console.log(`   🧹 [Prune ${prunedCount}/${pendingPrune.length}] ลบข่าวเกิน ${opts.openDays} วัน: "${item.name}"`);
+    } catch (err) {
+      if (err.status !== 404) {
+        console.warn(`   ⚠️ ลบข่าว "${item.name}" ไม่สำเร็จ: ${err.message}`);
+      }
+    }
+    if (item.syncKey && state.syncedItems[item.syncKey]) {
+      delete state.syncedItems[item.syncKey];
+      saveDiscordState(state);
+    }
+    await sleep(1000);
+  }
+
+  // Step B: Archive any existing active threads that aged past active threshold
+  let archivedExistingCount = 0;
+  for (const item of pendingArchive) {
+    try {
+      await discordApi(`/channels/${item.threadId}`, {
+        method: 'PATCH',
+        body: { archived: true },
+      });
+      if (state.syncedItems[item.syncKey]) {
+        state.syncedItems[item.syncKey].archived = true;
+        saveDiscordState(state);
+      }
+      archivedExistingCount++;
+      await sleep(450);
+    } catch (err) {
+      console.warn(`   ⚠️ Auto-archive ${item.syncKey} (${item.threadId}) ไม่สำเร็จ: ${err.message}`);
+    }
+  }
+  if (archivedExistingCount > 0) {
+    console.log(`📦 ย้ายกระทู้เดิมเข้า Auto-Archive แล้ว ${archivedExistingCount} กระทู้`);
+  }
+
+  if (batchCreate.length === 0 && pendingUpdate.length === 0) {
+    console.log('✅ เนื้อหาทั้งหมดบน Discord ตรงกับคลังล่าสุดแล้ว');
     return;
   }
 
+  // Step C: Create new threads with safe rate-limit pacing
   let createdCount = 0;
-  for (const job of pendingCreate) {
+  let skippedCount = 0;
+  for (let i = 0; i < batchCreate.length; i++) {
+    const job = batchCreate[i];
     try {
-      const thread = await discordApi(`/channels/${job.channelId}/threads`, {
-        method: 'POST',
-        body: job.payload,
-      });
+      const thread = await createForumThreadSafe(job);
+      let archivedOk = false;
+      if (job.shouldArchive) {
+        try {
+          await discordApi(`/channels/${thread.id}`, {
+            method: 'PATCH',
+            body: { archived: true },
+          });
+          archivedOk = true;
+          await sleep(350);
+        } catch (archErr) {
+          console.warn(`   ⚠️ สร้างแล้วแต่ Archive ${job.syncKey} ไม่สำเร็จ: ${archErr.message}`);
+        }
+      }
       state.syncedItems[job.syncKey] = {
         threadId: thread.id,
         channelId: job.channelId,
         title: job.payload.name,
+        archived: archivedOk,
         syncedAt: new Date().toISOString(),
       };
       saveDiscordState(state);
       createdCount++;
-      console.log(`   ✅ [${createdCount}/${pendingCreate.length}] ${job.syncKey} → "${job.payload.name}" (${thread.id})`);
-      await sleep(1500);
+      if (createdCount <= 5 || createdCount % 25 === 0 || createdCount === batchCreate.length) {
+        console.log(
+          `   ✅ [${createdCount}/${batchCreate.length}] ${job.syncKey}${
+            archivedOk ? ' [Archived]' : ' [Active]'
+          } → "${job.payload.name}"`
+        );
+      }
+      await sleep(1100);
+      if ((i + 1) % 50 === 0 && i + 1 < batchCreate.length) {
+        console.log(`   ⏸️ พักช่วงลดภาระ Rate Limit 5 วินาที (ดำเนินการแล้ว ${i + 1}/${batchCreate.length})...`);
+        await sleep(5000);
+      }
     } catch (err) {
+      if (err.status === 400) {
+        skippedCount++;
+        console.warn(`   ⚠️ ข้าม ${job.syncKey} ("${job.payload.name}") เนื่องจาก Discord 400: ${err.message}`);
+        await sleep(1000);
+        continue;
+      }
       console.error(`   ❌ Failed ${job.syncKey} ("${job.payload.name}"):`, err.message);
       throw err;
     }
   }
 
   let updatedCount = 0;
-  for (const { job, threadId, archived } of pendingUpdate) {
+  for (const { job, threadId, archived, shouldArchiveAfter } of pendingUpdate) {
     try {
       if (archived) {
         await discordApi(`/channels/${threadId}`, {
@@ -778,6 +1002,12 @@ async function main() {
           embeds: job.payload.message.embeds,
         },
       });
+      if (shouldArchiveAfter || archived) {
+        await discordApi(`/channels/${threadId}`, {
+          method: 'PATCH',
+          body: { archived: true },
+        });
+      }
       updatedCount++;
       console.log(`   🔄 [Update ${updatedCount}/${pendingUpdate.length}] ${job.syncKey} (${threadId})`);
       await sleep(1500);
@@ -787,7 +1017,7 @@ async function main() {
   }
 
   console.log(
-    `\n🎉 ซิงค์เนื้อหาขึ้น Discord สำเร็จ (โพสต์ใหม่ ${createdCount} กระทู้, อัปเดต ${updatedCount} กระทู้)!`
+    `\n🎉 ซิงค์เสร็จสิ้น! สร้างใหม่ ${createdCount} | ข้าม ${skippedCount} | อัปเดต ${updatedCount} | ลบข่าวเก่า ${prunedCount}`
   );
 }
 
