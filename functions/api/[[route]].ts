@@ -1,6 +1,12 @@
 import { getEbookEmailTemplateForTier } from '../../src/lib/emailTemplates';
 import { getEffectiveMemberTier } from '../../src/lib/oceanAccess';
 import { aggregateAnalyticsEvents } from '../../src/lib/analyticsAggregator';
+import {
+  calculateNextSubscriptionExpiry,
+  calculateUpgradePrice,
+  getSubscriptionStatus,
+} from '../../src/lib/subscription';
+import { getKorNewsAudioUrl } from '../../src/lib/korNewsAudioMap';
 import { Member, TierType, PaymentStatus } from '../../src/types';
 
 interface Env {
@@ -373,6 +379,7 @@ function rowToMember(r: any): Member {
     paymentSlipUrl: r.payment_slip_url || undefined,
     paymentAmount: Number(r.payment_amount || 0),
     billingCycle: r.billing_cycle || 'free',
+    subscriptionExpiresAt: r.subscription_expires_at || undefined,
     ebookClaimed: Boolean(r.ebook_claimed),
     ebookClaimedAt: r.ebook_claimed_at || undefined,
     discordUserId: r.discord_user_id || undefined,
@@ -386,6 +393,69 @@ function rowToMember(r: any): Member {
 
 function buildMemberCookie(safeMember: Omit<Member, 'password'>): string {
   return `safesoul_member=${encodeURIComponent(JSON.stringify(safeMember))}; Path=/; Max-Age=${60 * 60 * 24 * 30}; SameSite=Lax`;
+}
+
+/**
+ * Automatically sends 7-day, 3-day, and 0-day (due day) reminder emails via Resend
+ * (deduplicated per billing cycle via Cloudflare D1 subscription_reminders table).
+ */
+async function maybeDispatchExpiryReminderEdge(env: Env, member: Member): Promise<void> {
+  if (!env.DB || !env.RESEND_API_KEY || member.tier !== 'supporter_tier_2' || !member.email) {
+    return;
+  }
+  const sub = getSubscriptionStatus(member);
+  if (!sub.hasExpiry || !sub.expiresAt) return;
+
+  let reminderType: '7d' | '3d' | '0d' | null = null;
+  if (sub.state === 'warning_7d') reminderType = '7d';
+  else if (sub.state === 'warning_3d') reminderType = '3d';
+  else if (sub.state === 'due_today') reminderType = '0d';
+  if (!reminderType) return;
+
+  const periodKey = sub.expiresAt.slice(0, 10);
+  const remId = `${member.id}_${periodKey}_${reminderType}`;
+  try {
+    const existing = await env.DB.prepare('SELECT id FROM subscription_reminders WHERE id = ?')
+      .bind(remId)
+      .first();
+    if (existing) return;
+
+    const subjectMap = {
+      '7d': `[แจ้งเตือนล่วงหน้า 7 วัน] สิทธิ์สมาชิก The Fitrah Shield ครบกำหนดชำระ ${sub.expiresAtThai}`,
+      '3d': `[แจ้งเตือนล่วงหน้า 3 วัน] สิทธิ์สมาชิก The Fitrah Shield ใกล้ครบกำหนดชำระ ${sub.expiresAtThai}`,
+      '0d': `[ครบกำหนดชำระวันนี้] ต่ออายุสิทธิ์สมาชิก The Fitrah Shield (${sub.expiresAtThai})`,
+    };
+    const html = `
+      <div style="font-family: 'Noto Sans Thai', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0B1912; color: #F4F1EA; padding: 24px; border-radius: 16px; border: 1px solid #D9A94F;">
+        <div style="font-size: 12px; color: #F59E0B; font-weight: bold;">THE FITRAH SHIELD • แจ้งเตือนรอบบิลสมาชิก</div>
+        <h2 style="color: #FDE68A; margin: 8px 0 12px;">สวัสดีคุณ ${escapeHtml(member.name)} (Member #${member.memberNumber})</h2>
+        <p style="line-height: 1.7; font-size: 14px;">${escapeHtml(sub.reminderDetailText)}</p>
+        <ul style="font-size: 13px; line-height: 1.8; color: #E2DDD2;">
+          <li><strong>ต่ออายุรายเดือน:</strong> ฿199 / 30 วัน</li>
+          <li><strong>เปลี่ยนเป็นรายปี:</strong> ฿1,990 / 365 วัน (ประหยัด 2 เดือน)</li>
+          <li><strong>อัปเกรดตลอดชีพ (Founding 100):</strong> ${sub.isActiveYearly ? 'จ่ายเพียงส่วนต่าง ฿2,000 (หักค่ารายปี ฿1,990 แล้ว)' : '฿3,990 ครั้งเดียวตลอดชีพ'}</li>
+        </ul>
+        <p style="margin-top: 18px;">
+          <a href="https://thefitrahshield.hardynaipayong.cloud/pricing" style="display: inline-block; padding: 12px 24px; background: #F59E0B; color: #060A08; font-weight: bold; border-radius: 10px; text-decoration: none;">ต่ออายุ / อัปเกรดสิทธิ์ทันที (ตรวจสลิปอัตโนมัติ)</a>
+        </p>
+      </div>
+    `;
+    const res = await sendResendNotification(env, {
+      to: [member.email],
+      fallbackTo: ['n.ahamadchula@gmail.com'],
+      subject: subjectMap[reminderType],
+      html,
+    });
+    if (res.sent) {
+      await env.DB.prepare(
+        'INSERT OR IGNORE INTO subscription_reminders (id, member_id, billing_period_key, reminder_type, sent_at) VALUES (?, ?, ?, ?, ?)'
+      )
+        .bind(remId, member.id, periodKey, reminderType, new Date().toISOString())
+        .run();
+    }
+  } catch (e) {
+    console.error('Expiry reminder dispatch warning:', e);
+  }
 }
 
 function resolveDiscordRolesForMember(
@@ -687,6 +757,7 @@ export const onRequest = async (context: {
       const startIndex = (page - 1) * limit;
       const paginatedItems = items.slice(startIndex, startIndex + limit).map((item: any) => ({
         ...item,
+        audioUrl: item.audioUrl || getKorNewsAudioUrl(item.korNo) || getKorNewsAudioUrl(item.slug),
         sections: item.sections || [
           {
             index: 1,
@@ -738,10 +809,14 @@ export const onRequest = async (context: {
 
       const prev = idx > 0 ? items[idx - 1] : null;
       const next = idx < items.length - 1 ? items[idx + 1] : null;
+      const audioUrl =
+        fullArticle.audioUrl ||
+        getKorNewsAudioUrl(fullArticle.korNo) ||
+        getKorNewsAudioUrl(fullArticle.slug);
 
       return jsonResponse({
         success: true,
-        news: fullArticle,
+        news: { ...fullArticle, ...(audioUrl ? { audioUrl } : {}) },
         prev,
         next,
       });
@@ -764,7 +839,9 @@ export const onRequest = async (context: {
       if (env.DB && parsed?.id) {
         const row = await env.DB.prepare('SELECT * FROM members WHERE id = ?').bind(parsed.id).first();
         if (row) {
-          const { password: _, ...safe } = rowToMember(row);
+          const fullMember = rowToMember(row);
+          await maybeDispatchExpiryReminderEdge(env, fullMember);
+          const { password: _, ...safe } = fullMember;
           return jsonResponse({ authenticated: true, member: safe });
         }
       }
@@ -866,9 +943,13 @@ export const onRequest = async (context: {
       const nextNum = (Number(maxRow?.max_num) || 0) + 1;
       const id = `mem_${String(nextNum).padStart(3, '0')}`;
       const now = new Date().toISOString();
+      const subscriptionExpiresAt =
+        tier === 'supporter_tier_2' && paymentStatus === 'verified'
+          ? calculateNextSubscriptionExpiry(billingCycle === 'yearly' ? 'yearly' : 'monthly')
+          : null;
 
       await env.DB.prepare(
-        `INSERT INTO members (id, member_number, username, email, phone, password, name, tier, role, payment_status, payment_slip_url, payment_amount, billing_cycle, ebook_claimed, notes, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'member', ?, ?, ?, ?, 0, ?, ?)`
+        `INSERT INTO members (id, member_number, username, email, phone, password, name, tier, role, payment_status, payment_slip_url, payment_amount, billing_cycle, subscription_expires_at, ebook_claimed, notes, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'member', ?, ?, ?, ?, ?, 0, ?, ?)`
       )
         .bind(
           id,
@@ -883,6 +964,7 @@ export const onRequest = async (context: {
           body.paymentSlipDataUrl || null,
           paymentAmount,
           billingCycle,
+          subscriptionExpiresAt,
           verificationNotes || null,
           now
         )
@@ -920,13 +1002,18 @@ export const onRequest = async (context: {
         return jsonResponse({ success: false, error: 'กรุณาเข้าสู่ระบบก่อนอัปเกรด' }, 401);
       }
 
+      const existingRow = await env.DB.prepare('SELECT * FROM members WHERE id = ?').bind(memberId).first();
+      const existingMember = existingRow ? rowToMember(existingRow) : null;
+
       const targetTier: TierType = body.tier || 'supporter_tier_2';
-      const targetBillingCycle =
+      const targetBillingCycle: 'free' | 'monthly' | 'yearly' | 'lifetime' =
         body.billingCycle || (targetTier === 'founding_tier_3' ? 'lifetime' : 'monthly');
-      const targetAmount = Number(
-        body.paymentAmount ??
-          (targetTier === 'founding_tier_3' ? 3990 : targetBillingCycle === 'yearly' ? 1990 : 199)
+      const priceCalc = calculateUpgradePrice(
+        existingMember,
+        targetTier,
+        targetBillingCycle === 'yearly' ? 'yearly' : 'monthly'
       );
+      const targetAmount = priceCalc.amount;
 
       let paymentStatus: PaymentStatus = targetTier === 'free_tier_1' ? 'free' : 'pending_verification';
       let verificationNotes: string | null = null;
@@ -948,13 +1035,25 @@ export const onRequest = async (context: {
           paymentStatus = 'verified';
           verifiedTransRef = slipCheck.transRef;
           verifiedReceiverAcc = slipCheck.receiverAccount;
-          verificationNotes = `อัปเกรดและตรวจสอบสลิปอัตโนมัติผ่าน EasySlip สำเร็จ • Ref: ${slipCheck.transRef || '-'} • ยอด ฿${slipCheck.slipAmount ?? targetAmount}`;
+          verificationNotes = priceCalc.isAnnualToLifetimeDiff
+            ? `อัปเกรดรายปีเป็นตลอดชีพ (ส่วนต่าง ฿2,000 หักรายปี ฿1,990) ผ่าน EasySlip สำเร็จ • Ref: ${slipCheck.transRef || '-'}`
+            : `อัปเกรด/ต่ออายุและตรวจสอบสลิปอัตโนมัติผ่าน EasySlip สำเร็จ • Ref: ${slipCheck.transRef || '-'} • ยอด ฿${slipCheck.slipAmount ?? targetAmount}`;
         }
       }
 
+      const nextExpiresAt =
+        targetTier === 'founding_tier_3' || targetTier === 'free_tier_1'
+          ? null
+          : paymentStatus === 'verified'
+          ? calculateNextSubscriptionExpiry(
+              targetBillingCycle === 'yearly' ? 'yearly' : 'monthly',
+              existingMember?.subscriptionExpiresAt || null
+            )
+          : existingMember?.subscriptionExpiresAt || null;
+
       const now = new Date().toISOString();
       await env.DB.prepare(
-        `UPDATE members SET tier = ?, phone = COALESCE(NULLIF(?, ''), phone), payment_status = ?, payment_slip_url = COALESCE(?, payment_slip_url), payment_amount = ?, billing_cycle = ?, notes = COALESCE(?, notes), updated_at = ? WHERE id = ?`
+        `UPDATE members SET tier = ?, phone = COALESCE(NULLIF(?, ''), phone), payment_status = ?, payment_slip_url = COALESCE(?, payment_slip_url), payment_amount = ?, billing_cycle = ?, subscription_expires_at = ?, notes = COALESCE(?, notes), updated_at = ? WHERE id = ?`
       )
         .bind(
           targetTier,
@@ -963,6 +1062,7 @@ export const onRequest = async (context: {
           body.paymentSlipDataUrl || null,
           targetAmount,
           targetBillingCycle,
+          nextExpiresAt,
           verificationNotes,
           now,
           memberId

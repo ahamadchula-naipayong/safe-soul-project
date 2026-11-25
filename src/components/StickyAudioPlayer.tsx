@@ -11,7 +11,6 @@ import {
   Radio,
   RotateCcw,
   RotateCw,
-  ExternalLink,
 } from 'lucide-react';
 
 function formatSeconds(sec: number): string {
@@ -38,13 +37,11 @@ export function StickyAudioPlayer() {
 
   const [isMuted, setIsMuted] = useState(false);
   const [prevVolume, setPrevVolume] = useState(volume);
-  const [isExpanded, setIsExpanded] = useState(true);
 
   if (!currentTrack) return null;
 
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = parseFloat(e.target.value);
-    seekTo(val);
+    seekTo(parseFloat(e.target.value));
   };
 
   const handleToggleMute = () => {
@@ -60,26 +57,23 @@ export function StickyAudioPlayer() {
 
   const cyclePlaybackRate = () => {
     const rates = [1, 1.25, 1.5, 2];
-    const currentIndex = rates.indexOf(playbackRate);
-    const nextRate = rates[(currentIndex + 1) % rates.length];
+    const nextRate = rates[(rates.indexOf(playbackRate) + 1) % rates.length];
     setRate(nextRate);
   };
 
-  const seekForward10 = () => {
-    seekTo(Math.min(currentTime + 10, duration));
-  };
-
-  const seekBackward10 = () => {
-    seekTo(Math.max(currentTime - 10, 0));
-  };
+  const seekForward10 = () => seekTo(Math.min(currentTime + 10, duration || currentTime + 10));
+  const seekBackward10 = () => seekTo(Math.max(currentTime - 10, 0));
 
   return (
-    <aside aria-label="Audio Player" className="fixed bottom-0 left-0 right-0 z-40 transition-all duration-300">
-      <div className="max-w-7xl mx-auto px-2 sm:px-4 pb-2 sm:pb-3">
-        <div className="rounded-2xl bg-gradient-to-r from-emerald-dark via-emerald-card to-slate-dark border border-gold/40 shadow-2xl backdrop-blur-xl p-3 sm:p-4 text-parchment-cream">
-          {/* Top progress bar for smooth seeking */}
-          <div className="relative w-full mb-3 flex items-center gap-2">
-            <span className="text-[11px] font-mono text-parchment-muted/80 w-10 text-right">
+    <aside
+      aria-label="Audio Player"
+      className="fixed bottom-0 left-0 right-0 z-40 w-full max-w-[100vw] overflow-hidden pointer-events-none"
+    >
+      <div className="max-w-5xl mx-auto px-2 sm:px-4 pb-2 sm:pb-3 pointer-events-auto">
+        <div className="w-full max-w-full overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-dark via-emerald-card to-slate-dark border border-gold-warm/45 shadow-2xl backdrop-blur-xl px-2.5 py-2 sm:px-4 sm:py-2.5 text-parchment-cream">
+          {/* Ultra-compact Progress Scrubber Row */}
+          <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 w-full min-w-0">
+            <span className="text-[10px] font-mono text-parchment-muted tabular-nums shrink-0 w-8 sm:w-9 text-right">
               {formatSeconds(currentTime)}
             </span>
             <input
@@ -88,17 +82,34 @@ export function StickyAudioPlayer() {
               max={duration || 100}
               value={currentTime}
               onChange={handleSeek}
-              className="w-full h-1.5 bg-emerald-border/60 rounded-lg appearance-none cursor-pointer accent-gold-warm focus:outline-none"
+              aria-label="แถบเลื่อนเวลาเสียง"
+              className="flex-1 min-w-0 h-1 bg-emerald-border/70 rounded-lg appearance-none cursor-pointer accent-gold-warm focus:outline-none"
             />
-            <span className="text-[11px] font-mono text-parchment-muted/80 w-10">
+            <span className="text-[10px] font-mono text-parchment-muted tabular-nums shrink-0 w-8 sm:w-9">
               {formatSeconds(duration)}
             </span>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
-            {/* Track Info */}
-            <div className="flex items-center gap-3 w-full sm:w-auto">
-              <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-emerald-deep border border-gold/30 shrink-0 shadow-sm flex items-center justify-center">
+          {/* Single Compact Control Row (Fits cleanly inside 360px+ mobile screens without overflow!) */}
+          <div className="flex items-center justify-between gap-2 sm:gap-3 w-full min-w-0">
+            {/* Left: Compact Play/Pause (mobile) + Cover (desktop) + Truncated Title */}
+            <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1 overflow-hidden">
+              {/* Mobile Play/Pause right on left for 1-thumb reach */}
+              <button
+                type="button"
+                onClick={togglePlay}
+                aria-label={isPlaying ? 'หยุดชั่วคราว' : 'เล่นเสียง'}
+                className="sm:hidden w-9 h-9 rounded-full bg-gold-gradient text-slate-abyss flex items-center justify-center font-bold shadow-gold-sm shrink-0 active:scale-95 transition cursor-pointer"
+              >
+                {isPlaying ? (
+                  <Pause className="w-4 h-4 fill-current" />
+                ) : (
+                  <Play className="w-4 h-4 fill-current ml-0.5" />
+                )}
+              </button>
+
+              {/* Cover thumbnail on sm+ */}
+              <div className="hidden sm:flex relative w-9 h-9 rounded-lg overflow-hidden bg-emerald-deep border border-gold/30 shrink-0 items-center justify-center">
                 {currentTrack.coverImage ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -107,116 +118,106 @@ export function StickyAudioPlayer() {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <Radio className="w-6 h-6 text-gold-warm animate-pulse" />
-                )}
-                {isPlaying && (
-                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center gap-0.5">
-                    <span className="w-1 h-3 bg-gold-warm animate-pulse" style={{ animationDelay: '0ms' }} />
-                    <span className="w-1 h-5 bg-gold-warm animate-pulse" style={{ animationDelay: '150ms' }} />
-                    <span className="w-1 h-2 bg-gold-warm animate-pulse" style={{ animationDelay: '300ms' }} />
-                  </div>
+                  <Radio className="w-4 h-4 text-gold-warm" />
                 )}
               </div>
 
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-gold-warm px-1.5 py-0.5 rounded bg-gold-dim/30 border border-gold/30">
-                    Podcast
-                  </span>
-                  {currentTrack.seriesTitle && (
-                    <span className="text-xs text-parchment-muted truncate">
-                      {currentTrack.seriesTitle}
-                    </span>
-                  )}
-                  {currentTrack.partTitle && (
-                    <span className="text-[10px] text-emerald-300 font-semibold px-2 py-0.5 rounded-full bg-emerald-950/70 border border-emerald-500/40 shrink-0">
-                      {currentTrack.partTitle}
-                    </span>
-                  )}
-                </div>
-                <h4 className="text-sm font-semibold text-parchment-cream truncate">
+              <div className="min-w-0 flex-1 overflow-hidden">
+                {currentTrack.seriesTitle && (
+                  <div className="text-[10px] text-gold-warm font-semibold truncate leading-tight">
+                    {currentTrack.seriesTitle}
+                  </div>
+                )}
+                <h4 className="text-xs sm:text-sm font-semibold text-parchment-cream truncate leading-snug">
                   {currentTrack.title}
                 </h4>
               </div>
             </div>
 
-            {/* Controls + Mobile Close Button */}
-            <div className="flex items-center justify-between sm:justify-center w-full sm:w-auto gap-2.5 sm:gap-4">
-              <div className="flex items-center gap-2.5 sm:gap-4">
-                {/* -10s */}
-                <button
-                  onClick={seekBackward10}
-                  title="ย้อนหลัง 10 วินาที"
-                  className="p-2 text-parchment-muted hover:text-white transition rounded-full hover:bg-white/5 cursor-pointer"
-                >
-                  <RotateCcw className="w-4 h-4" />
-                </button>
+            {/* Center/Right: Compact Playback Controls */}
+            <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+              {/* -10s */}
+              <button
+                type="button"
+                onClick={seekBackward10}
+                title="ย้อนหลัง 10 วินาที"
+                aria-label="ย้อนหลัง 10 วินาที"
+                className="p-1.5 text-parchment-muted hover:text-gold-light transition rounded-full hover:bg-white/5 cursor-pointer"
+              >
+                <RotateCcw className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              </button>
 
-                {/* Play/Pause Button */}
-                <button
-                  onClick={togglePlay}
-                  className="w-11 h-11 rounded-full bg-gold-gradient text-slate-abyss flex items-center justify-center font-bold shadow-gold-sm hover:scale-105 active:scale-95 transition cursor-pointer"
-                >
-                  {isPlaying ? <Pause className="w-5 h-5 fill-current" /> : <Play className="w-5 h-5 fill-current ml-0.5" />}
-                </button>
+              {/* Desktop Play/Pause */}
+              <button
+                type="button"
+                onClick={togglePlay}
+                aria-label={isPlaying ? 'หยุดชั่วคราว' : 'เล่นเสียง'}
+                className="hidden sm:flex w-9 h-9 rounded-full bg-gold-gradient text-slate-abyss items-center justify-center font-bold shadow-gold-sm hover:scale-105 active:scale-95 transition cursor-pointer"
+              >
+                {isPlaying ? (
+                  <Pause className="w-4 h-4 fill-current" />
+                ) : (
+                  <Play className="w-4 h-4 fill-current ml-0.5" />
+                )}
+              </button>
 
-                {/* +10s */}
-                <button
-                  onClick={seekForward10}
-                  title="ไปข้างหน้า 10 วินาที"
-                  className="p-2 text-parchment-muted hover:text-white transition rounded-full hover:bg-white/5 cursor-pointer"
-                >
-                  <RotateCw className="w-4 h-4" />
-                </button>
+              {/* +10s */}
+              <button
+                type="button"
+                onClick={seekForward10}
+                title="ไปข้างหน้า 10 วินาที"
+                aria-label="ไปข้างหน้า 10 วินาที"
+                className="p-1.5 text-parchment-muted hover:text-gold-light transition rounded-full hover:bg-white/5 cursor-pointer"
+              >
+                <RotateCw className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              </button>
 
-                {/* Speed Button */}
+              {/* Speed */}
+              <button
+                type="button"
+                onClick={cyclePlaybackRate}
+                className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-[10px] sm:text-xs font-mono font-bold text-gold-light bg-emerald-deep/80 border border-gold/30 rounded-md hover:bg-emerald-surface transition cursor-pointer tabular-nums"
+                title="เปลี่ยนความเร็วเสียง"
+              >
+                {playbackRate}x
+              </button>
+
+              {/* Desktop Volume */}
+              <div className="hidden md:flex items-center gap-1.5 pl-1">
                 <button
-                  onClick={cyclePlaybackRate}
-                  className="px-2.5 py-1 text-xs font-mono font-bold text-gold-light bg-emerald-deep/80 border border-gold/30 rounded-lg hover:bg-emerald-surface transition cursor-pointer"
-                  title="เปลี่ยนความเร็วเสียง"
+                  type="button"
+                  onClick={handleToggleMute}
+                  aria-label="เปิด/ปิดเสียง"
+                  className="text-parchment-muted hover:text-gold-light transition cursor-pointer"
                 >
-                  {playbackRate}x
+                  {isMuted || volume === 0 ? (
+                    <VolumeX className="w-4 h-4" />
+                  ) : (
+                    <Volume2 className="w-4 h-4" />
+                  )}
                 </button>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.05"
+                  value={isMuted ? 0 : volume}
+                  onChange={(e) => {
+                    setTrackVolume(parseFloat(e.target.value));
+                    if (isMuted) setIsMuted(false);
+                  }}
+                  aria-label="ระดับเสียง"
+                  className="w-14 h-1 bg-emerald-border rounded appearance-none cursor-pointer accent-gold-warm"
+                />
               </div>
 
-              {/* Mobile-visible Close button */}
+              {/* Close */}
               <button
+                type="button"
                 onClick={closePlayer}
-                className="sm:hidden p-2 text-parchment-muted hover:text-white rounded-full bg-white/5 hover:bg-white/10 transition cursor-pointer"
+                className="p-1.5 text-parchment-muted hover:text-gold-light rounded-full hover:bg-white/10 transition cursor-pointer"
                 title="ปิดเครื่องเล่นเสียง"
                 aria-label="ปิดเครื่องเล่นเสียง"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Right side: Volume & Close (Desktop/Tablet) */}
-            <div className="hidden sm:flex items-center gap-3">
-              <button
-                onClick={handleToggleMute}
-                className="text-parchment-muted hover:text-gold-light transition cursor-pointer"
-              >
-                {isMuted || volume === 0 ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-              </button>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.05"
-                value={isMuted ? 0 : volume}
-                onChange={(e) => {
-                  setTrackVolume(parseFloat(e.target.value));
-                  if (isMuted) setIsMuted(false);
-                }}
-                className="w-16 h-1 bg-emerald-border rounded appearance-none cursor-pointer accent-gold-warm"
-              />
-
-              <div className="h-4 w-px bg-white/10 mx-1" />
-
-              <button
-                onClick={closePlayer}
-                className="p-1.5 text-parchment-muted/70 hover:text-white rounded-full hover:bg-white/5 transition cursor-pointer"
-                title="ปิดเครื่องเล่นเสียง"
               >
                 <X className="w-4 h-4" />
               </button>

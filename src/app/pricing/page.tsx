@@ -6,6 +6,7 @@ import { FreeEbookModal } from '@/components/FreeEbookModal';
 import { AccessTierTable } from '@/components/AccessTierTable';
 import { QrSlipPaymentBox } from '@/components/QrSlipPaymentBox';
 import { useAuth } from '@/context/AuthContext';
+import { calculateUpgradePrice } from '@/lib/subscription';
 import {
   Crown,
   Sparkles,
@@ -57,12 +58,8 @@ export default function PricingPage() {
       return;
     }
 
-    const amount =
-      selectedTier === 'founding_tier_3'
-        ? 3990
-        : billingCycle === 'yearly'
-        ? 1990
-        : 199;
+    const priceCalc = calculateUpgradePrice(member, selectedTier, billingCycle);
+    const amount = priceCalc.amount;
 
     setIsLoading(true);
     const res = await upgradeMembership({
@@ -202,7 +199,16 @@ export default function PricingPage() {
                     <div className="text-[11px] text-parchment-muted">Founding 100 ตลอดชีพ</div>
                   </div>
                 </div>
-                <span className="font-mono font-bold text-xs text-gold-light">฿3,990</span>
+                <div className="text-right">
+                  {calculateUpgradePrice(member, 'founding_tier_3', billingCycle).isAnnualToLifetimeDiff ? (
+                    <>
+                      <div className="text-[10px] font-mono text-parchment-muted line-through">฿3,990</div>
+                      <span className="font-mono font-bold text-xs text-emerald-300">ส่วนต่าง ฿2,000</span>
+                    </>
+                  ) : (
+                    <span className="font-mono font-bold text-xs text-gold-light">฿3,990</span>
+                  )}
+                </div>
               </button>
             </div>
           </div>
@@ -270,6 +276,12 @@ export default function PricingPage() {
               <QrSlipPaymentBox
                 tier={selectedTier}
                 billingCycle={billingCycle}
+                customAmount={calculateUpgradePrice(member, selectedTier, billingCycle).amount}
+                discountNote={
+                  calculateUpgradePrice(member, selectedTier, billingCycle).isAnnualToLifetimeDiff
+                    ? '✓ สิทธิ์อัปเกรดจากรายปี ➔ ตลอดชีพ: หักค่ารายปี ฿1,990 จากปกติ ฿3,990 เหลือจ่ายส่วนต่างเพียง ฿2,000'
+                    : undefined
+                }
                 slipDataUrl={slipDataUrl}
                 onSlipChange={(url) => setSlipDataUrl(url)}
               />
@@ -286,10 +298,10 @@ export default function PricingPage() {
                 className="w-full py-4 rounded-xl gold-bevel-button text-slate-abyss font-bold text-sm hover:brightness-110 shadow-gold-sm transition flex items-center justify-center gap-2 cursor-pointer"
               >
                 {isLoading ? (
-                  <span>กำลังอัปโหลดสลิป...</span>
+                  <span>กำลังตรวจสอบสลิปผ่าน EasySlip...</span>
                 ) : (
                   <>
-                    <span>ยืนยันการโอนเงิน & ส่งสลิปให้แอดมินตรวจสอบ</span>
+                    <span>ยืนยันการโอนเงิน & ตรวจสอบสลิปอัตโนมัติ (EasySlip)</span>
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}

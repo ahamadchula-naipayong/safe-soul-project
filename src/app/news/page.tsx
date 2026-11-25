@@ -4,6 +4,8 @@ import React, { useState, useEffect, useTransition } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '@/context/AuthContext';
+import { useAudio } from '@/context/AudioContext';
+import { getKorNewsAudioUrl } from '@/lib/korNewsAudioMap';
 import {
   Search,
   Calendar,
@@ -25,6 +27,9 @@ import {
   AlignJustify,
   LayoutGrid,
   Rows,
+  Headphones,
+  Play,
+  Pause,
 } from 'lucide-react';
 import { NewsItem } from '@/types';
 
@@ -45,6 +50,24 @@ export default function NewsIndexPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('content');
   const [isPending, startTransition] = useTransition();
   const { member, isLoggedIn } = useAuth();
+  const { currentTrack, isPlaying, playTrack, togglePlay } = useAudio();
+
+  const handlePlayNewsAudio = (e: React.MouseEvent, item: NewsItem, audioUrl: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const tid = `news-audio-${(item.korNo || item.slug).toLowerCase()}`;
+    if (currentTrack?.id === tid) {
+      togglePlay();
+    } else {
+      playTrack({
+        id: tid,
+        title: `${item.korNo}: ${item.title}`,
+        seriesTitle: `เสียงวิเคราะห์ข่าว KOR • ${item.subcategory || 'The Key of Return'}`,
+        audioUrl,
+        coverImage: item.image,
+      });
+    }
+  };
 
   // Load preferred viewMode from localStorage (defaulting to 'content' with 48 items/page)
   useEffect(() => {
@@ -620,6 +643,10 @@ export default function NewsIndexPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
               {news.map((item) => {
                 const canAccess = canAccessItem(item);
+                const audioUrl = getKorNewsAudioUrl(item.korNo) || getKorNewsAudioUrl(item.slug);
+                const isCardPlaying =
+                  currentTrack?.id === `news-audio-${(item.korNo || item.slug).toLowerCase()}` &&
+                  isPlaying;
                 return (
                   <article
                     key={item.id}
@@ -709,10 +736,28 @@ export default function NewsIndexPage() {
                       </div>
 
                       {/* Card Bottom Action */}
-                      <div className="pt-4 border-t border-emerald-border/40 flex items-center justify-between text-xs">
-                        <span className="text-gold-warm/80 font-mono text-[11px]">
-                          {item.dateShort}
-                        </span>
+                      <div className="pt-4 border-t border-emerald-border/40 flex flex-wrap items-center justify-between gap-2 text-xs">
+                        <div className="flex items-center gap-2">
+                          <span className="text-gold-warm/80 font-mono text-[11px]">
+                            {item.dateShort}
+                          </span>
+                          {audioUrl && (
+                            <button
+                              type="button"
+                              onClick={(e) => handlePlayNewsAudio(e, item, audioUrl)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg gold-bevel-button text-slate-abyss text-[11px] font-bold shadow-sm hover:brightness-110 transition cursor-pointer"
+                              title={`ฟังเสียงวิเคราะห์ข่าว ${item.korNo}`}
+                            >
+                              {isCardPlaying ? (
+                                <Pause className="w-3 h-3 fill-current" />
+                              ) : (
+                                <Play className="w-3 h-3 fill-current" />
+                              )}
+                              <Headphones className="w-3 h-3" />
+                              <span>{isCardPlaying ? 'หยุด' : 'ฟังเสียง'}</span>
+                            </button>
+                          )}
+                        </div>
 
                         {!canAccess ? (
                           <Link

@@ -20,6 +20,7 @@ export interface Member {
   paymentSlipUrl?: string;
   paymentAmount?: number;
   billingCycle?: 'free' | 'monthly' | 'yearly' | 'lifetime';
+  subscriptionExpiresAt?: string;
   ebookClaimed?: boolean;
   ebookClaimedAt?: string;
   discordUserId?: string;

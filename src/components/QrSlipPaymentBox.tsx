@@ -27,6 +27,8 @@ export const PAYMENT_QR_CONFIG = {
 interface QrSlipPaymentBoxProps {
   tier: TierType;
   billingCycle?: 'monthly' | 'yearly';
+  customAmount?: number;
+  discountNote?: string;
   slipDataUrl: string;
   onSlipChange: (dataUrl: string, fileName?: string) => void;
 }
@@ -34,6 +36,8 @@ interface QrSlipPaymentBoxProps {
 export function QrSlipPaymentBox({
   tier,
   billingCycle = 'monthly',
+  customAmount,
+  discountNote,
   slipDataUrl,
   onSlipChange,
 }: QrSlipPaymentBoxProps) {
@@ -46,12 +50,13 @@ export function QrSlipPaymentBox({
     return null;
   }
 
-  const amount =
+  const defaultAmount =
     tier === 'founding_tier_3'
       ? 3990
       : billingCycle === 'yearly'
       ? 1990
       : 199;
+  const amount = customAmount !== undefined ? customAmount : defaultAmount;
 
   const tierTitle =
     tier === 'founding_tier_3'
@@ -107,6 +112,9 @@ export function QrSlipPaymentBox({
         <div>
           <div className="text-parchment-muted text-[11px]">หมวดหมู่ระดับสมาชิกที่เลือก:</div>
           <div className="font-bold text-gold-light mt-0.5">{tierTitle}</div>
+          {discountNote && (
+            <div className="text-[11px] text-emerald-300 font-semibold mt-1">{discountNote}</div>
+          )}
         </div>
         <div className="text-right">
           <div className="text-parchment-muted text-[11px]">ยอดชำระสุทธิ</div>

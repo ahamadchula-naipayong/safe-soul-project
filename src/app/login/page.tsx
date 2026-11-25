@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { QrSlipPaymentBox } from '@/components/QrSlipPaymentBox';
+import { getSubscriptionStatus } from '@/lib/subscription';
 import { TierType } from '@/types';
 import {
   Compass,
@@ -354,6 +355,57 @@ function LoginContent() {
                   </button>
                 </div>
               )}
+
+              {/* Subscription Expiry / Renewal Alert Banner (7d / 3d / 0d / 2d Grace / Expired) */}
+              {(() => {
+                const sub = getSubscriptionStatus(member);
+                if (!sub.hasExpiry) return null;
+                const isUrgent =
+                  sub.state === 'due_today' ||
+                  sub.state === 'grace_period' ||
+                  sub.state === 'expired';
+                return (
+                  <div
+                    className={`p-4 rounded-2xl border text-xs sm:text-sm flex flex-col md:flex-row md:items-center justify-between gap-4 ${
+                      isUrgent
+                        ? 'bg-red-950/45 border-red-400/50 text-red-200'
+                        : sub.shouldRemind
+                        ? 'bg-amber-950/45 border-amber-400/50 text-amber-200'
+                        : 'bg-emerald-950/40 border-emerald-500/35 text-parchment-cream'
+                    }`}
+                  >
+                    <div className="space-y-1">
+                      <div className="flex flex-wrap items-center gap-2 font-bold">
+                        <Calendar className="w-4 h-4 text-gold-warm shrink-0" />
+                        <span>
+                          กำหนดชำระงวดถัดไป / วันหมดอายุ: {sub.expiresAtThai}
+                        </span>
+                        <span className="px-2 py-0.5 rounded-full text-[11px] bg-black/40 border border-gold-warm/40 text-gold-light">
+                          {sub.reminderBadgeText}
+                        </span>
+                      </div>
+                      <p className="text-xs opacity-90 font-light">{sub.reminderDetailText}</p>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2 shrink-0">
+                      <Link
+                        href="/pricing?tier=supporter_tier_2#checkout-box"
+                        className="px-3.5 py-2 rounded-xl bg-emerald-surface hover:bg-emerald-light border border-gold-warm/40 text-gold-light font-bold text-xs transition"
+                      >
+                        ต่อรายเดือน ฿199 / รายปี ฿1,990
+                      </Link>
+                      <Link
+                        href="/pricing?tier=founding_tier_3#checkout-box"
+                        className="px-3.5 py-2 rounded-xl gold-bevel-button text-slate-abyss font-bold text-xs shadow-gold-sm transition hover:brightness-105"
+                      >
+                        {sub.isActiveYearly
+                          ? 'อัปเกรดตลอดชีพ (ส่วนต่าง ฿2,000)'
+                          : 'อัปเกรดตลอดชีพ ฿3,990'}
+                      </Link>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Prestigious Member Sequence Banner */}
               <div className="p-6 sm:p-8 rounded-2xl bg-gradient-to-r from-[#183929] via-[#1C3E2D] to-[#122A1E] border border-gold-warm/60 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">

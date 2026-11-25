@@ -5,6 +5,7 @@ import {
   isReleasedBySchedule,
   formatThaiScheduleDate,
 } from '@/lib/releaseSchedule';
+import { getSubscriptionStatus } from '@/lib/subscription';
 
 export type EffectiveTier = 'visitor' | TierType;
 
@@ -25,17 +26,24 @@ export interface OceanAccessResult {
 export function getEffectiveMemberTier(member: Member | null | undefined): {
   effectiveTier: EffectiveTier;
   isPendingVerification: boolean;
+  isSubscriptionExpired?: boolean;
 } {
   if (!member) {
-    return { effectiveTier: 'visitor', isPendingVerification: false };
+    return { effectiveTier: 'visitor', isPendingVerification: false, isSubscriptionExpired: false };
   }
   if (
     (member.tier === 'supporter_tier_2' || member.tier === 'founding_tier_3') &&
     member.paymentStatus === 'pending_verification'
   ) {
-    return { effectiveTier: 'free_tier_1', isPendingVerification: true };
+    return { effectiveTier: 'free_tier_1', isPendingVerification: true, isSubscriptionExpired: false };
   }
-  return { effectiveTier: member.tier, isPendingVerification: false };
+  if (member.tier === 'supporter_tier_2') {
+    const sub = getSubscriptionStatus(member);
+    if (sub.isRevoked) {
+      return { effectiveTier: 'free_tier_1', isPendingVerification: false, isSubscriptionExpired: true };
+    }
+  }
+  return { effectiveTier: member.tier, isPendingVerification: false, isSubscriptionExpired: false };
 }
 
 export function getVesselDisplayName(tier: EffectiveTier): string {

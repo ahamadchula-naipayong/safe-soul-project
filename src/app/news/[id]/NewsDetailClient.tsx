@@ -11,11 +11,16 @@ import {
   Compass,
   ChevronLeft,
   ChevronRight,
+  Headphones,
+  Play,
+  Pause,
 } from 'lucide-react';
 import { NewsItem } from '@/types';
 import { NewsContentGate } from '@/components/NewsContentGate';
 import { ArticleActionToolbar } from '@/components/ArticleActionToolbar';
 import { ArticleCoffeeSupport } from '@/components/ArticleCoffeeSupport';
+import { useAudio } from '@/context/AudioContext';
+import { getKorNewsAudioUrl } from '@/lib/korNewsAudioMap';
 
 interface NewsDetailClientProps {
   slugId: string;
@@ -35,6 +40,7 @@ export default function NewsDetailClient({
   const [next, setNext] = useState<NewsItem | null>(initialNext);
   const [loading, setLoading] = useState<boolean>(!initialNews);
   const [notFoundErr, setNotFoundErr] = useState<boolean>(false);
+  const { currentTrack, isPlaying, playTrack, togglePlay } = useAudio();
 
   useEffect(() => {
     // Determine target slug from URL pathname (supports Cloudflare Pages dynamic rewrite /news/<slug>)
@@ -110,6 +116,29 @@ export default function NewsDetailClient({
     );
   }
 
+  const newsAudioUrl =
+    (news as NewsItem & { audioUrl?: string }).audioUrl ||
+    getKorNewsAudioUrl(news.korNo) ||
+    getKorNewsAudioUrl(news.slug);
+
+  const newsTrackId = `news-audio-${(news.korNo || news.slug).toLowerCase()}`;
+  const isThisNewsPlaying = currentTrack?.id === newsTrackId && isPlaying;
+
+  const handleToggleNewsAudio = () => {
+    if (!newsAudioUrl) return;
+    if (currentTrack?.id === newsTrackId) {
+      togglePlay();
+    } else {
+      playTrack({
+        id: newsTrackId,
+        title: `${news.korNo}: ${news.title}`,
+        seriesTitle: `เสียงวิเคราะห์ข่าว KOR • ${news.subcategory || 'The Key of Return'}`,
+        audioUrl: newsAudioUrl,
+        coverImage: news.image,
+      });
+    }
+  };
+
   return (
     <div className="relative min-h-screen text-parchment-cream font-thai selection:bg-gold-warm selection:text-slate-abyss">
       {/* 1. FIXED BACKGROUND IMAGE */}
@@ -144,6 +173,20 @@ export default function NewsDetailClient({
             <ArticleActionToolbar
               title={`${news.korNo}: ${news.title}`}
               description={news.topicLead || news.excerpt}
+              audioTrack={
+                newsAudioUrl
+                  ? {
+                      id: newsTrackId,
+                      title: `${news.korNo}: ${news.title}`,
+                      seriesTitle: `เสียงวิเคราะห์ข่าว KOR • ${news.subcategory || 'The Key of Return'}`,
+                      chapterNumber: 1,
+                      audioUrl: newsAudioUrl,
+                      coverImage: news.image,
+                      realm: 'shallow',
+                      isUnlocked: true,
+                    }
+                  : undefined
+              }
             />
 
             <div className="hidden md:flex items-center gap-2">
@@ -189,6 +232,23 @@ export default function NewsDetailClient({
           </a>
 
           <div className="flex flex-wrap items-center gap-3 self-end sm:self-auto">
+            {newsAudioUrl && (
+              <button
+                type="button"
+                onClick={handleToggleNewsAudio}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl gold-bevel-button text-slate-abyss text-xs font-bold shadow-gold-sm transition hover:scale-105 active:scale-95 cursor-pointer"
+                title={`เปิดฟังเสียงวิเคราะห์ข่าว ${news.korNo}`}
+              >
+                {isThisNewsPlaying ? (
+                  <Pause className="w-4 h-4 fill-current" />
+                ) : (
+                  <Play className="w-4 h-4 fill-current" />
+                )}
+                <Headphones className="w-3.5 h-3.5" />
+                <span>{isThisNewsPlaying ? 'กำลังเล่นเสียงข่าว (หยุด)' : 'เปิดฟังเสียงข่าวนี้'}</span>
+              </button>
+            )}
+
             {news.video && (
               <a
                 href={news.video}
