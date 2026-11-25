@@ -19,4 +19,5 @@ bucket_name = "fitrah-shield-media"
 [vars]
 NEXT_PUBLIC_SITE_URL = "https://thefitrahshield.hardynaipayong.cloud"
 NEXT_PUBLIC_AUDIO_BASE_URL = "https://pub-f97e75c998b047ada96253d539c8f805.r2.dev"
+NEXT_PUBLIC_DISCORD_INVITE_URL = "https://discord.gg/YMHttezcdr"
 EMAIL_FROM = "The Fitrah Shield <sanctuary@thefitrahshield.hardynaipayong.cloud>"

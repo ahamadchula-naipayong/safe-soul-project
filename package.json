@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "co-admin:sync": "node scripts/co-admin-sync.mjs"
+    "co-admin:sync": "node scripts/co-admin-sync.mjs",
+    "discord:setup": "node scripts/discord-setup.mjs",
+    "discord:sync": "node scripts/discord-sync.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.5.1",

@@ -31,10 +31,15 @@ export function Footer() {
             </p>
 
             <div className="flex items-center gap-3 pt-2 text-xs text-parchment-muted">
-              <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-deep/60 border border-gold/20">
+              <a
+                href={process.env.NEXT_PUBLIC_DISCORD_INVITE_URL || 'https://discord.gg/YMHttezcdr'}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-emerald-deep/60 hover:bg-indigo-950/70 border border-gold/20 hover:border-indigo-400/50 text-parchment-cream transition"
+              >
                 <MessageSquare className="w-3.5 h-3.5 text-indigo-400" />
                 <span>Discord Community</span>
-              </span>
+              </a>
             </div>
           </div>
 

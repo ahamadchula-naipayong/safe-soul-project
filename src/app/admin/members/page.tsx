@@ -25,6 +25,8 @@ import {
   Mail,
   Save,
   ExternalLink,
+  MessageSquare,
+  RefreshCw,
 } from 'lucide-react';
 
 export default function AdminMembersPage() {
@@ -48,6 +50,7 @@ export default function AdminMembersPage() {
   const [editingMember, setEditingMember] = useState<Partial<Member> | null>(null);
   const [isNewMember, setIsNewMember] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [syncingDiscordId, setSyncingDiscordId] = useState<string | null>(null);
 
   const importInputRef = useRef<HTMLInputElement>(null);
 
@@ -90,12 +93,35 @@ export default function AdminMembersPage() {
 
     if (search.trim()) {
       const q = search.trim().toLowerCase();
-      const hay = `#${m.memberNumber} ${m.username} ${m.name} ${m.email} ${m.phone || ''} ${m.notes || ''}`.toLowerCase();
+      const hay = `#${m.memberNumber} ${m.username} ${m.name} ${m.email} ${m.phone || ''} ${m.discordUsername || ''} ${m.notes || ''}`.toLowerCase();
       if (!hay.includes(q)) return false;
     }
 
     return true;
   });
+
+  const handleSyncDiscordRole = async (member: Member) => {
+    if (!member.discordUserId) return;
+    setSyncingDiscordId(member.id);
+    try {
+      const res = await fetch('/api/admin/members', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: member.id }),
+      });
+      const data = await res.json();
+      if (data.success && data.discordSync?.ok) {
+        showToast(`ซิงค์ยศ Discord สำหรับ ${member.discordUsername || member.username} เรียบร้อยแล้ว`);
+        loadMembers();
+      } else {
+        showToast(data.discordSync?.error || data.error || 'ซิงค์ยศ Discord ไม่สำเร็จ');
+      }
+    } catch {
+      showToast('เกิดข้อผิดพลาดในการซิงค์ยศ Discord');
+    } finally {
+      setSyncingDiscordId(null);
+    }
+  };
 
   const handleVerifySlip = async (member: Member) => {
     try {
@@ -109,7 +135,8 @@ export default function AdminMembersPage() {
       });
       const data = await res.json();
       if (data.success) {
-        showToast(`อนุมัติสลิปและเปิดสิทธิ์ให้ Member #${member.memberNumber} เรียบร้อยแล้ว`);
+        const discordSuffix = data.discordSync?.ok ? ' + อัปเดตยศ Discord แล้ว' : '';
+        showToast(`อนุมัติสลิปและเปิดสิทธิ์ให้ Member #${member.memberNumber} เรียบร้อยแล้ว${discordSuffix}`);
         setPreviewSlipMember(null);
         loadMembers();
       }
@@ -396,6 +423,7 @@ export default function AdminMembersPage() {
                   <th className="py-3.5 px-4">ชื่อสมาชิก / Username</th>
                   <th className="py-3.5 px-4">เบอร์โทรศัพท์ & อีเมล</th>
                   <th className="py-3.5 px-4">หมวดหมู่ระดับเรือ (Category)</th>
+                  <th className="py-3.5 px-4">Discord</th>
                   <th className="py-3.5 px-4">การชำระเงิน & สลิป</th>
                   <th className="py-3.5 px-4">วันที่ลงทะเบียน</th>
                   <th className="py-3.5 px-4 text-right">จัดการ</th>
@@ -404,13 +432,13 @@ export default function AdminMembersPage() {
               <tbody className="divide-y divide-emerald-border/40">
                 {loading ? (
                   <tr>
-                    <td colSpan={7} className="py-12 text-center text-parchment-muted">
+                    <td colSpan={8} className="py-12 text-center text-parchment-muted">
                       กำลังโหลดตารางข้อมูลสมาชิก...
                     </td>
                   </tr>
                 ) : filteredMembers.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-12 text-center text-parchment-muted">
+                    <td colSpan={8} className="py-12 text-center text-parchment-muted">
                       ไม่พบข้อมูลสมาชิกในหมวดหมู่นี้
                     </td>
                   </tr>
@@ -455,6 +483,30 @@ export default function AdminMembersPage() {
                       </td>
 
                       <td className="py-4 px-4">{renderTierBadge(m.tier)}</td>
+
+                      <td className="py-4 px-4">
+                        {m.discordUserId ? (
+                          <div className="space-y-1.5">
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-950/70 border border-indigo-400/40 text-indigo-200 text-[11px] font-mono">
+                              <MessageSquare className="w-3 h-3 text-indigo-400 shrink-0" />
+                              <span className="max-w-[140px] truncate">{m.discordUsername || m.discordUserId}</span>
+                            </span>
+                            <div>
+                              <button
+                                type="button"
+                                disabled={syncingDiscordId === m.id}
+                                onClick={() => handleSyncDiscordRole(m)}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-surface hover:bg-emerald-light border border-gold-warm/30 text-gold-light text-[10px] font-semibold transition disabled:opacity-50"
+                              >
+                                <RefreshCw className={`w-2.5 h-2.5 ${syncingDiscordId === m.id ? 'animate-spin' : ''}`} />
+                                <span>ซิงค์ยศ</span>
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-[11px] text-parchment-muted/60">ยังไม่เชื่อม</span>
+                        )}
+                      </td>
 
                       <td className="py-4 px-4 space-y-1.5">
                         <div className="flex items-center gap-2">

@@ -29,3 +29,15 @@ description: Co-Admin Skill and Pipeline for managing The Fitrah Shield (Safe So
    - รัน `node scripts/upload-r2.mjs`
 5. **กรณีซิงค์ทุกอย่างและ Deploy ขึ้นเว็บไซต์จริงในคำสั่งเดียว:**
    - รัน `npm run co-admin:sync` (หรือ `node scripts/co-admin-sync.mjs`)
+
+## 3. การจัดการและซิงค์เนื้อหาขึ้น Discord (Hybrid Summary Cards & OAuth2)
+- โครงสร้างสิทธิ์บน Discord แบ่งเป็น 2 ระดับหลัก (`Free` vs `Member`) พร้อมยศสีทอง `Founding 100` (สิทธิ์ห้องเทียบเท่า `Member`)
+- **ตั้งค่า/อัปเดตโครงสร้างห้อง ยศ ลำดับยศ และลิงก์เชิญถาวรบน Discord:**
+  - รัน `npm run discord:setup` (หรือ `node scripts/discord-setup.mjs`)
+- **ซิงค์เนื้อหาแบบลูกผสม (การ์ดสรุป + ลิงก์กลับเว็บ) จากทะเลน้ำตื้น, ทะเลน้ำลึก (ตามตารางเผยแพร่ W1–W23), และข่าวจาก Excel:**
+  - ทดสอบก่อนโพสต์จริง: `node scripts/discord-sync.mjs --dry-run`
+  - ซิงค์โพสต์จริงขึ้น Discord: `npm run discord:sync` (ค่าเริ่มต้นดึงข่าวล่าสุดหมวดละ 10 รายการ ปรับได้ด้วย `--news-limit=N` และถูกรวมใน `npm run co-admin:sync` แล้ว)
+  - ไฟล์เก็บสถานะ IDs, ลิงก์เชิญ และประวัติการซิงค์: `data/discord_state.json` (ห้ามเก็บ Secret/Token ในไฟล์นี้)
+- **ระบบเชื่อมบัญชีสมาชิกเว็บ ↔ Discord อัตโนมัติ (Cloudflare Pages Functions + D1):**
+  - สมาชิกกดปุ่ม **"เชื่อมต่อ Discord & รับยศอัตโนมัติ"** ได้ในหน้า `/login` (`GET /api/discord/connect` → `GET /api/discord/callback`)
+  - เมื่อแอดมินอนุมัติสลิปหรือเปลี่ยนแพ็กเกจผ่าน `/admin` (`PATCH /api/admin/members` หรือ Gemini Co-Admin `update_member`) ระบบจะซิงค์ยศ `Free`, `Member`, และ `Founding 100` บน Discord ให้โดยอัตโนมัติ

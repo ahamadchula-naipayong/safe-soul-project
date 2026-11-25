@@ -12,6 +12,14 @@ interface Env {
   EMAIL_FROM?: string;
   GEMINI_API_KEY?: string;
   GOOGLE_API_KEY?: string;
+  NEXT_PUBLIC_SITE_URL?: string;
+  DISCORD_CLIENT_ID?: string;
+  DISCORD_CLIENT_SECRET?: string;
+  DISCORD_BOT_TOKEN?: string;
+  DISCORD_GUILD_ID?: string;
+  DISCORD_ROLE_FREE?: string;
+  DISCORD_ROLE_MEMBER?: string;
+  DISCORD_ROLE_FOUNDING_100?: string;
 }
 
 async function fetchGoogleDriveTextEdge(rawUrl: string): Promise<{ ok: boolean; text: string; sourceType: string }> {
@@ -208,10 +216,169 @@ function rowToMember(r: any): Member {
     billingCycle: r.billing_cycle || 'free',
     ebookClaimed: Boolean(r.ebook_claimed),
     ebookClaimedAt: r.ebook_claimed_at || undefined,
+    discordUserId: r.discord_user_id || undefined,
+    discordUsername: r.discord_username || undefined,
+    discordLinkedAt: r.discord_linked_at || undefined,
     notes: r.notes || '',
     createdAt: r.created_at,
     updatedAt: r.updated_at || undefined,
   };
+}
+
+function buildMemberCookie(safeMember: Omit<Member, 'password'>): string {
+  return `safesoul_member=${encodeURIComponent(JSON.stringify(safeMember))}; Path=/; Max-Age=${60 * 60 * 24 * 30}; SameSite=Lax`;
+}
+
+function resolveDiscordRolesForMember(
+  env: Env,
+  member: Member
+): { desiredRoles: string[]; managedRoles: string[] } {
+  const freeRole = env.DISCORD_ROLE_FREE;
+  const memberRole = env.DISCORD_ROLE_MEMBER;
+  const foundingRole = env.DISCORD_ROLE_FOUNDING_100;
+  const managedRoles = Array.from(
+    new Set([freeRole, memberRole, foundingRole].filter(Boolean) as string[])
+  );
+
+  const { effectiveTier } = getEffectiveMemberTier(member);
+  let desired: (string | undefined)[] = [];
+  if (effectiveTier === 'founding_tier_3') {
+    desired = [memberRole, foundingRole];
+  } else if (effectiveTier === 'supporter_tier_2') {
+    desired = [memberRole];
+  } else {
+    desired = [freeRole];
+  }
+
+  return {
+    desiredRoles: Array.from(new Set(desired.filter(Boolean) as string[])),
+    managedRoles,
+  };
+}
+
+async function syncDiscordMemberRolesEdge(
+  env: Env,
+  member: Member,
+  oauthAccessToken?: string
+): Promise<{
+  ok: boolean;
+  joinedServer: boolean;
+  assignedRoles: string[];
+  error?: string;
+}> {
+  const botToken = env.DISCORD_BOT_TOKEN;
+  const guildId = env.DISCORD_GUILD_ID;
+  const discordUserId = member.discordUserId;
+
+  if (!botToken || !guildId || !discordUserId) {
+    return {
+      ok: false,
+      joinedServer: false,
+      assignedRoles: [],
+      error: 'Missing Discord Bot credentials or linked Discord User ID',
+    };
+  }
+
+  const { desiredRoles, managedRoles } = resolveDiscordRolesForMember(env, member);
+  const botHeaders = {
+    Authorization: `Bot ${botToken}`,
+    'Content-Type': 'application/json',
+  };
+
+  let joinedServer = false;
+
+  try {
+    if (oauthAccessToken) {
+      const joinRes = await fetch(
+        `https://discord.com/api/v10/guilds/${guildId}/members/${discordUserId}`,
+        {
+          method: 'PUT',
+          headers: botHeaders,
+          body: JSON.stringify({
+            access_token: oauthAccessToken,
+            roles: desiredRoles,
+          }),
+        }
+      );
+
+      if (joinRes.status === 201) {
+        return {
+          ok: true,
+          joinedServer: true,
+          assignedRoles: desiredRoles,
+        };
+      }
+
+      if (!joinRes.ok && joinRes.status !== 204) {
+        const errText = await joinRes.text();
+        return {
+          ok: false,
+          joinedServer: false,
+          assignedRoles: [],
+          error: `Discord guild join failed (${joinRes.status}): ${errText}`,
+        };
+      }
+      joinedServer = true;
+    }
+
+    for (const roleId of desiredRoles) {
+      const addRes = await fetch(
+        `https://discord.com/api/v10/guilds/${guildId}/members/${discordUserId}/roles/${roleId}`,
+        {
+          method: 'PUT',
+          headers: botHeaders,
+        }
+      );
+      if (!addRes.ok && addRes.status !== 204) {
+        const errText = await addRes.text();
+        return {
+          ok: false,
+          joinedServer,
+          assignedRoles: [],
+          error: `Discord add role failed (${addRes.status}): ${errText}`,
+        };
+      }
+    }
+
+    const desiredSet = new Set(desiredRoles);
+    for (const staleRoleId of managedRoles) {
+      if (desiredSet.has(staleRoleId)) continue;
+      await fetch(
+        `https://discord.com/api/v10/guilds/${guildId}/members/${discordUserId}/roles/${staleRoleId}`,
+        {
+          method: 'DELETE',
+          headers: botHeaders,
+        }
+      );
+    }
+
+    return {
+      ok: true,
+      joinedServer,
+      assignedRoles: desiredRoles,
+    };
+  } catch (err: any) {
+    return {
+      ok: false,
+      joinedServer,
+      assignedRoles: [],
+      error: err?.message || 'Discord role sync error',
+    };
+  }
+}
+
+async function getAuthenticatedD1Member(request: Request, env: Env): Promise<Member | null> {
+  const cookies = parseCookies(request.headers.get('Cookie'));
+  if (!cookies.safesoul_member || !env.DB) return null;
+  let parsed: any = null;
+  try {
+    parsed = JSON.parse(cookies.safesoul_member);
+  } catch {
+    return null;
+  }
+  if (!parsed?.id) return null;
+  const row = await env.DB.prepare('SELECT * FROM members WHERE id = ?').bind(parsed.id).first();
+  return row ? rowToMember(row) : null;
 }
 
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
@@ -563,7 +730,11 @@ export const onRequest = async (context: {
         .run();
 
       const updated = await env.DB.prepare('SELECT * FROM members WHERE id = ?').bind(memberId).first();
-      const { password: _, ...safe } = rowToMember(updated);
+      const updatedMember = rowToMember(updated);
+      if (updatedMember.discordUserId) {
+        await syncDiscordMemberRolesEdge(env, updatedMember);
+      }
+      const { password: _, ...safe } = updatedMember;
       return jsonResponse(
         { success: true, member: safe },
         200,
@@ -866,7 +1037,12 @@ export const onRequest = async (context: {
           )
           .run();
         const updated = await env.DB.prepare('SELECT * FROM members WHERE id = ?').bind(body.id).first();
-        return jsonResponse({ success: true, member: rowToMember(updated) });
+        const updatedMember = rowToMember(updated);
+        let discordSync: any = null;
+        if (updatedMember.discordUserId) {
+          discordSync = await syncDiscordMemberRolesEdge(env, updatedMember);
+        }
+        return jsonResponse({ success: true, member: updatedMember, discordSync });
       }
 
       if (method === 'DELETE') {
@@ -1349,6 +1525,13 @@ export const onRequest = async (context: {
                 data.id
               )
               .run();
+            const updatedRow = await env.DB.prepare('SELECT * FROM members WHERE id = ?').bind(data.id).first();
+            if (updatedRow) {
+              const updatedMember = rowToMember(updatedRow);
+              if (updatedMember.discordUserId) {
+                await syncDiscordMemberRolesEdge(env, updatedMember);
+              }
+            }
             return jsonResponse({
               success: true,
               message: `อัปเดตสิทธิ์และสถานะสมาชิก (${data.id}) ลงฐานข้อมูล Cloudflare D1 เรียบร้อยแล้ว`,
@@ -1441,6 +1624,189 @@ export const onRequest = async (context: {
           reply: geminiRes.reply,
         });
       }
+    }
+
+    // -----------------------------------------------------------------------
+    // 10. Discord OAuth2 Member Linking & Role Sync
+    // -----------------------------------------------------------------------
+    if (path === '/api/discord/connect' && method === 'GET') {
+      const origin = url.origin;
+      const member = await getAuthenticatedD1Member(request, env);
+      if (!member) {
+        return Response.redirect(`${origin}/login?discord=login_required`, 302);
+      }
+
+      if (!env.DISCORD_CLIENT_ID) {
+        return Response.redirect(
+          `${origin}/login?discord=error&reason=${encodeURIComponent('ยังไม่ได้ตั้งค่า DISCORD_CLIENT_ID บนเซิร์ฟเวอร์')}`,
+          302
+        );
+      }
+
+      const nonce = crypto.randomUUID();
+      const stateValue = `${member.id}:${nonce}`;
+      const redirectUri = `${origin}/api/discord/callback`;
+      const authUrl = new URL('https://discord.com/oauth2/authorize');
+      authUrl.searchParams.set('client_id', env.DISCORD_CLIENT_ID);
+      authUrl.searchParams.set('response_type', 'code');
+      authUrl.searchParams.set('redirect_uri', redirectUri);
+      authUrl.searchParams.set('scope', 'identify guilds.join');
+      authUrl.searchParams.set('state', stateValue);
+
+      const isHttps = origin.startsWith('https://');
+      const stateCookie = `discord_oauth_state=${encodeURIComponent(stateValue)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=600${isHttps ? '; Secure' : ''}`;
+      const headers = new Headers({ Location: authUrl.toString() });
+      headers.append('Set-Cookie', stateCookie);
+      return new Response(null, { status: 302, headers });
+    }
+
+    if (path === '/api/discord/callback' && method === 'GET') {
+      const origin = url.origin;
+      const isHttps = origin.startsWith('https://');
+      const clearStateCookie = `discord_oauth_state=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${isHttps ? '; Secure' : ''}`;
+      const redirectWithError = (reason: string) => {
+        const headers = new Headers({
+          Location: `${origin}/login?discord=error&reason=${encodeURIComponent(reason)}`,
+        });
+        headers.append('Set-Cookie', clearStateCookie);
+        return new Response(null, { status: 302, headers });
+      };
+
+      const oauthError = url.searchParams.get('error');
+      if (oauthError) {
+        return redirectWithError(`ยกเลิกการเชื่อมต่อ Discord (${oauthError})`);
+      }
+
+      const code = url.searchParams.get('code');
+      const stateParam = url.searchParams.get('state');
+      const cookies = parseCookies(request.headers.get('Cookie'));
+      const savedState = cookies.discord_oauth_state;
+
+      if (!code || !stateParam || !savedState || stateParam !== savedState) {
+        return redirectWithError('รหัสยืนยันความปลอดภัย OAuth State ไม่ตรงกัน กรุณาลองใหม่อีกครั้ง');
+      }
+
+      const memberId = stateParam.split(':')[0];
+      if (!memberId || !env.DB) {
+        return redirectWithError('ไม่พบข้อมูลบัญชีสมาชิกในระบบ');
+      }
+
+      if (!env.DISCORD_CLIENT_ID || !env.DISCORD_CLIENT_SECRET) {
+        return redirectWithError('ระบบยังไม่ได้ตั้งค่า Discord Client ID / Secret');
+      }
+
+      const tokenRes = await fetch('https://discord.com/api/v10/oauth2/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          client_id: env.DISCORD_CLIENT_ID,
+          client_secret: env.DISCORD_CLIENT_SECRET,
+          grant_type: 'authorization_code',
+          code,
+          redirect_uri: `${origin}/api/discord/callback`,
+        }),
+      });
+
+      const tokenData: any = await tokenRes.json();
+      if (!tokenRes.ok || !tokenData?.access_token) {
+        return redirectWithError('ไม่สามารถแลกโทเค็นกับ Discord ได้ กรุณาลองใหม่');
+      }
+
+      const userRes = await fetch('https://discord.com/api/v10/users/@me', {
+        headers: { Authorization: `Bearer ${tokenData.access_token}` },
+      });
+      const discordUser: any = await userRes.json();
+      if (!userRes.ok || !discordUser?.id) {
+        return redirectWithError('ไม่สามารถดึงข้อมูลบัญชี Discord ได้');
+      }
+
+      const displayUsername = discordUser.global_name
+        ? `${discordUser.global_name} (@${discordUser.username})`
+        : `@${discordUser.username}`;
+      const now = new Date().toISOString();
+
+      await env.DB.prepare(
+        `UPDATE members SET discord_user_id = ?, discord_username = ?, discord_linked_at = ?, updated_at = ? WHERE id = ?`
+      )
+        .bind(discordUser.id, displayUsername, now, now, memberId)
+        .run();
+
+      const updatedRow = await env.DB.prepare('SELECT * FROM members WHERE id = ?').bind(memberId).first();
+      if (!updatedRow) {
+        return redirectWithError('ไม่พบข้อมูลสมาชิกหลังอัปเดต');
+      }
+
+      const updatedMember = rowToMember(updatedRow);
+      const syncResult = await syncDiscordMemberRolesEdge(env, updatedMember, tokenData.access_token);
+      const { password: _, ...safe } = updatedMember;
+
+      const targetLocation = syncResult.ok
+        ? `${origin}/login?discord=connected#discord-sanctuary`
+        : `${origin}/login?discord=connected&sync_warning=${encodeURIComponent(syncResult.error || 'กรุณาเข้าเซิร์ฟเวอร์แล้วกดซิงค์ยศอีกครั้ง')}#discord-sanctuary`;
+
+      const headers = new Headers({ Location: targetLocation });
+      headers.append('Set-Cookie', clearStateCookie);
+      headers.append('Set-Cookie', buildMemberCookie(safe));
+      return new Response(null, { status: 302, headers });
+    }
+
+    if (path === '/api/discord/sync-me' && method === 'POST') {
+      const member = await getAuthenticatedD1Member(request, env);
+      if (!member) {
+        return jsonResponse({ success: false, error: 'กรุณาเข้าสู่ระบบก่อน' }, 401);
+      }
+      if (!member.discordUserId) {
+        return jsonResponse({ success: false, error: 'ยังไม่ได้เชื่อมต่อบัญชี Discord' }, 400);
+      }
+      const discordSync = await syncDiscordMemberRolesEdge(env, member);
+      const { password: _, ...safe } = member;
+      return jsonResponse(
+        {
+          success: discordSync.ok,
+          discordSync,
+          member: safe,
+          error: discordSync.ok ? undefined : discordSync.error,
+        },
+        discordSync.ok ? 200 : 400,
+        { 'Set-Cookie': buildMemberCookie(safe) }
+      );
+    }
+
+    if (path === '/api/discord/disconnect' && method === 'POST') {
+      const member = await getAuthenticatedD1Member(request, env);
+      if (!member || !env.DB) {
+        return jsonResponse({ success: false, error: 'กรุณาเข้าสู่ระบบก่อน' }, 401);
+      }
+
+      if (member.discordUserId && env.DISCORD_BOT_TOKEN && env.DISCORD_GUILD_ID) {
+        const { managedRoles } = resolveDiscordRolesForMember(env, member);
+        for (const roleId of managedRoles) {
+          await fetch(
+            `https://discord.com/api/v10/guilds/${env.DISCORD_GUILD_ID}/members/${member.discordUserId}/roles/${roleId}`,
+            {
+              method: 'DELETE',
+              headers: { Authorization: `Bot ${env.DISCORD_BOT_TOKEN}` },
+            }
+          ).catch(() => {});
+        }
+      }
+
+      const now = new Date().toISOString();
+      await env.DB.prepare(
+        `UPDATE members SET discord_user_id = NULL, discord_username = NULL, discord_linked_at = NULL, updated_at = ? WHERE id = ?`
+      )
+        .bind(now, member.id)
+        .run();
+
+      const updatedRow = await env.DB.prepare('SELECT * FROM members WHERE id = ?').bind(member.id).first();
+      const updatedMember = updatedRow ? rowToMember(updatedRow) : { ...member, discordUserId: undefined, discordUsername: undefined, discordLinkedAt: undefined };
+      const { password: _, ...safe } = updatedMember;
+
+      return jsonResponse(
+        { success: true, member: safe },
+        200,
+        { 'Set-Cookie': buildMemberCookie(safe) }
+      );
     }
 
     return jsonResponse({ error: `Not found: ${path}` }, 404);

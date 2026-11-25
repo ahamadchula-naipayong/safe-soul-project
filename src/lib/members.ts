@@ -78,7 +78,7 @@ export function saveMembers(members: Member[]): void {
     Promise.all(
       members.map((m) =>
         executeD1Query(
-          `INSERT OR REPLACE INTO members (id, member_number, username, email, phone, password, name, tier, role, payment_status, payment_slip_url, payment_amount, billing_cycle, ebook_claimed, ebook_claimed_at, notes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          `INSERT INTO members (id, member_number, username, email, phone, password, name, tier, role, payment_status, payment_slip_url, payment_amount, billing_cycle, ebook_claimed, ebook_claimed_at, discord_user_id, discord_username, discord_linked_at, notes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET member_number=excluded.member_number, username=excluded.username, email=excluded.email, phone=excluded.phone, password=excluded.password, name=excluded.name, tier=excluded.tier, role=excluded.role, payment_status=excluded.payment_status, payment_slip_url=excluded.payment_slip_url, payment_amount=excluded.payment_amount, billing_cycle=excluded.billing_cycle, ebook_claimed=excluded.ebook_claimed, ebook_claimed_at=excluded.ebook_claimed_at, discord_user_id=COALESCE(excluded.discord_user_id, members.discord_user_id), discord_username=COALESCE(excluded.discord_username, members.discord_username), discord_linked_at=COALESCE(excluded.discord_linked_at, members.discord_linked_at), notes=excluded.notes, updated_at=excluded.updated_at`,
           [
             m.id,
             m.memberNumber,
@@ -95,6 +95,9 @@ export function saveMembers(members: Member[]): void {
             m.billingCycle || 'free',
             m.ebookClaimed ? 1 : 0,
             m.ebookClaimedAt || null,
+            m.discordUserId || null,
+            m.discordUsername || null,
+            m.discordLinkedAt || null,
             m.notes || '',
             m.createdAt,
             m.updatedAt || null,

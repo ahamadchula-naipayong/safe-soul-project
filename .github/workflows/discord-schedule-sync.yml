@@ -1,0 +1,57 @@
+name: Discord Scheduled Content Sync (W1-W23)
+
+on:
+  schedule:
+    # Runs daily at 05:05 ICT (22:05 UTC), 5 minutes after scheduled 05:00 ICT chapter releases
+    - cron: '5 22 * * *'
+  workflow_dispatch:
+    inputs:
+      update_existing:
+        description: 'Update already-posted Discord summary cards'
+        required: false
+        default: 'false'
+        type: boolean
+
+jobs:
+  discord-sync:
+    runs-on: ubuntu-latest
+    name: Sync Released Chapters & Latest News to Discord
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Check Discord secrets
+        id: check_secrets
+        env:
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_GUILD_ID: ${{ secrets.DISCORD_GUILD_ID }}
+        run: |
+          if [ -z "$DISCORD_BOT_TOKEN" ] || [ -z "$DISCORD_GUILD_ID" ]; then
+            echo "ready=false" >> $GITHUB_OUTPUT
+            echo "⚠️ DISCORD_BOT_TOKEN or DISCORD_GUILD_ID secret is not set in GitHub Actions; skipping sync."
+          else
+            echo "ready=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Install dependencies
+        if: steps.check_secrets.outputs.ready == 'true'
+        run: npm ci
+
+      - name: Run Discord Hybrid Content Sync
+        if: steps.check_secrets.outputs.ready == 'true'
+        env:
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_GUILD_ID: ${{ secrets.DISCORD_GUILD_ID }}
+          NEXT_PUBLIC_SITE_URL: https://thefitrahshield.hardynaipayong.cloud
+        run: |
+          if [ "${{ inputs.update_existing }}" = "true" ]; then
+            node scripts/discord-sync.mjs --update-existing
+          else
+            node scripts/discord-sync.mjs
+          fi

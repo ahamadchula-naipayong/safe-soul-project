@@ -22,6 +22,9 @@ export interface Member {
   billingCycle?: 'free' | 'monthly' | 'yearly' | 'lifetime';
   ebookClaimed?: boolean;
   ebookClaimedAt?: string;
+  discordUserId?: string;
+  discordUsername?: string;
+  discordLinkedAt?: string;
   notes?: string;
   createdAt: string;
   updatedAt?: string;

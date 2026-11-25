@@ -5,7 +5,7 @@
  *
  * Usage:
  *   npm run co-admin:sync
- *   node scripts/co-admin-sync.mjs [--skip-news] [--skip-d1] [--skip-deploy]
+ *   node scripts/co-admin-sync.mjs [--skip-news] [--skip-d1] [--skip-deploy] [--skip-discord]
  */
 import { execSync } from 'child_process';
 
@@ -22,15 +22,19 @@ async function main() {
   console.log('🛡️ เริ่มต้นกระบวนการ THE FITRAH SHIELD CO-ADMIN PIPELINE...');
 
   if (!args.has('--skip-news')) {
-    runStep('ขั้นตอนที่ 1/3: ซิงค์ตารางข่าว Assets/News Deepdive.xlsx ขึ้น Cloudflare R2', 'node scripts/build-news-r2.mjs');
+    runStep('ขั้นตอนที่ 1/4: ซิงค์ตารางข่าว Assets/News Deepdive.xlsx ขึ้น Cloudflare R2', 'node scripts/build-news-r2.mjs');
   }
 
   if (!args.has('--skip-d1')) {
-    runStep('ขั้นตอนที่ 2/3: ซิงค์ข้อมูลสมาชิกและสินค้า (data/*.json) ขึ้นฐานข้อมูล Cloudflare D1', 'node scripts/seed-d1.mjs');
+    runStep('ขั้นตอนที่ 2/4: ซิงค์ข้อมูลสมาชิกและสินค้า (data/*.json) ขึ้นฐานข้อมูล Cloudflare D1', 'node scripts/seed-d1.mjs');
   }
 
   if (!args.has('--skip-deploy')) {
-    runStep('ขั้นตอนที่ 3/3: Build และ Deploy เว็บไซต์ขึ้น Cloudflare Pages (the-fitrah-shield)', 'node scripts/deploy-cloudflare.mjs');
+    runStep('ขั้นตอนที่ 3/4: Build และ Deploy เว็บไซต์ขึ้น Cloudflare Pages (the-fitrah-shield)', 'node scripts/deploy-cloudflare.mjs');
+  }
+
+  if (!args.has('--skip-discord')) {
+    runStep('ขั้นตอนที่ 4/4: ซิงค์บทความและข่าวใหม่ขึ้น Discord Forum Channels', 'node scripts/discord-sync.mjs');
   }
 
   console.log('\n🎉 กระบวนการ Co-Admin Sync & Deploy เสร็จสมบูรณ์ครบทุกขั้นตอน!');

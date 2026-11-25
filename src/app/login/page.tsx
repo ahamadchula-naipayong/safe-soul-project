@@ -23,6 +23,10 @@ import {
   FileText,
   Anchor,
   Clock,
+  MessageSquare,
+  RefreshCw,
+  Unlink,
+  ExternalLink,
 } from 'lucide-react';
 
 const TIER_CATEGORIES: {
@@ -61,7 +65,13 @@ const TIER_CATEGORIES: {
 
 function LoginContent() {
   const searchParams = useSearchParams();
-  const { member, isLoggedIn, login, register, logout } = useAuth();
+  const { member, isLoggedIn, login, register, logout, refreshSession } = useAuth();
+
+  const [discordStatusBanner, setDiscordStatusBanner] = useState<{
+    type: 'success' | 'warning' | 'error';
+    text: string;
+  } | null>(null);
+  const [discordBusy, setDiscordBusy] = useState(false);
 
   const [activeTab, setActiveTab] = useState<'login' | 'register'>('login');
 
@@ -96,7 +106,85 @@ function LoginContent() {
       setRegTier(tierParam);
       if (!tabParam) setActiveTab('register');
     }
+
+    const discordParam = searchParams.get('discord');
+    const reasonParam = searchParams.get('reason');
+    const syncWarning = searchParams.get('sync_warning');
+    if (discordParam === 'connected') {
+      setDiscordStatusBanner({
+        type: syncWarning ? 'warning' : 'success',
+        text: syncWarning
+          ? `เชื่อมต่อบัญชี Discord สำเร็จแล้ว! (${syncWarning})`
+          : 'เชื่อมต่อบัญชี Discord และรับยศสมาชิกตามระดับเรือเรียบร้อยแล้ว!',
+      });
+      refreshSession();
+    } else if (discordParam === 'login_required') {
+      setDiscordStatusBanner({
+        type: 'warning',
+        text: 'กรุณาเข้าสู่ระบบบัญชีสมาชิกเว็บไซต์ก่อนกดเชื่อมต่อ Discord เพื่อรับยศอัตโนมัติ',
+      });
+    } else if (discordParam === 'error') {
+      setDiscordStatusBanner({
+        type: 'error',
+        text: reasonParam || 'เกิดข้อผิดพลาดในการเชื่อมต่อ Discord กรุณาลองใหม่อีกครั้ง',
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
+
+  const handleDiscordSyncMe = async () => {
+    setDiscordBusy(true);
+    try {
+      const res = await fetch('/api/discord/sync-me', { method: 'POST' });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setDiscordStatusBanner({
+          type: 'success',
+          text: 'อัปเดตยศ Discord ตามระดับสมาชิกล่าสุดเรียบร้อยแล้ว!',
+        });
+        await refreshSession();
+      } else {
+        setDiscordStatusBanner({
+          type: 'error',
+          text: data.error || 'ไม่สามารถซิงค์ยศได้ กรุณาตรวจสอบว่าคุณเข้า Discord Server แล้ว',
+        });
+      }
+    } catch {
+      setDiscordStatusBanner({
+        type: 'error',
+        text: 'ไม่สามารถเชื่อมต่อระบบซิงค์ยศได้ กรุณาลองใหม่',
+      });
+    } finally {
+      setDiscordBusy(false);
+    }
+  };
+
+  const handleDiscordDisconnect = async () => {
+    setDiscordBusy(true);
+    try {
+      const res = await fetch('/api/discord/disconnect', { method: 'POST' });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setDiscordStatusBanner({
+          type: 'warning',
+          text: 'ยกเลิกการเชื่อมต่อบัญชี Discord เรียบร้อยแล้ว',
+        });
+        await refreshSession();
+      } else {
+        setDiscordStatusBanner({
+          type: 'error',
+          text: data.error || 'ไม่สามารถยกเลิกการเชื่อมต่อได้',
+        });
+      }
+    } catch {
+      setDiscordStatusBanner({
+        type: 'error',
+        text: 'เกิดข้อผิดพลาดในการยกเลิกการเชื่อมต่อ',
+      });
+    } finally {
+      setDiscordBusy(false);
+    }
+  };
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -305,6 +393,121 @@ function LoginContent() {
                 </div>
               </div>
 
+              {/* Discord Sanctuary Integration Card */}
+              <div
+                id="discord-sanctuary"
+                className="p-5 sm:p-6 rounded-2xl bg-[#0B1726]/80 border border-indigo-400/35 space-y-4 shadow-lg"
+              >
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-400/40 flex items-center justify-center text-indigo-300 shrink-0">
+                      <MessageSquare className="w-5 h-5" />
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="text-sm sm:text-base font-bold text-parchment-cream">
+                          Discord Sanctuary • ชุมชนเสวนาและคลังสรุปบทเรียน
+                        </h3>
+                        {member.discordUserId ? (
+                          <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-[10px] font-semibold">
+                            เชื่อมต่อแล้ว
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-full bg-white/10 border border-white/15 text-parchment-muted text-[10px]">
+                            ยังไม่เชื่อมต่อ
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-parchment-muted leading-relaxed">
+                        สิทธิ์ยศ Discord ของคุณ:{' '}
+                        <strong className="text-gold-light">
+                          {member.paymentStatus === 'pending_verification' && member.tier !== 'free_tier_1'
+                            ? 'Free (ชั่วคราวระหว่างรอแอดมินตรวจสลิป)'
+                            : member.tier === 'founding_tier_3'
+                            ? 'Member + ยศสีทอง Founding 100'
+                            : member.tier === 'supporter_tier_2'
+                            ? 'Member (ปลดล็อกทะเลน้ำลึก & ข่าว Deepdive)'
+                            : 'Free (ทะเลน้ำตื้น 7 เกาะ & ข่าวเปิด)'}
+                        </strong>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {discordStatusBanner && (
+                  <div
+                    className={`p-3 rounded-xl border text-xs ${
+                      discordStatusBanner.type === 'success'
+                        ? 'bg-emerald-950/60 border-emerald-400/40 text-emerald-200'
+                        : discordStatusBanner.type === 'warning'
+                        ? 'bg-amber-950/60 border-amber-400/40 text-amber-200'
+                        : 'bg-red-950/60 border-red-400/40 text-red-200'
+                    }`}
+                  >
+                    {discordStatusBanner.text}
+                  </div>
+                )}
+
+                {member.discordUserId ? (
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+                    <div className="text-xs text-parchment-cream/90">
+                      บัญชีที่เชื่อมต่อ:{' '}
+                      <span className="font-mono font-semibold text-indigo-300">
+                        {member.discordUsername || member.discordUserId}
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <a
+                        href={process.env.NEXT_PUBLIC_DISCORD_INVITE_URL || 'https://discord.gg/YMHttezcdr'}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        <span>เข้าสู่ Discord Server</span>
+                      </a>
+                      <button
+                        type="button"
+                        disabled={discordBusy}
+                        onClick={handleDiscordSyncMe}
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-surface hover:bg-emerald-light border border-gold-warm/40 text-gold-light text-xs font-semibold transition disabled:opacity-50"
+                      >
+                        <RefreshCw className={`w-3.5 h-3.5 ${discordBusy ? 'animate-spin' : ''}`} />
+                        <span>ซิงค์ยศล่าสุด</span>
+                      </button>
+                      <button
+                        type="button"
+                        disabled={discordBusy}
+                        onClick={handleDiscordDisconnect}
+                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-red-950/40 hover:bg-red-900/60 border border-red-500/30 text-red-300 text-xs font-medium transition disabled:opacity-50"
+                      >
+                        <Unlink className="w-3.5 h-3.5" />
+                        <span>ยกเลิกการเชื่อมต่อ</span>
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap items-center gap-3 pt-1">
+                    <a
+                      href="/api/discord/connect"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg transition hover:scale-[1.02]"
+                    >
+                      <MessageSquare className="w-4 h-4" />
+                      <span>เชื่อมต่อ Discord &amp; รับยศอัตโนมัติ</span>
+                    </a>
+                    <a
+                      href={process.env.NEXT_PUBLIC_DISCORD_INVITE_URL || 'https://discord.gg/YMHttezcdr'}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-black/40 hover:bg-black/60 border border-indigo-400/30 text-indigo-200 text-xs font-medium transition"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      <span>เปิดดู Discord Server</span>
+                    </a>
+                  </div>
+                )}
+              </div>
+
               {/* Navigation Options */}
               <div className="pt-4 flex flex-wrap items-center gap-3.5">
                 <Link
@@ -351,6 +554,20 @@ function LoginContent() {
                 ลงชื่อเข้าใช้หรือลงทะเบียนเพื่อรับลำดับสิทธิ์สมาชิก (Member Sequence) ถาวร พร้อมเลือกหมวดหมู่เรือที่คุณต้องการ
               </p>
             </div>
+
+            {discordStatusBanner && (
+              <div
+                className={`p-3.5 rounded-xl border text-xs text-center ${
+                  discordStatusBanner.type === 'success'
+                    ? 'bg-emerald-950/60 border-emerald-400/40 text-emerald-200'
+                    : discordStatusBanner.type === 'warning'
+                    ? 'bg-amber-950/60 border-amber-400/40 text-amber-200'
+                    : 'bg-red-950/60 border-red-400/40 text-red-200'
+                }`}
+              >
+                {discordStatusBanner.text}
+              </div>
+            )}
 
             {/* Mode Switcher Tabs */}
             <div className="flex max-w-sm mx-auto p-1.5 rounded-2xl bg-black/50 border border-emerald-border/60">
