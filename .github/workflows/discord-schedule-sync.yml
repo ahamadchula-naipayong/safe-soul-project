@@ -1,10 +1,13 @@
 name: Discord Scheduled Content Sync (W1-W23 & Rolling News)
 
+concurrency:
+  group: discord-content-sync
+  cancel-in-progress: false
+
 on:
   schedule:
-    # Runs daily at 05:05 ICT (22:05 UTC), 5 minutes after scheduled 05:00 ICT chapter releases
-    # Syncs new Deep Ocean chapters, rolling 30-day Open/West Asia news (prunes >30d), and all Deepdive (auto-archives >600)
-    - cron: '5 22 * * *'
+    # Safety-net backup cron at 05:30 ICT (22:30 UTC). Primary exact-time triggers run via Cloudflare Worker Cron (05:05, 12:05, 20:05 ICT).
+    - cron: '30 22 * * *'
   workflow_dispatch:
     inputs:
       update_existing:
@@ -50,6 +53,7 @@ jobs:
           DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
           DISCORD_GUILD_ID: ${{ secrets.DISCORD_GUILD_ID }}
           NEXT_PUBLIC_SITE_URL: https://thefitrahshield.hardynaipayong.cloud
+          NEXT_PUBLIC_AUDIO_BASE_URL: https://pub-f97e75c998b047ada96253d539c8f805.r2.dev
         run: |
           if [ "${{ inputs.update_existing }}" = "true" ]; then
             node scripts/discord-sync.mjs --profile=fitrah --update-existing
@@ -63,6 +67,7 @@ jobs:
           DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
           DISCORD_BIRDS_GUILD_ID: ${{ secrets.DISCORD_BIRDS_GUILD_ID || '1473338926164086915' }}
           NEXT_PUBLIC_SITE_URL: https://thefitrahshield.hardynaipayong.cloud
+          NEXT_PUBLIC_AUDIO_BASE_URL: https://pub-f97e75c998b047ada96253d539c8f805.r2.dev
         run: |
           if [ "${{ inputs.update_existing }}" = "true" ]; then
             node scripts/discord-sync.mjs --profile=birds --update-existing

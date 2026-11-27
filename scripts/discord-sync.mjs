@@ -96,6 +96,8 @@ const THAI_SHORT_MONTHS = [
   'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.',
 ];
 
+const DEFAULT_AUDIO_BASE_URL = 'https://pub-f97e75c998b047ada96253d539c8f805.r2.dev';
+
 function parseArgs() {
   const argv = process.argv.slice(2);
   let profile = 'fitrah';
@@ -103,6 +105,7 @@ function parseArgs() {
   let includeUnreleased = false;
   let updateExisting = false;
   let noPrune = false;
+  let localOnly = false;
   let openDays = 30;
   let openActiveDays = 5;
   let deepdiveDays = null;
@@ -114,6 +117,7 @@ function parseArgs() {
     else if (arg === '--include-unreleased') includeUnreleased = true;
     else if (arg === '--update-existing') updateExisting = true;
     else if (arg === '--no-prune') noPrune = true;
+    else if (arg === '--local-only') localOnly = true;
     else if (arg.startsWith('--profile=')) {
       const val = arg.split('=')[1].trim().toLowerCase();
       if (val === 'fitrah' || val === 'birds') profile = val;
@@ -145,6 +149,7 @@ function parseArgs() {
     includeUnreleased,
     updateExisting,
     noPrune,
+    localOnly,
     openDays,
     openActiveDays,
     deepdiveDays,
@@ -224,8 +229,15 @@ async function ensureForumMetadataFromDiscord(guildId, state, profileCfg) {
   return state;
 }
 
+function extractKorSyncKey(threadName) {
+  if (!threadName) return null;
+  const match = String(threadName).match(/^\[((?:KOR|NEWS)[^\]]+)\]/i);
+  return match ? `news:${match[1].trim().toLowerCase()}` : null;
+}
+
 async function fetchExistingThreadsIndex(guildId, forumIds) {
   const byChannel = new Map();
+  const byKorByChannel = new Map();
   const listsByChannel = new Map();
   const seenIds = new Set();
 
@@ -239,6 +251,13 @@ async function fetchExistingThreadsIndex(guildId, forumIds) {
     if (!byChannel.has(t.parent_id)) byChannel.set(t.parent_id, new Map());
     if (!byChannel.get(t.parent_id).has(t.name)) {
       byChannel.get(t.parent_id).set(t.name, entry);
+    }
+    const korKey = extractKorSyncKey(t.name);
+    if (korKey) {
+      if (!byKorByChannel.has(t.parent_id)) byKorByChannel.set(t.parent_id, new Map());
+      if (!byKorByChannel.get(t.parent_id).has(korKey)) {
+        byKorByChannel.get(t.parent_id).set(korKey, entry);
+      }
     }
     if (!seenIds.has(t.id)) {
       seenIds.add(t.id);
@@ -277,7 +296,7 @@ async function fetchExistingThreadsIndex(guildId, forumIds) {
     }
   }
 
-  return { byChannel, listsByChannel };
+  return { byChannel, byKorByChannel, listsByChannel };
 }
 
 function truncateText(str, maxLen) {
@@ -476,10 +495,116 @@ function loadNewsFromExcel() {
   return deduped;
 }
 
-function buildPendingThreads(
+function getNewsIndexUrl() {
+  if (process.env.NEWS_INDEX_URL) return process.env.NEWS_INDEX_URL;
+  const baseUrl = (process.env.NEXT_PUBLIC_AUDIO_BASE_URL || DEFAULT_AUDIO_BASE_URL).replace(/\/+$/, '');
+  return `${baseUrl}/news/news-index.json`;
+}
+
+async function loadNewsFromLiveR2() {
+  const newsIndexUrl = getNewsIndexUrl();
+  const res = await fetch(`${newsIndexUrl}?t=${Date.now()}`, {
+    cache: 'no-store',
+    signal: AbortSignal.timeout(25000),
+  });
+  if (!res.ok) {
+    throw new Error(`HTTP ${res.status} fetching ${newsIndexUrl}`);
+  }
+  const raw = await res.json();
+  const rawItems = Array.isArray(raw) ? raw : raw.items || raw.articles || [];
+  if (!Array.isArray(rawItems) || rawItems.length === 0) {
+    throw new Error('Live news-index.json returned 0 items');
+  }
+
+  const cleanTitle = (s) => String(s || '').replace(/^\*\*|\*\*$/g, '').trim();
+  const items = [];
+
+  for (const it of rawItems) {
+    const korNo = String(it.korNo || it.id || '').trim();
+    const title = cleanTitle(it.title);
+    if (!korNo || !title) continue;
+
+    const slug = String(it.slug || korNo).trim().toLowerCase();
+    const topicLead = cleanTitle(it.topicLead || it.title);
+    const subcategory = String(it.subcategory || 'Deepdive').trim();
+    const dateParsed = parseNewsDate(it.date);
+    const dateFormatted = it.dateFormatted || dateParsed.formatted;
+    const dateTimestamp =
+      typeof it.dateTimestamp === 'number' && !Number.isNaN(it.dateTimestamp)
+        ? it.dateTimestamp
+        : dateParsed.timestamp;
+    const image = it.image ? String(it.image).trim() : '';
+    const source = it.source && String(it.source).trim() ? String(it.source).trim() : null;
+    const summary = stripMarkdownToSummary(it.excerpt || it.summary || it.topicLead || it.title, 550);
+    const sectionsCount =
+      typeof it.sectionsCount === 'number' && it.sectionsCount > 0 ? it.sectionsCount : null;
+
+    items.push({
+      korNo,
+      slug,
+      title,
+      topicLead,
+      subcategory,
+      dateFormatted,
+      dateTimestamp,
+      image,
+      source,
+      summary,
+      sectionsCount,
+    });
+  }
+
+  items.sort((a, b) => {
+    const diff = b.dateTimestamp - a.dateTimestamp;
+    return diff !== 0 ? diff : b.korNo.localeCompare(a.korNo);
+  });
+
+  const seenSlugs = new Set();
+  const deduped = [];
+  for (const it of items) {
+    if (seenSlugs.has(it.slug)) continue;
+    seenSlugs.add(it.slug);
+    deduped.push(it);
+  }
+  return { items: deduped, sourceLabel: 'Cloudflare R2 (Live)' };
+}
+
+async function loadNews(localOnly) {
+  if (!localOnly) {
+    try {
+      return await loadNewsFromLiveR2();
+    } catch (err) {
+      console.warn(`⚠️ ดึงข่าวสดจาก Cloudflare R2 ไม่สำเร็จ (${err.message}) — สลับไปอ่านจาก Excel ในเครื่องแทน`);
+    }
+  }
+  return { items: loadNewsFromExcel(), sourceLabel: 'Excel (Local Fallback)' };
+}
+
+async function loadJsonWithLiveFallback(remoteUrl, localPath, localOnly) {
+  if (!localOnly && remoteUrl) {
+    try {
+      const res = await fetch(`${remoteUrl}?t=${Date.now()}`, {
+        cache: 'no-store',
+        signal: AbortSignal.timeout(15000),
+      });
+      if (res.ok) {
+        return await res.json();
+      }
+      console.warn(`⚠️ ดึงข้อมูลสดจาก ${remoteUrl} ไม่สำเร็จ (HTTP ${res.status}) — ใช้ไฟล์ในเครื่องแทน`);
+    } catch (err) {
+      console.warn(`⚠️ ดึงข้อมูลสดจาก ${remoteUrl} ไม่สำเร็จ (${err.message}) — ใช้ไฟล์ในเครื่องแทน`);
+    }
+  }
+  if (fs.existsSync(localPath)) {
+    return JSON.parse(fs.readFileSync(localPath, 'utf8'));
+  }
+  return null;
+}
+
+async function buildPendingThreads(
   state,
   siteUrl,
-  { includeUnreleased, openDays, openActiveDays, deepdiveDays, deepdiveActiveLimit },
+  { includeUnreleased, localOnly, openDays, openActiveDays, deepdiveDays, deepdiveActiveLimit },
   profileCfg
 ) {
   const jobs = [];
@@ -489,8 +614,10 @@ function buildPendingThreads(
 
   // 1. Shallow Waters (7 Islands) -> #ทะเลน้ำตื้น-7-เกาะ (fitrah) or #ksf_basic-thoughts🫶 (birds)
   const oneshotPath = path.join(process.cwd(), 'public', 'api-data', 'oneshot.json');
-  if (fs.existsSync(oneshotPath) && state.channels.shallowForum) {
-    const oneshot = JSON.parse(fs.readFileSync(oneshotPath, 'utf8'));
+  const oneshot = state.channels.shallowForum
+    ? await loadJsonWithLiveFallback(`${siteUrl}/api-data/oneshot.json`, oneshotPath, localOnly)
+    : null;
+  if (oneshot && state.channels.shallowForum) {
     const forumId = state.channels.shallowForum;
     const chTags = tags.shallowForum || {};
     for (const ch of oneshot.chapters || []) {
@@ -597,8 +724,10 @@ function buildPendingThreads(
 
   // 2. Deep Ocean (10 Archipelagos) -> Only on Fitrah Shield profile
   const oceanPath = path.join(process.cwd(), 'public', 'api-data', 'ocean.json');
-  if (profileCfg.includeDeepOcean && fs.existsSync(oceanPath)) {
-    const ocean = JSON.parse(fs.readFileSync(oceanPath, 'utf8'));
+  const ocean = profileCfg.includeDeepOcean
+    ? await loadJsonWithLiveFallback(`${siteUrl}/api-data/ocean.json`, oceanPath, localOnly)
+    : null;
+  if (profileCfg.includeDeepOcean && ocean) {
     const sampleForumId = state.channels.deepSampleForum;
     const sampleTags = tags.deepSampleForum || {};
     const deepForumId = state.channels.deepOceanForum;
@@ -702,10 +831,10 @@ function buildPendingThreads(
     }
   }
 
-  // 3. News from Assets/News Deepdive.xlsx
+  // 3. News from Cloudflare R2 Live Index (with local Excel fallback)
   // - Open / West Asia: rolling window (default 30 days); newest openActiveDays stay Active, rest Auto-Archived
   // - Deepdive: Fitrah keeps ALL (newest 600 Active, rest Auto-Archive); Birds keeps rolling 30 days open to all
-  const allNews = loadNewsFromExcel();
+  const { items: allNews, sourceLabel: newsSourceLabel } = await loadNews(localOnly);
   const deepdiveNews = allNews.filter((n) => n.subcategory.toLowerCase().includes('deepdive'));
   const openNews = allNews.filter((n) => !n.subcategory.toLowerCase().includes('deepdive'));
 
@@ -752,7 +881,9 @@ function buildPendingThreads(
               url,
               color: 0x22d3ee,
               description: truncateBlock(
-                `${leadLine}${item.summary}\n\n📰 **[อ่านรายงานฉบับเต็ม (${item.sectionsCount} ส่วน) บนเว็บไซต์](${url})**`,
+                `${leadLine}${item.summary}\n\n📰 **[อ่านรายงานฉบับเต็ม${
+                  item.sectionsCount ? ` (${item.sectionsCount} ส่วน)` : ''
+                } บนเว็บไซต์](${url})**`,
                 3900
               ),
               fields: [
@@ -811,7 +942,9 @@ function buildPendingThreads(
               url,
               color: 0xd9a94f,
               description: truncateBlock(
-                `${leadLine}${item.summary}\n\n🔎 **[อ่านบทวิเคราะห์ Deepdive ฉบับเต็ม (${item.sectionsCount} ส่วน) บนเว็บไซต์](${url})**`,
+                `${leadLine}${item.summary}\n\n🔎 **[อ่านบทวิเคราะห์ Deepdive ฉบับเต็ม${
+                  item.sectionsCount ? ` (${item.sectionsCount} ส่วน)` : ''
+                } บนเว็บไซต์](${url})**`,
                 3900
               ),
               fields: [
@@ -853,6 +986,7 @@ function buildPendingThreads(
 
   return {
     jobs,
+    newsSourceLabel,
     validOpenKeys: new Set(openJobs.map((j) => j.syncKey)),
     validOpenNames: new Set(openJobs.map((j) => j.payload.name)),
     validDeepdiveKeys: new Set(deepdiveJobs.map((j) => j.syncKey)),
@@ -922,20 +1056,19 @@ async function main() {
   );
   const {
     jobs,
+    newsSourceLabel,
     validOpenKeys,
     validOpenNames,
     validDeepdiveKeys,
     validDeepdiveNames,
     newsTotals,
-  } = buildPendingThreads(state, siteUrl, opts, profileCfg);
+  } = await buildPendingThreads(state, siteUrl, opts, profileCfg);
   const alreadySynced = state.syncedItems || {};
 
   // Live Discord deduplication so CI/stateless runs never create duplicates
   const forumIds = profileCfg.requiredForums.map((k) => state.channels[k]);
-  const { byChannel: liveThreadsByChannel, listsByChannel } = await fetchExistingThreadsIndex(
-    guildId,
-    forumIds
-  );
+  const { byChannel: liveThreadsByChannel, byKorByChannel, listsByChannel } =
+    await fetchExistingThreadsIndex(guildId, forumIds);
 
   // Detect expired news threads (> openDays / > deepdiveDays) to prune
   const pendingPrune = [];
@@ -955,13 +1088,15 @@ async function main() {
       }
     }
     for (const t of listsByChannel.get(channelId) || []) {
+      const korKey = extractKorSyncKey(t.name);
       if (
         /^\[(KOR|NEWS)[^\]]+\]/i.test(t.name) &&
         !validNames.has(t.name) &&
+        !(korKey && validKeys.has(korKey)) &&
         !seenPruneThreadIds.has(t.id)
       ) {
         seenPruneThreadIds.add(t.id);
-        pendingPrune.push({ syncKey: null, threadId: t.id, name: t.name });
+        pendingPrune.push({ syncKey: korKey, threadId: t.id, name: t.name });
       }
     }
   };
@@ -979,7 +1114,11 @@ async function main() {
 
   for (const job of jobs) {
     const saved = alreadySynced[job.syncKey];
-    const liveMatch = liveThreadsByChannel.get(job.channelId)?.get(job.payload.name);
+    const liveMatch =
+      liveThreadsByChannel.get(job.channelId)?.get(job.payload.name) ||
+      (job.syncKey.startsWith('news:')
+        ? byKorByChannel.get(job.channelId)?.get(job.syncKey)
+        : undefined);
     const knownThreadId = saved?.threadId || liveMatch?.id;
 
     if (knownThreadId) {
@@ -1012,7 +1151,7 @@ async function main() {
     opts.batchSize > 0 ? pendingCreate.slice(0, opts.batchSize) : pendingCreate;
 
   console.log(
-    `📊 สถิติคลังข่าวใน Excel: ทั้งหมด ${newsTotals.totalRows} รายการ ` +
+    `📊 สถิติคลังข่าว (${newsSourceLabel}): ทั้งหมด ${newsTotals.totalRows} รายการ ` +
       `(เปิด/West Asia ${newsTotals.openTotal} → เก็บ ${opts.openDays} วัน ${newsTotals.openSelected} [Active ${newsTotals.openActiveCount} / Archive ${newsTotals.openArchivedCount}], ` +
       `Deepdive ${newsTotals.deepdiveTotal} → ซิงค์ ${newsTotals.deepdiveSelected} [Active ${newsTotals.deepdiveActiveCount} / Archive ${newsTotals.deepdiveArchivedCount}])`
   );

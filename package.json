@@ -11,7 +11,8 @@
     "discord:setup": "node scripts/discord-setup.mjs",
     "discord:sync": "node scripts/discord-sync.mjs",
     "discord:birds:setup": "node scripts/discord-birds-setup.mjs",
-    "discord:birds:sync": "node scripts/discord-sync.mjs --profile=birds"
+    "discord:birds:sync": "node scripts/discord-sync.mjs --profile=birds",
+    "discord:cron:deploy": "wrangler deploy --config workers/discord-cron/wrangler.toml"
   },
   "dependencies": {
     "@supabase/ssr": "^0.5.1",

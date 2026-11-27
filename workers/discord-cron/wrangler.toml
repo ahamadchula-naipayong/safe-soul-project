@@ -1,0 +1,18 @@
+name = "fitrah-discord-cron"
+main = "src/index.js"
+account_id = "2e1b9f31899de83cd61c91278688516c"
+compatibility_date = "2025-02-01"
+workers_dev = true
+
+[triggers]
+# Runs 3x daily in ICT (UTC+7):
+# 05:05 ICT (22:05 UTC) - catches 05:00 ICT Deep Ocean chapter releases + overnight news
+# 12:05 ICT (05:05 UTC) - midday news sync
+# 20:05 ICT (13:05 UTC) - evening news sync
+crons = ["5 22 * * *", "5 5 * * *", "5 13 * * *"]
+
+[vars]
+GITHUB_OWNER = "ahamadchula-naipayong"
+GITHUB_REPO = "safe-soul-project"
+GITHUB_WORKFLOW_FILE = "discord-schedule-sync.yml"
+GITHUB_REF = "main"
